@@ -18,8 +18,10 @@ public class Cell
     public int MinSize { get; set; }
     public Microsoft.Xna.Framework.Color Color { get; set; } = Microsoft.Xna.Framework.Color.White;
 
-    public List<Cell> HNeighbours;
-    public List<Cell> VNeighbours;
+    public List<Cell> HNeighbours = new List<Cell>();
+    public List<Cell> VNeighbours = new List<Cell>();
+    public List<Corridor> HCorridors = new List<Corridor>();
+    public List<Corridor> VCorridors = new List<Corridor>();
 
     public Cell(int X1, int Y1, int X2, int Y2, int MinSize)
     {
@@ -35,26 +37,19 @@ public class Cell
         return Left == null && Right == null;
     }
 
-    public List<Cell> GetLeaves()
-    {
+    public void GetLeaves(List<Cell> cells)
+    { 
         if (IsLeaf())
         {
-            return new List<Cell> { this };
+            cells.Add(this);
         }
         else
         {
-            List<Cell> leaves = new List<Cell>();
-            if (Left != null)
-            {
-                leaves.AddRange(Left.GetLeaves());
-            }
-            if (Right != null)
-            {
-                leaves.AddRange(Right.GetLeaves());
-            }
-            return leaves;
+            Left.GetLeaves(cells);
+            Right.GetLeaves(cells);
         }
     }
+
 
     public void Shrink()
     {
@@ -65,17 +60,17 @@ public class Cell
         }
         else
         {
-            Color = new Microsoft.Xna.Framework.Color((byte)RandGen.RandInt(30, 255), (byte)RandGen.RandInt(30, 255), (byte)RandGen.RandInt(30, 255));
+            Color = new Microsoft.Xna.Framework.Color((byte)RandGen.RandInt(30, 220), (byte)RandGen.RandInt(30, 220), (byte)RandGen.RandInt(30, 220));
             
             int width = X2 - X1;
             int height = Y2 - Y1;
             int newWidth = Math.Max(MinSize, (int)(width * RandGen.RandFloat(0.5F, 0.90F)));
             int newHeight = Math.Max(MinSize, (int)(height * RandGen.RandFloat(0.5F, 0.90F)));
-            X1 = X1 + (int)((width - newWidth) / 2);
-            X2 = X2 - (int)((width - newWidth) / 2);
-            Y1 = Y1 + (int)((height - newHeight) / 2);
-            Y2 = Y2 - (int)((height - newHeight) / 2);
-            
+            X1 = (int)(X1 + ((width - newWidth) * 0.5F));
+            X2 = (int)(X2 - ((width - newWidth) * 0.5F));
+            Y1 = (int)(Y1 + ((height - newHeight) * 0.5F));
+            Y2 = (int)(Y2 - ((height - newHeight) * 0.5F));
+           
         }
     }
 
