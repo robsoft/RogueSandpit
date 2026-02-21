@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RogueSandpit", "RogueSandpit.csproj", "{10E4816F-B149-3EBD-4EBA-01D5B0FEC3F3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{10E4816F-B149-3EBD-4EBA-01D5B0FEC3F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10E4816F-B149-3EBD-4EBA-01D5B0FEC3F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10E4816F-B149-3EBD-4EBA-01D5B0FEC3F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10E4816F-B149-3EBD-4EBA-01D5B0FEC3F3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6974B3AA-1DE5-4573-92FC-C28A7EFFBA03}
+	EndGlobalSection
+EndGlobal
