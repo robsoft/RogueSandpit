@@ -15,6 +15,8 @@ namespace RogueSandpit
         private bool _isResizing = false;
 
         private Map map;
+        private Player player;
+        private GameState gameState;
         private KeyboardState _currentKeyboardState;
         private KeyboardState _previousKeyboardState;
 
@@ -38,8 +40,8 @@ namespace RogueSandpit
 
         protected override void Initialize()
         {
-            map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight);
-
+            map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
+            KickOffNewGame();
             base.Initialize();
         }
 
@@ -51,10 +53,23 @@ namespace RogueSandpit
             CalculateRenderDestination();
         }
 
+        private void KickOffNewGame()
+        {
+            map.Initialise();
+            player = new Player();
+            gameState = new GameState(map, player);
+
+            player.X = map.StartPosX;
+            player.Y = map.StartPosY;
+
+            Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
+        }
+
         // todo: get the basic 'move' stuff implemented - needs to know about path traversal,
         // dealing with barriers and obstacles (can we treat doors with our 'obstacle' class?)
         protected override void Update(GameTime gameTime)
         {
+            // deal with the meta stuff - updates that have nothing to do with the actual game itself
             _previousKeyboardState = _currentKeyboardState;
 
             // Get the new current state
@@ -63,9 +78,27 @@ namespace RogueSandpit
             if (_currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (_currentKeyboardState.IsKeyDown(Keys.Space) && _previousKeyboardState.IsKeyUp(Keys.Space))
+            if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
             {
-                map.Initialise();
+                KickOffNewGame();
+            }
+
+            if (_currentKeyboardState.IsKeyUp(Keys.F1) && _previousKeyboardState.IsKeyDown(Keys.F1))
+            {
+                if (map.RenderMode == RenderMode.Rooms)
+                {
+                    map.RenderMode = RenderMode.Cells;
+                }
+                else
+                {
+                    map.RenderMode = RenderMode.Rooms;
+                }
+            }
+            
+            if (!player.Dead)
+            {
+                // this will take care of the player's turn, and the computer's responses
+                gameState.Update(gameTime, _currentKeyboardState, _previousKeyboardState);
             }
 
             base.Update(gameTime);
@@ -76,7 +109,7 @@ namespace RogueSandpit
             // draw to our render target first
             GraphicsDevice.SetRenderTarget(_renderTarget);
 
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
             map.Display(_spriteBatch);
             _spriteBatch.End();

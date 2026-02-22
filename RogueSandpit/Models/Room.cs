@@ -6,31 +6,23 @@ using System.Threading.Tasks;
 
 namespace RogueSandpit.Models;
 
-public class Room
+public class Room : BaseMapElement
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public int X1 { get; set; }
-    public int X2 { get; set; }
-    public int Y1 { get; set; }
-    public int Y2 { get; set; }
-
     public Room LeftLeaves { get; set; }
     public Room RightLeaves { get; set; }
     public int MinimumSize { get; set; }
     public Microsoft.Xna.Framework.Color Color { get; set; } = Microsoft.Xna.Framework.Color.White;
     public bool BeenTraversed { get; set; } = false;
 
+    public int Area {get;set;} = 0;
+
     public List<Room> RightNeighbours = new List<Room>();
     public List<Room> DownNeighbours = new List<Room>();
     public List<Corridor> Corridors = new List<Corridor>();
     public List<Obstacle> Obstacles = new List<Obstacle>();
 
-    public Room(int X1, int Y1, int X2, int Y2, int MinSize)
+    public Room(int X1, int Y1, int X2, int Y2, int MinSize) : base(X1, Y1, X2, Y2)
     {
-        this.X1 = X1;
-        this.X2 = X2;
-        this.Y1 = Y1;
-        this.Y2 = Y2;
         this.MinimumSize = MinSize;
     }
 
@@ -78,14 +70,13 @@ public class Room
         }
     }
 
-    public void Fettle()
+    public void AddColumns()
     {
         // add some columns (2x2, 2x3 etc) into larger rooms
-        // add some random noise to the edges of the rooms, where doing so doesn't break a boundary or corridor.
         if (!IsLeaf())
         {
-            LeftLeaves.Fettle();
-            RightLeaves.Fettle();
+            LeftLeaves.AddColumns();
+            RightLeaves.AddColumns();
         }
         else
         {

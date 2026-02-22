@@ -8,9 +8,13 @@ namespace RogueSandpit.Models;
 
 public static class RandGen
 {
-    private static Random _rand = new Random();
+    public static int Seed { get; private set; } = 0;
+
+    private static Random _rand = new Random(0);
+
     public static void SetSeed(int seed)
     {
+        Seed = seed;
         _rand = new Random(seed);
     }
 
