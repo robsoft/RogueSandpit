@@ -1,2 +1,2 @@
-﻿using var game = new RogueSandpit.Game1();
+﻿using var game = new RogueSandpit.GameWrapper();
 game.Run();

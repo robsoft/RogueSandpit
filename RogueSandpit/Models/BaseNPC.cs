@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Intrinsics.X86;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 
 namespace RogueSandpit.Models;
@@ -14,7 +9,7 @@ namespace RogueSandpit.Models;
 public abstract class BaseNPC
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public BaseMapElement CurrentRoom { get; private set; }
+    public BaseContainingElement CurrentRoom { get; private set; }
     public string Description { get; set; } = String.Empty;
     public string Name { get; set; } = String.Empty;
     public Map Map { get; private set; }
@@ -22,13 +17,13 @@ public abstract class BaseNPC
     public Direction Direction { get; set; } = Direction.Up;
     public int X { get; set; }
     public int Y { get; set; }
-    public int Speed { get; set; } 
+    public float Speed { get; set; } = 1.0F;
     public int HP { get; set; }
     public int Damage { get; set; }
 
     public int AssetID { get; set; }
-    public int AnimFrame {  get; set; }
-    
+    public int AnimFrame { get; set; }
+
     public NPCState State { get; set; } = NPCState.InActive;
     public CharacterMood Mood { get; set; } = CharacterMood.Neutral;
     public int MoodValue { get; set; } = 0;
@@ -48,7 +43,7 @@ public abstract class BaseNPC
     public int HomeX { get; set; }
     public int HomeY { get; set; }
 
-    public BaseNPC(Map map, int x, int y, BaseMapElement currentRoom)
+    public BaseNPC(Map map, int x, int y, BaseContainingElement currentRoom)
     {
         this.Map = map;
         this.X = x;
@@ -73,7 +68,7 @@ public abstract class BaseNPC
 
     public void Move(GameTime gameTime, Player player)
     {
-         // Check if adjacent for attack
+        // Check if adjacent for attack
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
         if (dx <= 1 && dy <= 1 && (dx + dy) > 0)
@@ -84,48 +79,48 @@ public abstract class BaseNPC
             return;
         }
 
-/*
+        /*
 
-        if (Room.Contains(player.X, player.Y) || HasSeenPlayer)
-        {
-            HasSeenPlayer = true;
-            // Chase if in line of sight
-            if (dungeon.HasLineOfSight(X, Y, player.X, player.Y))
-            {
-                var path = Pathfinding.AStar(dungeon, X, Y, player.X, player.Y);
-                if (path.Count > 0)
+                if (Room.Contains(player.X, player.Y) || HasSeenPlayer)
                 {
-                    var next = path[0];
-                    X = next.Item1;
-                    Y = next.Item2;
-                }
-            }
-        {*/
+                    HasSeenPlayer = true;
+                    // Chase if in line of sight
+                    if (dungeon.HasLineOfSight(X, Y, player.X, player.Y))
+                    {
+                        var path = Pathfinding.AStar(dungeon, X, Y, player.X, player.Y);
+                        if (path.Count > 0)
+                        {
+                            var next = path[0];
+                            X = next.Item1;
+                            Y = next.Item2;
+                        }
+                    }
+                {*/
 
         // Player not seen, random move within room
         var newX = X;
         var newY = Y;
         var lastDirection = (int)Direction;
         // chance of just changing direction mid-flight
-        if (RandGen.RandInt(0,100) < 15)
+        if (RandGen.RandInt(0, 100) < 15)
         {
-            Direction = (Direction)(RandGen.RandInt(0,4));
+            Direction = (Direction)(RandGen.RandInt(0, 4));
         }
 
-        if (!CanMove(Direction, out newX, out newY))
+        if (!CanMove(out newX, out newY))
         {
             Console.WriteLine($"NPC {Name} can't move {Direction} from ({X}, {Y})");
             var attempts = 0;
-            while (attempts < 3 && !CanMove(Direction, out newX, out newY))
+            while (attempts < 3 && !CanMove(out newX, out newY))
             {
-                Direction = (Direction)(RandGen.RandInt(0,4));
+                Direction = (Direction)(RandGen.RandInt(0, 4));
                 attempts++;
             }
             if (attempts == 3)
             {
                 // reset to opposite last direction
-                Direction = (Direction)(((int)Direction + 2)%4);
-                Console.WriteLine($"NPC {Name} is stuck at ({X}, {Y}) so we've flipped the direction to {Direction}"); 
+                Direction = (Direction)(((int)Direction + 2) % 4);
+                Console.WriteLine($"NPC {Name} is stuck at ({X}, {Y}) so we've flipped the direction to {Direction}");
                 // but we don't move this time
                 return;
             }
@@ -134,30 +129,30 @@ public abstract class BaseNPC
         X = newX;
         Y = newY;
 
-        if (Map.MapCells[X, Y].ParentElement!=null && Map.MapCells[X, Y].ParentElement!=CurrentRoom)
+        if (Map.MapCells[X, Y].ParentElement != null && Map.MapCells[X, Y].ParentElement != CurrentRoom)
         {
             Console.WriteLine($"NPC {Name} changed their current room ({X}, {Y})");
             CurrentRoom = Map.MapCells[X, Y].ParentElement;
         }
     }
 
-    private bool CanMove(Direction direction, out int newX, out int newY)
+    private bool CanMove(out int newX, out int newY)
     {
         newX = X;
         newY = Y;
-        switch (direction)
+        switch (Direction)
         {
             case Direction.Up:
-                newY--;
+                newY = (int)Math.Round(newY - Speed);
                 break;
             case Direction.Down:
-                newY++;
+                newY = (int)Math.Round(newY + Speed);
                 break;
             case Direction.Left:
-                newX--;
+                newX = (int)Math.Round(newX - Speed);
                 break;
             case Direction.Right:
-                newX++;
+                newX = (int)Math.Round(newX + Speed);
                 break;
             default:
                 break;

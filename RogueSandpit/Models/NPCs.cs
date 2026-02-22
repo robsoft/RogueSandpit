@@ -13,12 +13,12 @@ namespace RogueSandpit.Models;
 // need to write helpers for;
 // 1) generate a name (markov chain video about character name generation)
 // 2) generate attributes like aggression, hp, damage etc - needs some thought & inspiration
-// 3) helper methods for targetting things, returning 'home' etc
+// 3) helper methods for targeting things, returning 'home' etc
 
 
 public static class NPCFactory
 {
-    public static BaseNPC CreateNPC(Map map,CharacterTypes type, int x, int y, BaseMapElement currentRoom)
+    public static BaseNPC CreateNPC(Map map, CharacterTypes type, int x, int y, BaseContainingElement currentRoom)
     {
         switch (type)
         {
@@ -36,7 +36,7 @@ public static class NPCFactory
 
 public class Orc : BaseNPC
 {
-    public Orc(Map map, int x, int y, BaseMapElement currentRoom): base(map, x, y, currentRoom)
+    public Orc(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Orc";
         Name = "Orc";
@@ -47,23 +47,25 @@ public class Orc : BaseNPC
 
 public class Goblin : BaseNPC
 {
-    public Goblin(Map map, int x, int y, BaseMapElement currentRoom): base(map, x, y, currentRoom)
+    public Goblin(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Goblin";
         Name = "Goblin";
         Damage = 10 + RandGen.RandInt(0, 10);
         HP = 30 + RandGen.RandInt(0, 10);
+        Speed = 1.0f;
     }
 }
 
 public class Skeleton : BaseNPC
 {
-    public Skeleton(Map map, int x, int y, BaseMapElement currentRoom): base(map, x, y, currentRoom)
+    public Skeleton(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Skeleton";
         Name = "Skeleton";
         Damage = 5 + RandGen.RandInt(0, 10);
         HP = 40 + RandGen.RandInt(0, 10);
+        Speed = 1.0f;
     }
 }
 

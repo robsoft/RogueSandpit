@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RogueSandpit.Models;
 
-public class BaseMapElement
+public class BaseContainingElement
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public int X1 { get; set; }
@@ -15,8 +15,8 @@ public class BaseMapElement
     public int Y2 { get; set; }
 
     public bool HasVisited { get; set; } = false;
-    
-    public BaseMapElement(int x1, int y1, int x2, int y2)
+
+    public BaseContainingElement(int x1, int y1, int x2, int y2)
     {
         X1 = x1;
         Y1 = y1;

@@ -22,7 +22,7 @@ public class Map
     public int MinRooms { get; set; } = 11;
     public int MinDimension { get; set; } = 3;
     public bool ShowGrid { get; set; } = true;
-    public RenderMode RenderMode { get; set; } = RenderMode.Rooms; 
+    public RenderMode RenderMode { get; set; } = RenderMode.Rooms;
 
 
     public int StartPosX { get; private set; } = 0;
@@ -47,7 +47,7 @@ public class Map
     // todo:
     // 1) create a kind of simple 'carved out' array so that we can easily do line-of-sight without thinking about rooms.
     // 2) block off each corridor entrance with a special piece of wall, that we can pass through but that we can't see through,
-    // until we've passed through it the first time (opening it, leaving it open, kind of tihng)
+    // until we've passed through it the first time (opening it, leaving it open, kind of thing)
 
 
     public Map(GraphicsDevice graphicsDevice, int nativeWidth, int nativeHeight, int seed = 0)
@@ -69,7 +69,7 @@ public class Map
         RoomList = new List<Room>();
         // reset the 'root' room to be the whole map
         Root = new Room(0, 0, Width, Height, MinDimension);
-        
+
         MapObstacles = new List<Obstacle>();
         Exits = new List<Corridor>();
         NPCs = new List<BaseNPC>();
@@ -111,7 +111,7 @@ public class Map
             // basic area of the room
             int area = (room.X2 - room.X1) * (room.Y2 - room.Y1);
             // remove any obstacles that are in the room
-            foreach(Obstacle obstacle in room.Obstacles)
+            foreach (Obstacle obstacle in room.Obstacles)
             {
                 int obsArea = (obstacle.X2 - obstacle.X1) * (obstacle.Y2 - obstacle.Y1);
                 area -= obsArea;
@@ -124,12 +124,12 @@ public class Map
     {
         List<Point> occupiedSpaces = new List<Point>();
 
-        foreach(Room room in RoomList)
+        foreach (Room room in RoomList)
         {
             // blank out any 'obstacles' as places we can't put NPCs
-            foreach(Obstacle obstacle in room.Obstacles)
+            foreach (Obstacle obstacle in room.Obstacles)
             {
-                for(int x = obstacle.X1; x < obstacle.X2; x++)
+                for (int x = obstacle.X1; x < obstacle.X2; x++)
                 {
                     for (int y = obstacle.Y1; y < obstacle.Y2; y++)
                     {
@@ -138,14 +138,14 @@ public class Map
                 }
             }
 
-            // and add a number of NPCs based on that area (1 per 25 squares, on average)
-            int npcCount = (int)(room.Area / 25F);
+            // and add a number of NPCs based on that area (1 per 30 squares, on average)
+            int npcCount = (int)(room.Area / 30F);
 
             for (int i = 0; i < npcCount; i++)
             {
-                var x= room.X1 + RandGen.RandInt(0, room.X2 - room.X1);
+                var x = room.X1 + RandGen.RandInt(0, room.X2 - room.X1);
                 var y = room.Y1 + RandGen.RandInt(0, room.Y2 - room.Y1);
-                var failCount=0;
+                var failCount = 0;
                 while (occupiedSpaces.Contains(new Point(x, y)))
                 {
                     x = room.X1 + RandGen.RandInt(0, room.X2 - room.X1);
@@ -167,15 +167,15 @@ public class Map
     }
 
     private void AddLoot()
-    {}
+    { }
 
     private void AddSpecials()
-    {}
+    { }
 
     // this flattens the room/corridor/obstacle structure into a single 2-d array of 'cells' that we can easily query for line-of-sight and pathfinding, without having to think about rooms and corridors etc. We can still use the room/corridor/obstacle structure for rendering, and for any room-specific logic we want to add later on
     private void CreateMapCells()
     {
-        MapCells = new MapCell[Width+1, Height+1];  // adding one here just makes zero-based indexing easier to follow
+        MapCells = new MapCell[Width + 1, Height + 1];  // adding one here just makes zero-based indexing easier to follow
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < Height; y++)
@@ -184,7 +184,7 @@ public class Map
             }
         }
 
-        foreach(Room room in RoomList)
+        foreach (Room room in RoomList)
         {
             Console.WriteLine($"Room at {room.X1}, {room.Y1}, to {room.X2}, {room.Y2}");
 
@@ -196,7 +196,7 @@ public class Map
                 }
             }
 
-            foreach(Corridor corridor in room.Corridors)
+            foreach (Corridor corridor in room.Corridors)
             {
                 Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
 
@@ -211,7 +211,7 @@ public class Map
                 MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
             }
 
-            foreach(Obstacle obstacle in room.Obstacles)
+            foreach (Obstacle obstacle in room.Obstacles)
             {
                 Console.WriteLine($"Obstacle at {obstacle.X1}, {obstacle.Y1}, to {obstacle.X2}, {obstacle.Y2}");
 
@@ -226,7 +226,7 @@ public class Map
         }
 
         // exits are a special case of corridors where one side doesn't have a room        
-        foreach(Corridor corridor in Exits)
+        foreach (Corridor corridor in Exits)
         {
             for (int x = corridor.X1; x <= corridor.X2; x++)
             {
@@ -311,17 +311,17 @@ public class Map
             var y = Math.Max(candidate.Y1, candidate.Y2);
             Console.WriteLine($"Adding exit at {x}, {y}, connecting to corridor at {candidate.X1}, {candidate.Y1}, {candidate.X2}, {candidate.Y2} ");
             // fudge the exit corridor to butt-up to the candidate, but not overlap
-            var corridor = new Corridor(x, y+1, x, Height-1);
+            var corridor = new Corridor(x, y + 1, x, Height - 1);
             corridor.HasVisited = true; // we want this to be visible from the start, so mark it as visited
             Exits.Add(corridor);
 
             StartPosX = x;
-            StartPosY = Height-1;
+            StartPosY = Height - 1;
             return;
         }
 
         StartPosX = 0;
-        StartPosY = Height-1;
+        StartPosY = Height - 1;
 
     }
 
@@ -329,8 +329,8 @@ public class Map
     public void Display(SpriteBatch spriteBatch)
     {
         if (IsInitialising) return;
-      
-        if (RenderMode==RenderMode.Cells)
+
+        if (RenderMode == RenderMode.Cells)
         {
             RenderMapCells(spriteBatch);
         }
@@ -341,7 +341,7 @@ public class Map
 
         _primDrawer.DrawFilledRectangle(spriteBatch,
             new Rectangle(CurrentPlayerX * CellScale, CurrentPlayerY * CellScale, CellScale, CellScale),
-            Color.White);    
+            Color.White);
 
 
         if (ShowGrid)
@@ -387,7 +387,7 @@ public class Map
             }
         }
 
-        foreach(BaseNPC npc in NPCs)
+        foreach (BaseNPC npc in NPCs)
         {
             _primDrawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
@@ -449,12 +449,12 @@ public class Map
                 corridor.Color);
         }
 
-        BaseMapElement currentPlayerRoom = MapCells[CurrentPlayerX, CurrentPlayerY].ParentElement;
-        foreach(BaseNPC npc in NPCs)
+        BaseContainingElement currentPlayerRoom = MapCells[CurrentPlayerX, CurrentPlayerY].ParentElement;
+        foreach (BaseNPC npc in NPCs)
         {
             //if (npc.CurrentRoom.HasVisited)
             // only show NPCs in the current room
-            if (currentPlayerRoom!=null && npc.CurrentRoom == currentPlayerRoom)
+            if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
             {
                 _primDrawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
@@ -487,7 +487,7 @@ public class Map
                     int hallY = RandGen.RandInt(
                         Math.Max(room.Y1, neighbourRoom.Y1),
                         Math.Min(room.Y2, neighbourRoom.Y2) - 1);
-                    room.Corridors.Add(new Corridor(room.X2, hallY, neighbourRoom.X1-1, hallY));
+                    room.Corridors.Add(new Corridor(room.X2, hallY, neighbourRoom.X1 - 1, hallY));
                 }
             }
 
@@ -499,7 +499,7 @@ public class Map
                     int hallX = RandGen.RandInt(
                         Math.Max(room.X1, neighbourCell.X1),
                         Math.Min(room.X2, neighbourCell.X2) - 1);
-                    room.Corridors.Add(new Corridor(hallX, room.Y2, hallX, neighbourCell.Y1-1));
+                    room.Corridors.Add(new Corridor(hallX, room.Y2, hallX, neighbourCell.Y1 - 1));
                 }
             }
         }

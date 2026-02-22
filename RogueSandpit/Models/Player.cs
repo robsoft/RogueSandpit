@@ -15,10 +15,10 @@ public class Player
 
     public int X { get; set; } = 0;
     public int Y { get; set; } = 0;
-    public int Health {get; private set;} = 0;
-    public int Damage {get; private set;} = 0;
-    public bool Dead {get; private set;} = false;  
-    public BaseMapElement CurrentRoom { get; set; } = null;
+    public int Health { get; private set; } = 0;
+    public int Damage { get; private set; } = 0;
+    public bool Dead { get; private set; } = false;
+    public BaseContainingElement CurrentRoom { get; set; } = null;
 
     public Player()
     {
@@ -56,7 +56,7 @@ public class Player
         if (Health < 0) Health = 0;
         if (Health == 0)
         {
-            Dead=true;
+            Dead = true;
         }
     }
 

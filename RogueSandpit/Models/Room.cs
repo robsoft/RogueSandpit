@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 
 namespace RogueSandpit.Models;
 
-public class Room : BaseMapElement
+public class Room : BaseContainingElement
 {
     public Room LeftLeaves { get; set; }
     public Room RightLeaves { get; set; }
     public int MinimumSize { get; set; }
     public Microsoft.Xna.Framework.Color Color { get; set; } = Microsoft.Xna.Framework.Color.White;
-    public bool BeenTraversed { get; set; } = false;
 
-    public int Area {get;set;} = 0;
+    public int Area { get; set; } = 0;
 
     public List<Room> RightNeighbours = new List<Room>();
     public List<Room> DownNeighbours = new List<Room>();
@@ -62,10 +61,10 @@ public class Room : BaseMapElement
             int newHeight = Math.Max(MinimumSize, (int)(height * RandGen.RandFloat(0.5F, 0.90F)));
             var xDiff = (int)((width - newWidth) * 0.5F);
             var yDiff = (int)((height - newHeight) * 0.5F);
-            X1 = X1 + xDiff;
-            X2 = X2 - xDiff;
-            Y1 = Y1 + yDiff;
-            Y2 = Y2 - yDiff;
+            X1 += xDiff;
+            X2 -= xDiff;
+            Y1 += yDiff;
+            Y2 -= yDiff;
 
         }
     }

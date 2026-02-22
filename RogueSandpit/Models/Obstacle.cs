@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace RogueSandpit.Models;
 
-public class Obstacle : BaseMapElement
+public class Obstacle : BaseContainingElement
 {
 
     public Microsoft.Xna.Framework.Color Color { get; set; } = Microsoft.Xna.Framework.Color.Yellow;

@@ -12,9 +12,9 @@ public class MapCell
     public int X { get; private set; }
     public int Y { get; private set; }
     public MapCellType CellType { get; private set; }
-    public BaseMapElement ParentElement { get; private set; }
+    public BaseContainingElement ParentElement { get; private set; }
 
-    public MapCell(int x, int y, MapCellType cellType, BaseMapElement parentElement = null)
+    public MapCell(int x, int y, MapCellType cellType, BaseContainingElement parentElement = null)
     {
         this.X = x;
         this.Y = y;

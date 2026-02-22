@@ -16,8 +16,12 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
+- setting speed to !=1.0 values caused NPCs to stand on each other and warp around too much, look at this  
+- clean-up the MapCell and 'occupiedSpaces' kind of stuff into one, simpler approach  
+- refactor Player class so it handles it's own moves, knows about Map etc  
+- suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - UI for HP, Damage etc  
-- Names & class variation for NPCs  
+- Names & class variation for NPCs - Markov-chain generation of names? 
 - Implement the A* and Line-Of-Sight mechanics as per the RogueALike project  
 - Player to attack NPCs
 - Loot
@@ -38,7 +42,7 @@ builds & runs on Mac and Windows
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
 - Some doors require keys to open  
-- Other doors may require a 'move' to open, so you can't just walk straight through them  
+- Other doors may use-up a 'move' to open, so you can't just walk straight through them  
 - An inventory system with items that can be equipped and used, a limit on weight/count  
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    

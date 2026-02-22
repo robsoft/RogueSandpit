@@ -50,10 +50,10 @@ public class GameState
         MoveNPCs(gameTime);
         Player.Update(gameTime);
 
-        if (Player.Dead==true)
+        if (Player.Dead)
         {
             Console.WriteLine("Player is dead! Game over.");
-            return;
+            return; // by bailing before resetting PlayerTakenTurn, we stop the game
         }
         PlayerTakenTurn = false;
     }   

@@ -6,7 +6,7 @@ using RogueSandpit.Models;
 
 namespace RogueSandpit
 {
-    public class Game1 : Game
+    public class GameWrapper : Game
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
@@ -14,16 +14,16 @@ namespace RogueSandpit
         private Rectangle _renderDestination;
         private bool _isResizing = false;
 
-        private Map map;
-        private Player player;
-        private GameState gameState;
+        private Map _map;
+        private Player _player;
+        private GameState _gameState;
         private KeyboardState _currentKeyboardState;
         private KeyboardState _previousKeyboardState;
 
         private int _nativeWidth = 800;
         private int _nativeHeight = 600;
 
-        public Game1()
+        public GameWrapper()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -40,7 +40,7 @@ namespace RogueSandpit
 
         protected override void Initialize()
         {
-            map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
+            _map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
             KickOffNewGame();
             base.Initialize();
         }
@@ -55,18 +55,16 @@ namespace RogueSandpit
 
         private void KickOffNewGame()
         {
-            map.Initialise();
-            player = new Player();
-            gameState = new GameState(map, player);
+            _map.Initialise();
+            _player = new Player();
+            _gameState = new GameState(_map, _player);
 
-            player.X = map.StartPosX;
-            player.Y = map.StartPosY;
+            _player.X = _map.StartPosX;
+            _player.Y = _map.StartPosY;
 
             Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
         }
 
-        // todo: get the basic 'move' stuff implemented - needs to know about path traversal,
-        // dealing with barriers and obstacles (can we treat doors with our 'obstacle' class?)
         protected override void Update(GameTime gameTime)
         {
             // deal with the meta stuff - updates that have nothing to do with the actual game itself
@@ -85,20 +83,20 @@ namespace RogueSandpit
 
             if (_currentKeyboardState.IsKeyUp(Keys.F1) && _previousKeyboardState.IsKeyDown(Keys.F1))
             {
-                if (map.RenderMode == RenderMode.Rooms)
+                if (_map.RenderMode == RenderMode.Rooms)
                 {
-                    map.RenderMode = RenderMode.Cells;
+                    _map.RenderMode = RenderMode.Cells;
                 }
                 else
                 {
-                    map.RenderMode = RenderMode.Rooms;
+                    _map.RenderMode = RenderMode.Rooms;
                 }
             }
-            
-            if (!player.Dead)
+
+            if (!_player.Dead)
             {
                 // this will take care of the player's turn, and the computer's responses
-                gameState.Update(gameTime, _currentKeyboardState, _previousKeyboardState);
+                _gameState.Update(gameTime, _currentKeyboardState, _previousKeyboardState);
             }
 
             base.Update(gameTime);
@@ -111,7 +109,7 @@ namespace RogueSandpit
 
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
-            map.Display(_spriteBatch);
+            _map.Display(_spriteBatch);
             _spriteBatch.End();
 
             // then draw the render target to the screen
