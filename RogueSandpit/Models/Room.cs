@@ -19,6 +19,7 @@ public class Room : BaseContainingElement
     public List<Room> DownNeighbours = new List<Room>();
     public List<Corridor> Corridors = new List<Corridor>();
     public List<Obstacle> Obstacles = new List<Obstacle>();
+    public List<Special> Specials = new List<Special>();
 
     public Room(int X1, int Y1, int X2, int Y2, int MinSize) : base(X1, Y1, X2, Y2)
     {
@@ -94,6 +95,7 @@ public class Room : BaseContainingElement
                     Microsoft.Xna.Framework.Color.Black));
             }
 
+            /*
             if (RandGen.RandInt(0, 2) == 0)
             {
                 var corner = new int[4, 2] { { X1, Y1 }, { X2, Y1 }, { X1, Y2 }, { X2, Y2 } };
@@ -109,6 +111,7 @@ public class Room : BaseContainingElement
                     }
                 }
             }
+            */
         }
     }
 

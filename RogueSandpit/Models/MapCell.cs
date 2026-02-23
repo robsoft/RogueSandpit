@@ -22,4 +22,9 @@ public class MapCell
         this.ParentElement = parentElement;
     }
 
+    public void SetCellType(MapCellType cellType)
+    {
+        this.CellType = cellType;
+    }
+
 }

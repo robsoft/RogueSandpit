@@ -31,12 +31,6 @@ public abstract class BaseNPC
     public Visibility Visibility { get; set; } = Visibility.Hidden;
     public bool HasSeenPlayer { get; private set; } = false;
 
-    // we set these to the position of something we want to follow, when we start following it
-    // at each turn, if we can still see the target, we update these.
-    // if the target 'disappears' from view, we continue to travel to the location where we last saw it 
-    public int TargetX { get; set; }
-    public int TargetY { get; set; }
-    public int TargetId { get; set; } // id of the player, item or other NPC we're following
 
     // this is where the NPC starts out from, and is where it will 'home' back to when it can't find a target   
     // (the target is dead or disappeared etc)
@@ -50,7 +44,6 @@ public abstract class BaseNPC
         this.Y = y;
         this.HomeX = x;
         this.HomeY = y;
-
         this.CurrentRoom = currentRoom;
 
         Direction = (Direction)RandGen.RandInt(0, 4);
@@ -63,6 +56,7 @@ public abstract class BaseNPC
         if (HP <= 0)
         {
             State = NPCState.Dead;
+            Console.WriteLine($"{Name} has been killed!");
         }
     }
 
@@ -74,7 +68,7 @@ public abstract class BaseNPC
         if (dx <= 1 && dy <= 1 && (dx + dy) > 0)
         {
             // Attack
-            Console.WriteLine($"NPC {Name} attacked player at ({player.X}, {player.Y}) with {Damage} damage!");
+            Console.WriteLine($"{Name} attacked player with {Damage} damage!");
             player.TakeDamage(Damage);
             return;
         }
@@ -109,7 +103,7 @@ public abstract class BaseNPC
 
         if (!CanMove(out newX, out newY))
         {
-            Console.WriteLine($"NPC {Name} can't move {Direction} from ({X}, {Y})");
+            //Console.WriteLine($"{Name} can't move {Direction} from ({X}, {Y})");
             var attempts = 0;
             while (attempts < 3 && !CanMove(out newX, out newY))
             {
@@ -120,7 +114,7 @@ public abstract class BaseNPC
             {
                 // reset to opposite last direction
                 Direction = (Direction)(((int)Direction + 2) % 4);
-                Console.WriteLine($"NPC {Name} is stuck at ({X}, {Y}) so we've flipped the direction to {Direction}");
+                Console.WriteLine($"{Name} got stuck at ({X}, {Y}), flipped the direction to {Direction}");
                 // but we don't move this time
                 return;
             }
@@ -131,7 +125,7 @@ public abstract class BaseNPC
 
         if (Map.MapCells[X, Y].ParentElement != null && Map.MapCells[X, Y].ParentElement != CurrentRoom)
         {
-            Console.WriteLine($"NPC {Name} changed their current room ({X}, {Y})");
+            Console.WriteLine($"{Name} changed room ({X}, {Y})");
             CurrentRoom = Map.MapCells[X, Y].ParentElement;
         }
     }

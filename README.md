@@ -16,6 +16,8 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
+- when in debug mode, hover over a cell to find out what it is (eg Goblin-20, Room-4 etc)
+- investigate better placement of the 'special' tile
 - setting speed to !=1.0 values caused NPCs to stand on each other and warp around too much, look at this  
 - clean-up the MapCell and 'occupiedSpaces' kind of stuff into one, simpler approach  
 - refactor Player class so it handles it's own moves, knows about Map etc  

@@ -18,15 +18,25 @@ namespace RogueSandpit.Models;
 
 public static class NPCFactory
 {
+    public static Dictionary<CharacterTypes, int> CharacterTypeCounts = new Dictionary<CharacterTypes, int>
+    {
+        { CharacterTypes.Orc, 0 },
+        { CharacterTypes.Goblin, 0 },
+        { CharacterTypes.Skeleton, 0 }
+    };
+
     public static BaseNPC CreateNPC(Map map, CharacterTypes type, int x, int y, BaseContainingElement currentRoom)
     {
         switch (type)
         {
             case CharacterTypes.Orc:
+                CharacterTypeCounts[CharacterTypes.Orc]++;   
                 return new Orc(map, x, y, currentRoom);
             case CharacterTypes.Goblin:
+                CharacterTypeCounts[CharacterTypes.Goblin]++;   
                 return new Goblin(map, x, y, currentRoom);
             case CharacterTypes.Skeleton:
+                CharacterTypeCounts[CharacterTypes.Skeleton]++;   
                 return new Skeleton(map, x, y, currentRoom);
             default:
                 throw new ArgumentException("Invalid character type");
@@ -39,7 +49,7 @@ public class Orc : BaseNPC
     public Orc(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Orc";
-        Name = "Orc";
+        Name = $"Orc-{NPCFactory.CharacterTypeCounts[CharacterTypes.Orc]}";
         Damage = 5 + RandGen.RandInt(0, 10);
         HP = 30 + RandGen.RandInt(0, 10);
     }
@@ -50,7 +60,7 @@ public class Goblin : BaseNPC
     public Goblin(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Goblin";
-        Name = "Goblin";
+        Name = $"Goblin-{NPCFactory.CharacterTypeCounts[CharacterTypes.Goblin]}";
         Damage = 10 + RandGen.RandInt(0, 10);
         HP = 30 + RandGen.RandInt(0, 10);
         Speed = 1.0f;
@@ -62,7 +72,7 @@ public class Skeleton : BaseNPC
     public Skeleton(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         Description = "Skeleton";
-        Name = "Skeleton";
+        Name = $"Skeleton-{NPCFactory.CharacterTypeCounts[CharacterTypes.Skeleton]}";
         Damage = 5 + RandGen.RandInt(0, 10);
         HP = 40 + RandGen.RandInt(0, 10);
         Speed = 1.0f;

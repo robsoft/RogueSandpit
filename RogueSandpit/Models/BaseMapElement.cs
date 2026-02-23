@@ -9,6 +9,7 @@ namespace RogueSandpit.Models;
 public class BaseContainingElement
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; set; } = "Unnamed";
     public int X1 { get; set; }
     public int X2 { get; set; }
     public int Y1 { get; set; }

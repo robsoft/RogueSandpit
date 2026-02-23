@@ -17,7 +17,7 @@ public class GameState
     public GameState(Map map, Player player)
     {
         this.Map = map;
-        this.Player = player;      
+        this.Player = player;
     }
 
     public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState previousKeyboardState)
@@ -44,7 +44,7 @@ public class GameState
         }
         if (!PlayerTakenTurn)
         {
-           return;
+            return;
         }
 
         MoveNPCs(gameTime);
@@ -56,7 +56,7 @@ public class GameState
             return; // by bailing before resetting PlayerTakenTurn, we stop the game
         }
         PlayerTakenTurn = false;
-    }   
+    }
 
     private void MoveNPCs(GameTime gameTime)
     {
@@ -85,8 +85,12 @@ public class GameState
             var cell = Map.MapCells[newX, newY];
             if (cell.ParentElement != null)
             {
-                Console.WriteLine($"Player moved to ({newX}, {newY}) which is part of {cell.ParentElement.GetType().Name} at ({cell.ParentElement.X1}, {cell.ParentElement.Y1}, {cell.ParentElement.X2}, {cell.ParentElement.Y2})");
                 cell.ParentElement.HasVisited = true;
+            }
+            if (cell.CellType==MapCellType.Door)
+            {
+                // TODO: open the door, for now just remove it
+                Map.MapCells[newX, newY].SetCellType(MapCellType.Floor);
             }
         }
         PlayerTakenTurn = true;

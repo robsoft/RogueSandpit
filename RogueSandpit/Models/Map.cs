@@ -89,10 +89,16 @@ public class Map
 
         // now calculate the area of each room
         CalculateRoomAreas();
+        
+        // Name the rooms
+        NameRooms();
+
         // figure out a starting point for the map
         AddExits();
         AddNPCs();
         AddLoot();
+
+        // Add the macguffin
         AddSpecials();
 
         // now flatten this into a single big 2-d array
@@ -138,8 +144,8 @@ public class Map
                 }
             }
 
-            // and add a number of NPCs based on that area (1 per 30 squares, on average)
-            int npcCount = (int)(room.Area / 30F);
+            // and add a number of NPCs based on that area (1 per 35 squares, on average)
+            int npcCount = (int)(room.Area / 35F);
 
             for (int i = 0; i < npcCount; i++)
             {
@@ -166,11 +172,25 @@ public class Map
         }
     }
 
+    private void NameRooms()
+    {
+        int roomNum=1;
+        foreach(Room room in RoomList)
+        {
+            room.Name = $"Room {roomNum}";
+            roomNum++;   
+        }
+    }
+
     private void AddLoot()
     { }
 
     private void AddSpecials()
-    { }
+    {
+        // find the last room in the list, and add a special item to it
+        Room lastRoom = RoomList[RoomList.Count - 1];
+        lastRoom.Specials.Add(new Special(lastRoom.X1 + 1, lastRoom.Y1 + 1, lastRoom));
+    }
 
     // this flattens the room/corridor/obstacle structure into a single 2-d array of 'cells' that we can easily query for line-of-sight and pathfinding, without having to think about rooms and corridors etc. We can still use the room/corridor/obstacle structure for rendering, and for any room-specific logic we want to add later on
     private void CreateMapCells()
@@ -196,6 +216,11 @@ public class Map
                 }
             }
 
+            foreach(Special special in room.Specials)
+            {
+                MapCells[special.X, special.Y] = new MapCell(special.X, special.Y, MapCellType.Special, null);
+            }
+            
             foreach (Corridor corridor in room.Corridors)
             {
                 Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
@@ -377,6 +402,9 @@ public class Map
                     case MapCellType.Door:
                         color = Color.Gray;
                         break;
+                    case MapCellType.Special:
+                        color = Color.Yellow;
+                        break;
                     default:
                         color = MapBackgroundColor;
                         break;
@@ -391,7 +419,7 @@ public class Map
         {
             _primDrawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
-                Color.Red);
+                Color.Black);
         }
 
     }
@@ -427,6 +455,13 @@ public class Map
                         (obstacle.X2 - obstacle.X1) * CellScale, (obstacle.Y2 - obstacle.Y1) * CellScale),
                         MapBackgroundColor); // obstacle.Color);
                 }
+                foreach (var special in room.Specials)
+                {
+                    _primDrawer.DrawFilledRectangle(spriteBatch,
+                        new Rectangle(special.X * CellScale, special.Y * CellScale, CellScale, CellScale),
+                        Color.Yellow);
+                }
+
             }
         }
 
