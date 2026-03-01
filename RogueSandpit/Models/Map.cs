@@ -89,7 +89,7 @@ public class Map
 
         // now calculate the area of each room
         CalculateRoomAreas();
-        
+
         // Name the rooms
         NameRooms();
 
@@ -103,6 +103,8 @@ public class Map
 
         // now flatten this into a single big 2-d array
         CreateMapCells();
+
+        //AddDoorways();
 
         CurrentPlayerX = StartPosX;
         CurrentPlayerY = StartPosY;
@@ -174,11 +176,54 @@ public class Map
 
     private void NameRooms()
     {
-        int roomNum=1;
-        foreach(Room room in RoomList)
+        int roomNum = 1;
+        foreach (Room room in RoomList)
         {
             room.Name = $"Room {roomNum}";
-            roomNum++;   
+            roomNum++;
+        }
+    }
+
+    private void AddDoorways()
+    {
+        // post-flattening
+        foreach (Room room in RoomList)
+        {
+            // go through the horizontal corridors, and for each one, identify the room to the left and the right, adding a 'doorway' tile just inside the room
+            foreach (Corridor corridor in room.HCorridors)
+            {
+                Room leftRoom = RoomList.Find(r => r.X2 == corridor.X1); //doesn't this need to factor in the y position otherwise corridors in the same x range but different y ranges will be confused?
+                Room rightRoom = RoomList.Find(r => r.X1 == corridor.X2);
+                if (leftRoom != null && rightRoom != null)
+                {
+                    leftRoom.Doorways.Add(new Doorway(leftRoom.X2 - 1, corridor.Y1));
+                    //rightRoom.Doorways.Add(new Doorway(rightRoom.X1, corridor.Y1));
+                    MapCells[leftRoom.X2 - 1, corridor.Y1].SetCellType(MapCellType.Door);
+                    //MapCells[rightRoom.X1, corridor.Y1].SetCellType(MapCellType.Door);
+                }
+                else
+                {
+                    Console.WriteLine($"Corridor problem {corridor.X1}, {corridor.Y1}, {corridor.X2}, {corridor.Y2} ");
+                    if (leftRoom == null) Console.WriteLine("Left room is null");
+                    if (rightRoom == null) Console.WriteLine("Right room is null");
+                }
+            }
+
+            /*         
+                        // then repeat with the vertical corridors, identifying the room above and below, adding a 'doorway' tile just inside the room 
+                        foreach(Corridor corridor in room.VCorridors)
+                        {
+                            Room topRoom = RoomList.Find(r => r.Y2 == corridor.Y1);
+                            Room bottomRoom = RoomList.Find(r => r.Y1 == corridor.Y2);
+                            if (topRoom != null && bottomRoom != null)
+                            {
+                                topRoom.Doorways.Add(new Doorway(corridor.X1, topRoom.Y2 - 1));
+                                //bottomRoom.Doorways.Add(new Doorway(corridor.X1, bottomRoom.Y1));
+                                MapCells[corridor.X1, topRoom.Y2 - 1].SetCellType(MapCellType.Door);
+                                //MapCells[corridor.X1, bottomRoom.Y1].SetCellType(MapCellType.Door);
+                            }
+                        }
+                        */
         }
     }
 
@@ -216,12 +261,12 @@ public class Map
                 }
             }
 
-            foreach(Special special in room.Specials)
+            foreach (Special special in room.Specials)
             {
                 MapCells[special.X, special.Y] = new MapCell(special.X, special.Y, MapCellType.Special, null);
             }
-            
-            foreach (Corridor corridor in room.Corridors)
+
+            foreach (Corridor corridor in room.HCorridors)
             {
                 Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
 
@@ -232,8 +277,23 @@ public class Map
                         MapCells[x, y] = new MapCell(x, y, MapCellType.Floor, corridor);
                     }
                 }
-                MapCells[corridor.X1, corridor.Y1] = new MapCell(corridor.X1, corridor.Y1, MapCellType.Door);
-                MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
+                //MapCells[corridor.X1, corridor.Y1] = new MapCell(corridor.X1, corridor.Y1, MapCellType.Door);
+                //MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
+            }
+
+            foreach (Corridor corridor in room.VCorridors)
+            {
+                Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
+
+                for (int x = corridor.X1; x <= corridor.X2; x++)
+                {
+                    for (int y = corridor.Y1; y <= corridor.Y2; y++)
+                    {
+                        MapCells[x, y] = new MapCell(x, y, MapCellType.Floor, corridor);
+                    }
+                }
+                //MapCells[corridor.X1, corridor.Y1] = new MapCell(corridor.X1, corridor.Y1, MapCellType.Door);
+                //MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
             }
 
             foreach (Obstacle obstacle in room.Obstacles)
@@ -306,7 +366,7 @@ public class Map
         Corridor candidate = null;
         foreach (Room room in RoomList)
         {
-            foreach (Corridor corridor in room.Corridors)
+            foreach (Corridor corridor in room.HCorridors)
             {
                 // skip if a vertical corridor
                 if (corridor.X1 + 1 < corridor.X2)
@@ -430,7 +490,17 @@ public class Map
         foreach (var room in RoomList)
         {
             // draw the corridors first, we might be leading up to a room we haven't visited yet
-            foreach (var corridor in room.Corridors)
+            foreach (var corridor in room.HCorridors)
+            {
+                if (corridor.HasVisited)
+                {
+                    _primDrawer.DrawFilledRectangle(spriteBatch,
+                        new Rectangle(corridor.X1 * CellScale, corridor.Y1 * CellScale,
+                        (1 + corridor.X2 - corridor.X1) * CellScale, (1 + corridor.Y2 - corridor.Y1) * CellScale),
+                        corridor.Color);
+                }
+            }
+            foreach (var corridor in room.VCorridors)
             {
                 if (corridor.HasVisited)
                 {
@@ -460,6 +530,13 @@ public class Map
                     _primDrawer.DrawFilledRectangle(spriteBatch,
                         new Rectangle(special.X * CellScale, special.Y * CellScale, CellScale, CellScale),
                         Color.Yellow);
+                }
+
+                foreach (var doorway in room.Doorways)
+                {
+                    _primDrawer.DrawFilledRectangle(spriteBatch,
+                        new Rectangle(doorway.X1 * CellScale, doorway.Y1 * CellScale, CellScale, CellScale),
+                        Color.Blue);
                 }
 
             }
@@ -522,7 +599,7 @@ public class Map
                     int hallY = RandGen.RandInt(
                         Math.Max(room.Y1, neighbourRoom.Y1),
                         Math.Min(room.Y2, neighbourRoom.Y2) - 1);
-                    room.Corridors.Add(new Corridor(room.X2, hallY, neighbourRoom.X1 - 1, hallY));
+                    room.HCorridors.Add(new Corridor(room.X2, hallY, neighbourRoom.X1 - 1, hallY));
                 }
             }
 
@@ -534,7 +611,7 @@ public class Map
                     int hallX = RandGen.RandInt(
                         Math.Max(room.X1, neighbourCell.X1),
                         Math.Min(room.X2, neighbourCell.X2) - 1);
-                    room.Corridors.Add(new Corridor(hallX, room.Y2, hallX, neighbourCell.Y1 - 1));
+                    room.VCorridors.Add(new Corridor(hallX, room.Y2, hallX, neighbourCell.Y1 - 1));
                 }
             }
         }

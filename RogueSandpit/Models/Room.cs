@@ -17,7 +17,9 @@ public class Room : BaseContainingElement
 
     public List<Room> RightNeighbours = new List<Room>();
     public List<Room> DownNeighbours = new List<Room>();
-    public List<Corridor> Corridors = new List<Corridor>();
+    public List<Corridor> HCorridors = new List<Corridor>();
+    public List<Corridor> VCorridors = new List<Corridor>();
+    public List<Doorway> Doorways = new List<Doorway>();
     public List<Obstacle> Obstacles = new List<Obstacle>();
     public List<Special> Specials = new List<Special>();
 
