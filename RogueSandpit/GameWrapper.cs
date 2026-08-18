@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -76,6 +77,27 @@ namespace RogueSandpit
             if (_currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
+            if (_player.Dead)
+            {
+                UpdateDead(gameTime);           
+            }
+            else
+            {
+                UpdateLive(gameTime);
+            }
+        }
+
+        private void UpdateDead(GameTime gameTime)
+        {
+            if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
+            {
+                KickOffNewGame();
+            }
+        }
+
+
+        private void UpdateLive(GameTime gameTime)
+        {
             if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
             {
                 KickOffNewGame();
@@ -109,7 +131,11 @@ namespace RogueSandpit
 
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
-            _map.Display(_spriteBatch);
+
+            if (!_player.Dead)
+            {
+                _map.Display(_spriteBatch);
+            }
             _spriteBatch.End();
 
             // then draw the render target to the screen
