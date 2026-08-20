@@ -23,17 +23,18 @@ namespace RogueSandpit
         private GameState _gameState;
         private KeyboardState _currentKeyboardState;
         private KeyboardState _previousKeyboardState;
+        private bool _inventoryOpen;
 
         private int _nativeWidth = 800;
         private int _nativeHeight = 600;
 
-        public GameWrapper()
+        public GameWrapper(int windowScale = GameOptions.DefaultWindowScale)
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            _graphics.PreferredBackBufferWidth = _nativeWidth;
-            _graphics.PreferredBackBufferHeight = _nativeHeight;
+            _graphics.PreferredBackBufferWidth = _nativeWidth * windowScale;
+            _graphics.PreferredBackBufferHeight = _nativeHeight * windowScale;
             _graphics.ApplyChanges();
 
             Window.AllowUserResizing = true;
@@ -62,6 +63,7 @@ namespace RogueSandpit
 
         private void KickOffNewGame(bool regenerateMap = true)
         {
+            _inventoryOpen = false;
             if (regenerateMap)
             {
                 _map.Initialise();
@@ -105,6 +107,11 @@ namespace RogueSandpit
 
         private void UpdateLive(GameTime gameTime)
         {
+            if (WasPressed(Keys.I))
+            {
+                _inventoryOpen = !_inventoryOpen;
+            }
+
             if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
             {
                 KickOffNewGame();
@@ -133,6 +140,18 @@ namespace RogueSandpit
 
         private PlayerCommand GetPlayerCommand()
         {
+            if (_inventoryOpen)
+            {
+                if (WasPressed(Keys.Up) || WasPressed(Keys.Left) || WasPressed(Keys.OemOpenBrackets))
+                    return PlayerCommand.SelectPreviousItem;
+                if (WasPressed(Keys.Down) || WasPressed(Keys.Right) || WasPressed(Keys.OemCloseBrackets))
+                    return PlayerCommand.SelectNextItem;
+                if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
+                if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
+                if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
+                return PlayerCommand.None;
+            }
+
             if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
             if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
@@ -163,6 +182,11 @@ namespace RogueSandpit
             _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
             DrawEventLog();
             DrawHud();
+
+            if (_inventoryOpen && _gameState.Outcome == GameOutcome.Playing)
+            {
+                DrawInventoryPanel();
+            }
 
             if (_map.RenderMode == RenderMode.Cells && hoveredCell.HasValue)
             {
@@ -195,6 +219,50 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName}",
                 new Vector2(6, 585), 1, Color.White);
+        }
+
+        private void DrawInventoryPanel()
+        {
+            const int panelX = 350;
+            const int panelY = 125;
+            const int panelWidth = 440;
+            const int panelHeight = 330;
+            const int firstRowY = panelY + 48;
+            const int rowHeight = 28;
+
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.94f);
+            _pixelFont.DrawText(_spriteBatch, "INVENTORY",
+                new Vector2(panelX + 14, panelY + 12), 3, Color.White);
+
+            for (int index = 0; index < _player.Inventory.Capacity; index++)
+            {
+                int rowY = firstRowY + index * rowHeight;
+                bool selected = index == _player.Inventory.SelectedIndex;
+                if (selected)
+                {
+                    _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                        new Rectangle(panelX + 10, rowY - 4, panelWidth - 20, rowHeight - 2),
+                        Color.DarkSlateBlue);
+                }
+
+                Item item = index < _player.Inventory.Items.Count ? _player.Inventory.Items[index] : null;
+                string itemName = item?.Name ?? "EMPTY";
+                Color itemColor = item == null ? Color.DarkGray : Color.White;
+                _pixelFont.DrawText(_spriteBatch, $"{index + 1} {itemName}",
+                    new Vector2(panelX + 18, rowY), 2, itemColor);
+
+                if (item == null) continue;
+                string power = item.Power > 0 ? $" {item.Power}" : "";
+                string equipped = item == _player.EquippedWeapon || item == _player.EquippedArmor
+                    ? " EQUIPPED"
+                    : "";
+                _pixelFont.DrawText(_spriteBatch, $"{item.Type}{power}{equipped}",
+                    new Vector2(panelX + 245, rowY + 4), 1, Color.LightGray);
+            }
+
+            _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT  H USE  E EQUIP  D DROP  I CLOSE",
+                new Vector2(panelX + 14, panelY + panelHeight - 22), 1, Color.LightGray);
         }
 
         private void DrawEventLog()

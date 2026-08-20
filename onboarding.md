@@ -15,7 +15,8 @@ Requires the .NET SDK (project targets `net9.0`; this machine has 9.0.306 and 10
 ```bash
 cd RogueSandpit
 dotnet build     # restores MonoGame + MGCB content-pipeline tools automatically, builds cleanly
-dotnet run        # launches the game window
+dotnet run        # launches at the accessibility-friendly 2x window scale
+dotnet run -- --scale 1  # original 800x600 window used for compact debugging
 ```
 
 There's also a VS Code launch config (`RogueSandpit/.vscode/launch.json`, "C#: RogueSandpit Debug") and a solution file at the repo root (`RogueSandpit.slnx`) if you'd rather open it in an IDE. The README states it builds & runs on both Mac and Windows.
@@ -28,6 +29,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 |---|---|
 | Arrow keys | Move player (WASD not yet implemented, despite README saying "will come") |
 | Left/right bracket | Select an inventory item |
+| I | Open/close the eight-slot inventory panel (arrows select while open) |
 | H | Use the selected healing potion |
 | E | Equip the selected weapon or armor |
 | D | Drop the selected item |
@@ -39,7 +41,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 ## Architecture
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
-- **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
+- **`GameOptions.cs`** / **`GameWrapper.cs`** — command-line window scaling plus the MonoGame update/draw loop, inventory panel, input translation, and aspect-ratio-preserving resizing. The native canvas remains 800×600 at every window scale.
 - **`Models/GameState.cs`** — framework-independent turn coordinator. It resolves targets, doors, objectives, event messages, and NPC response order while delegating player state changes and shared occupancy rules to their owning models.
 - **`Models/Map.cs`** — procedural map generation and centralized terrain/actor occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). Initial NPC placement and live movement share these rules.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state and NPC identity/movement/AI. Five seeded, named archetypes have distinct health/damage profiles. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering.

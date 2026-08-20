@@ -5,6 +5,8 @@ A simple rogue-like game built with Monogame and .net 9. The game features a pla
 ## Monogame, .Net9
 builds & runs on Mac and Windows
 
+`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `dotnet run -- --scale 1` for the original window size, or `--scale 3` / `--scale 4` for larger integer scaling.
+
 
 ## Current Status
 - Player character can move around the map  
@@ -26,6 +28,7 @@ builds & runs on Mac and Windows
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
 - Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot
 - Equipped armor reduces incoming damage and is shown with defence in the HUD
+- I opens an eight-slot inventory panel with selection, item details, and equipment state
 - Closed doors take a turn to open; locked doors require a carried, reusable key
 - Chasing and investigating NPCs can spend a turn opening closed doors, but not locked ones
  
@@ -41,6 +44,7 @@ builds & runs on Mac and Windows
 - E to equip the selected weapon or armor
 - D to drop the selected item
 - Left/right bracket to select an inventory item
+- I to open or close the inventory panel; arrows select items while it is open
 - Period or numpad 5 to wait one turn
 - F1 to toggle debug/map viewer  
 - In debug mode, hover a cell to inspect it and visualize NPC decisions
@@ -55,6 +59,6 @@ builds & runs on Mac and Windows
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
 - Expand doors with distinct keys or consumable keys
-- Extend the current count-limited inventory with menus and possibly weight
+- Extend the current inventory with stacking and possibly weight
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    
