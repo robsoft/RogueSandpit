@@ -40,8 +40,8 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
 - **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
-- **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement. It also owns the bounded `GameEventLog` used by the on-screen event feed.
-- **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
+- **`Models/GameState.cs`** — framework-independent turn coordinator. It resolves targets, doors, objectives, event messages, and NPC response order while delegating player state changes and shared occupancy rules to their owning models.
+- **`Models/Map.cs`** — procedural map generation and centralized terrain/actor occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). Initial NPC placement and live movement share these rules.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state and NPC identity/movement/AI. Five seeded, named archetypes have distinct health/damage profiles. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering.
 - **`Models/Items.cs`** — item, ground-loot, inventory selection, and item-factory models. The player has an eight-slot inventory; potions heal, weapons add damage, armor adds defence, and reusable keys unlock doors.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
@@ -55,8 +55,6 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 Working: map generation, fog-of-war exploration, player movement and bump combat, five named NPC archetypes with pursuit/search AI, loot/inventory/equipment, closed and locked doors, a retrieve-and-return objective, HUD, visible win/loss states, debug map view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
-- Initial placement and live actor occupancy could be consolidated further.
-- `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - NPC local searches are deliberately short and do not yet predict exits, react to sound, or share awareness.
 
 ## Where to look for "what's next"

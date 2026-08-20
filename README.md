@@ -31,8 +31,6 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- continue consolidating initial placement and live actor occupancy
-- refactor Player class so it handles it's own moves, knows about Map etc  
 - Extend local NPC searching with prediction, hearing, or shared awareness
 - Graphics!  
 

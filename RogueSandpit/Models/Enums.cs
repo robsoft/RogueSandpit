@@ -20,4 +20,5 @@ public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, S
 public enum NPCAwareness { Unaware, Pursuing, Investigating };
 public enum ItemType { HealingPotion, Weapon, Key, Armor };
 public enum DoorState { Closed, Locked, Open };
+public enum PlayerItemActionResult { Success, NoSelection, WrongItemType, NoEffect, Blocked };
 

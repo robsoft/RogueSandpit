@@ -67,8 +67,7 @@ namespace RogueSandpit
                 _map.Initialise();
             }
             _player = new Player();
-            _player.X = _map.StartPosX;
-            _player.Y = _map.StartPosY;
+            _player.Place(_map, _map.StartPosX, _map.StartPosY);
             _gameState = new GameState(_map, _player);
 
             Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
