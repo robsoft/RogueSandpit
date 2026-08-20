@@ -32,6 +32,37 @@ public class LootInventoryTests
     }
 
     [Fact]
+    public void FirstPickedUpWeaponIsAutomaticallyEquipped()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item weapon = ItemFactory.Create(ItemType.Weapon);
+        map.GroundItems.Add(new GroundItem(weapon, x + 1, y));
+
+        gameState.Update(PlayerCommand.MoveRight);
+
+        Assert.Same(weapon, player.EquippedWeapon);
+        Assert.Equal(player.BaseDamage + weapon.Power, player.Damage);
+        Assert.Contains("AUTO-EQUIPPED IRON SWORD", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void PickingUpAnotherWeaponDoesNotReplaceEquippedWeapon()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item equippedWeapon = ItemFactory.Create(ItemType.Weapon);
+        Item newWeapon = new Item("STEEL AXE", ItemType.Weapon, 12);
+        player.Inventory.TryAdd(equippedWeapon);
+        player.Equip(equippedWeapon);
+        map.GroundItems.Add(new GroundItem(newWeapon, x + 1, y));
+
+        gameState.Update(PlayerCommand.MoveRight);
+
+        Assert.Same(equippedWeapon, player.EquippedWeapon);
+        Assert.Contains(newWeapon, player.Inventory.Items);
+        Assert.DoesNotContain("AUTO-EQUIPPED STEEL AXE", gameState.EventLog.Entries);
+    }
+
+    [Fact]
     public void FullInventoryLeavesLootOnGround()
     {
         (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();

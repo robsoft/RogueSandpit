@@ -25,16 +25,16 @@ namespace RogueSandpit
         private KeyboardState _previousKeyboardState;
         private bool _inventoryOpen;
 
-        private int _nativeWidth = 800;
-        private int _nativeHeight = 600;
+        public const int NativeWidth = 800;
+        public const int NativeHeight = 600;
 
         public GameWrapper(int windowScale = GameOptions.DefaultWindowScale)
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            _graphics.PreferredBackBufferWidth = _nativeWidth * windowScale;
-            _graphics.PreferredBackBufferHeight = _nativeHeight * windowScale;
+            _graphics.PreferredBackBufferWidth = NativeWidth * windowScale;
+            _graphics.PreferredBackBufferHeight = NativeHeight * windowScale;
             _graphics.ApplyChanges();
 
             Window.AllowUserResizing = true;
@@ -53,7 +53,7 @@ namespace RogueSandpit
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            _renderTarget = new RenderTarget2D(GraphicsDevice, _nativeWidth, _nativeHeight);
+            _renderTarget = new RenderTarget2D(GraphicsDevice, NativeWidth, NativeHeight);
             _uiDrawer = new PrimitiveDrawer(GraphicsDevice);
             _pixelFont = new PixelFont(GraphicsDevice);
             _mapRenderer = new MapRenderer(GraphicsDevice, _map);
@@ -211,7 +211,7 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, _nativeWidth, 20), Color.Black);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, NativeWidth, 20), Color.Black);
             string specialStatus = _player.HasSpecial ? "YES" : "NO";
             string weaponName = _player.EquippedWeapon?.Name ?? "NONE";
             string armorName = _player.EquippedArmor?.Name ?? "NONE";
@@ -288,7 +288,7 @@ namespace RogueSandpit
 
             Point mousePosition = Mouse.GetState().Position;
             return ViewportMapper.TryWindowToMapCell(mousePosition, _renderDestination,
-                _nativeWidth, _nativeHeight, _map, out Point mapCell)
+                NativeWidth, NativeHeight, _map, out Point mapCell)
                 ? mapCell
                 : null;
         }
@@ -355,12 +355,12 @@ namespace RogueSandpit
             string heading = _gameState.Outcome == GameOutcome.Won ? "YOU WIN" : "GAME OVER";
             Color headingColor = _gameState.Outcome == GameOutcome.Won ? Color.Yellow : Color.Red;
             int headingScale = 5;
-            int headingX = (_nativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
+            int headingX = (NativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
             _pixelFont.DrawText(_spriteBatch, heading, new Vector2(headingX, 240), headingScale, headingColor);
 
             const string restartText = "SPACE TO RESTART";
             int restartScale = 3;
-            int restartX = (_nativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
+            int restartX = (NativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
             _pixelFont.DrawText(_spriteBatch, restartText, new Vector2(restartX, 320), restartScale, Color.White);
         }
 
@@ -381,16 +381,16 @@ namespace RogueSandpit
         {
             // figure out the new scale to maintain aspect ratio
             Point size = GraphicsDevice.Viewport.Bounds.Size;
-            float scaleX = (float)size.X / _nativeWidth;
-            float scaleY = (float)size.Y / _nativeHeight;
+            float scaleX = (float)size.X / NativeWidth;
+            float scaleY = (float)size.Y / NativeHeight;
             float scale = Math.Min(scaleX, scaleY);
 
             // create a new render destination rectangle
             _renderDestination = new Rectangle(
-                (int)((size.X - _nativeWidth * scale) / 2),
-                (int)((size.Y - _nativeHeight * scale) / 2),
-                (int)(_nativeWidth * scale),
-                (int)(_nativeHeight * scale)
+                (int)((size.X - NativeWidth * scale) / 2),
+                (int)((size.Y - NativeHeight * scale) / 2),
+                (int)(NativeWidth * scale),
+                (int)(NativeHeight * scale)
             );
 
         }

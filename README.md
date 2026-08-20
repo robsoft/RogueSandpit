@@ -27,6 +27,7 @@ builds & runs on Mac and Windows
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
 - Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot
+- The first weapon collected is equipped automatically when the weapon slot is empty
 - Equipped armor reduces incoming damage and is shown with defence in the HUD
 - I opens an eight-slot inventory panel with selection, item details, and equipment state
 - Closed doors take a turn to open; locked doors require a carried, reusable key

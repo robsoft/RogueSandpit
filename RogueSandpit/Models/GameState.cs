@@ -134,7 +134,7 @@ public class GameState
         GroundItem groundItem = Map.GetGroundItemAt(x, y);
         if (groundItem == null) return;
 
-        if (!Player.Inventory.TryAdd(groundItem.Item))
+        if (!Player.TryCollectItem(groundItem.Item, out bool autoEquipped))
         {
             EventLog.Add($"INVENTORY FULL {groundItem.Item.Name}");
             return;
@@ -142,6 +142,7 @@ public class GameState
 
         Map.RemoveGroundItem(groundItem);
         EventLog.Add($"PICKED UP {groundItem.Item.Name}");
+        if (autoEquipped) EventLog.Add($"AUTO-EQUIPPED {groundItem.Item.Name}");
     }
 
     private bool UsePotion()

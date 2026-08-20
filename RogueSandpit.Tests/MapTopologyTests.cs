@@ -6,6 +6,15 @@ namespace RogueSandpit.Tests;
 public class MapTopologyTests
 {
     [Fact]
+    public void MapWidthExactlyFillsNativeCanvas()
+    {
+        var map = new Map(123);
+
+        Assert.Equal(GameWrapper.NativeWidth, map.Width * map.CellScale);
+        Assert.Equal(GameWrapper.NativeHeight, map.Height * map.CellScale + 20);
+    }
+
+    [Fact]
     public void DistinctRoomsNeverShareDirectlyWalkableEdgeAcrossManySeeds()
     {
         for (int seed = 0; seed < 100; seed++)

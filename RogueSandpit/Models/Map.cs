@@ -15,7 +15,7 @@ public class Map
     public bool IsInitialising { get; private set; } = false;
 
     // these are 'config', really
-    public int Width { get; } = 79;
+    public int Width { get; } = 80;
     public int Height { get; } = 58;
     public int CellScale { get; } = 10;
     public int MinRooms { get; set; } = 11;
