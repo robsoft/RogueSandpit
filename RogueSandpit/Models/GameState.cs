@@ -28,8 +28,10 @@ public class GameState
             PlayerCommand.MoveDown => AttemptMove(0, 1),
             PlayerCommand.MoveLeft => AttemptMove(-1, 0),
             PlayerCommand.MoveRight => AttemptMove(1, 0),
+            PlayerCommand.Wait => Wait(),
             PlayerCommand.UsePotion => UsePotion(),
             PlayerCommand.EquipWeapon => EquipWeapon(),
+            PlayerCommand.DropItem => DropItem(),
             _ => false
         };
 
@@ -165,6 +167,32 @@ public class GameState
 
         Player.Inventory.Remove(potion);
         EventLog.Add($"HEALED {healed}");
+        return true;
+    }
+
+    private bool Wait()
+    {
+        EventLog.Add("PLAYER WAITS");
+        return true;
+    }
+
+    private bool DropItem()
+    {
+        Item item = Player.Inventory.Items.LastOrDefault();
+        if (item == null)
+        {
+            EventLog.Add("INVENTORY EMPTY");
+            return false;
+        }
+
+        if (!Map.DropItem(item, Player.X, Player.Y))
+        {
+            EventLog.Add("CANNOT DROP HERE");
+            return false;
+        }
+
+        Player.RemoveFromInventory(item);
+        EventLog.Add($"DROPPED {item.Name}");
         return true;
     }
 

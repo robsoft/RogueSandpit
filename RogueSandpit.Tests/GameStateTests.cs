@@ -148,6 +148,24 @@ public class GameStateTests
     }
 
     [Fact]
+    public void WaitingAdvancesNpcTurnAndRecordsEvent()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        var npc = new Orc(map, x, y + 1, map.MapCells[x, y].ParentElement)
+        {
+            State = NPCState.Active,
+            Damage = player.Health
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.Wait);
+
+        Assert.True(player.Dead);
+        Assert.Equal(GameOutcome.Lost, gameState.Outcome);
+        Assert.Contains("PLAYER WAITS", gameState.EventLog.Entries);
+    }
+
+    [Fact]
     public void BlockedMoveConsumesTurnAndCanEndGame()
     {
         (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();

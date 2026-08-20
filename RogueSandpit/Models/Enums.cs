@@ -16,7 +16,7 @@ public enum CharacterMood { Attacker, Defender, Neutral, Helpful };
 public enum RenderMode { Rooms, Cells };
 public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };
-public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, UsePotion, EquipWeapon };
+public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, UsePotion, EquipWeapon, DropItem };
 public enum NPCAwareness { Unaware, Pursuing, Investigating };
 public enum ItemType { HealingPotion, Weapon, Key };
 public enum DoorState { Closed, Locked, Open };
