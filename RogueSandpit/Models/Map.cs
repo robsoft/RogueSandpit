@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RogueSandpit.Graphics;
 using Microsoft.Xna.Framework;
 
 namespace RogueSandpit.Models;
@@ -37,29 +36,14 @@ public class Map
     public List<Room> RoomList { get; set; }
     public List<BaseNPC> NPCs { get; set; } = new List<BaseNPC>();
 
-    private int _nativeWidth;
-    private int _nativeHeight;
-    private PrimitiveDrawer _primDrawer;
-    private GraphicsDevice _graphicsDevice;
-
-    private Color MapBackgroundColor = Color.CornflowerBlue;
-
     // todo:
     // 1) create a kind of simple 'carved out' array so that we can easily do line-of-sight without thinking about rooms.
     // 2) block off each corridor entrance with a special piece of wall, that we can pass through but that we can't see through,
     // until we've passed through it the first time (opening it, leaving it open, kind of thing)
 
 
-    public Map(GraphicsDevice graphicsDevice, int nativeWidth, int nativeHeight, int seed = 0)
+    public Map(int seed = 0)
     {
-        _graphicsDevice = graphicsDevice;
-        if (_graphicsDevice != null)
-        {
-            _primDrawer = new PrimitiveDrawer(_graphicsDevice);
-        }
-        _nativeWidth = nativeWidth;
-        _nativeHeight = nativeHeight;
-
         RandGen.SetSeed(seed);
         Initialise();
     }
@@ -453,176 +437,6 @@ public class Map
 
     }
 
-
-    public void Display(SpriteBatch spriteBatch)
-    {
-        if (IsInitialising) return;
-
-        if (RenderMode == RenderMode.Cells)
-        {
-            RenderMapCells(spriteBatch);
-        }
-        else
-        {
-            RenderRooms(spriteBatch);
-        }
-
-        _primDrawer.DrawFilledRectangle(spriteBatch,
-            new Rectangle(CurrentPlayerX * CellScale, CurrentPlayerY * CellScale, CellScale, CellScale),
-            Color.White);
-
-
-        if (ShowGrid)
-        {
-            for (int i = 0; i <= Width; i++)
-            {
-                _primDrawer.DrawLine(spriteBatch, new Vector2(i * CellScale, 0), new Vector2(i * CellScale, Height * CellScale), Color.Black);
-            }
-            for (int i = 0; i <= Height; i++)
-            {
-                _primDrawer.DrawLine(spriteBatch, new Vector2(0, i * CellScale), new Vector2(Width * CellScale, i * CellScale), Color.Black);
-            }
-        }
-    }
-
-    // draw the map as 'cells', ie, based on type and indicating line of sight etc
-    private void RenderMapCells(SpriteBatch spriteBatch)
-    {
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
-            {
-                var cell = MapCells[x, y];
-                Color color;
-                switch (cell.CellType)
-                {
-                    case MapCellType.Wall:
-                        color = Color.DarkGray;
-                        break;
-                    case MapCellType.Floor:
-                        color = Color.LightGray;
-                        break;
-                    case MapCellType.Door:
-                        color = Color.Gray;
-                        break;
-                    case MapCellType.Special:
-                        color = Color.Yellow;
-                        break;
-                    default:
-                        color = MapBackgroundColor;
-                        break;
-                }
-                _primDrawer.DrawFilledRectangle(spriteBatch,
-                    new Rectangle(x * CellScale, y * CellScale, CellScale, CellScale),
-                    color);
-            }
-        }
-
-        foreach (BaseNPC npc in NPCs)
-        {
-            if (npc.State == NPCState.Dead) continue;
-
-            _primDrawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
-                Color.Black);
-        }
-
-    }
-
-    // draw the map as rooms and corridors
-    private void RenderRooms(SpriteBatch spriteBatch)
-    {
-        foreach (var room in RoomList)
-        {
-            // draw the corridors first, we might be leading up to a room we haven't visited yet
-            foreach (var corridor in room.HCorridors)
-            {
-                if (corridor.HasVisited)
-                {
-                    _primDrawer.DrawFilledRectangle(spriteBatch,
-                        new Rectangle(corridor.X1 * CellScale, corridor.Y1 * CellScale,
-                        (1 + corridor.X2 - corridor.X1) * CellScale, (1 + corridor.Y2 - corridor.Y1) * CellScale),
-                        corridor.Color);
-                }
-            }
-            foreach (var corridor in room.VCorridors)
-            {
-                if (corridor.HasVisited)
-                {
-                    _primDrawer.DrawFilledRectangle(spriteBatch,
-                        new Rectangle(corridor.X1 * CellScale, corridor.Y1 * CellScale,
-                        (1 + corridor.X2 - corridor.X1) * CellScale, (1 + corridor.Y2 - corridor.Y1) * CellScale),
-                        corridor.Color);
-                }
-            }
-
-            if (room.HasVisited)
-            {
-                _primDrawer.DrawFilledRectangle(spriteBatch,
-                    new Rectangle(room.X1 * CellScale, room.Y1 * CellScale,
-                    (room.X2 - room.X1) * CellScale, (room.Y2 - room.Y1) * CellScale),
-                    room.Color);
-
-                foreach (var obstacle in room.Obstacles)
-                {
-                    _primDrawer.DrawFilledRectangle(spriteBatch,
-                        new Rectangle(obstacle.X1 * CellScale, obstacle.Y1 * CellScale,
-                        (obstacle.X2 - obstacle.X1) * CellScale, (obstacle.Y2 - obstacle.Y1) * CellScale),
-                        MapBackgroundColor); // obstacle.Color);
-                }
-                foreach (var special in room.Specials)
-                {
-                    _primDrawer.DrawFilledRectangle(spriteBatch,
-                        new Rectangle(special.X * CellScale, special.Y * CellScale, CellScale, CellScale),
-                        Color.Yellow);
-                }
-
-                foreach (var doorway in room.Doorways)
-                {
-                    _primDrawer.DrawFilledRectangle(spriteBatch,
-                        new Rectangle(doorway.X1 * CellScale, doorway.Y1 * CellScale, CellScale, CellScale),
-                        Color.Blue);
-                }
-
-            }
-        }
-
-        foreach (var obstacle in MapObstacles)
-        {
-            if (obstacle.HasVisited)
-            {
-                _primDrawer.DrawFilledRectangle(spriteBatch,
-                    new Rectangle(obstacle.X1 * CellScale, obstacle.Y1 * CellScale,
-                    (obstacle.X2 - obstacle.X1) * CellScale, (obstacle.Y2 - obstacle.Y1) * CellScale),
-                    MapBackgroundColor); // obstacle.Color);
-            }
-        }
-
-        foreach (var corridor in Exits)
-        {
-            _primDrawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(corridor.X1 * CellScale, corridor.Y1 * CellScale,
-                (1 + corridor.X2 - corridor.X1) * CellScale, (1 + corridor.Y2 - corridor.Y1) * CellScale),
-                corridor.Color);
-        }
-
-        BaseContainingElement currentPlayerRoom = MapCells[CurrentPlayerX, CurrentPlayerY].ParentElement;
-        foreach (BaseNPC npc in NPCs)
-        {
-            if (npc.State == NPCState.Dead) continue;
-
-            //if (npc.CurrentRoom.HasVisited)
-            // only show NPCs in the current room
-            if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
-            {
-                _primDrawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
-                Color.Red);
-            }
-        }
-
-
-    }
 
     private void DivideIntoRooms()
     {

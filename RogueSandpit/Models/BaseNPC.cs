@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Runtime.Intrinsics.X86;
-using Microsoft.Xna.Framework;
-
-
 namespace RogueSandpit.Models;
 
 
@@ -59,7 +56,7 @@ public abstract class BaseNPC
         }
     }
 
-    public void Move(GameTime gameTime, Player player)
+    public void Move(Player player)
     {
         // Check if adjacent for attack
         int dx = Math.Abs(X - player.X);

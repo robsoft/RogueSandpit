@@ -34,14 +34,14 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 ## Architecture
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
-- **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, keyboard state diffing (current vs previous frame, to detect key-*press* rather than key-*down*), and window resize/aspect-ratio handling (renders to a fixed-size `RenderTarget2D` then scales it to the window). Delegates actual gameplay to `GameState`.
-- **`Models/GameState.cs`** — turn logic. Reads player input, calls `Map.IsWalkable` before moving, then advances NPCs and the player for that turn. A move only "counts" (`PlayerTakenTurn`) once an arrow key is pressed, even if the player walked into a wall.
-- **`Models/Map.cs`** (the biggest file) — procedural map generation: rooms, corridors, doorways, cell types (`Wall`/`Floor`/`Door`/`Special`), plus rendering (`RenderMode.Rooms` vs `RenderMode.Cells` for debug view).
+- **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
+- **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement.
+- **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI (currently: random wandering within a room, attacks when adjacent to the player; chase/line-of-sight/A* logic is stubbed out in comments, not wired up).
 - **`Models/PathFinding.cs`** — A* groundwork referenced by NPC comments but not yet in use.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").
-- **`Graphics/PrimitiveDrawer.cs`** — simple shape/primitive rendering helpers used since there's no sprite art yet.
+- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, and **`PixelFont.cs`** — map/UI presentation kept separate from simulation rules; simple primitives are used since there's no sprite art yet.
 - **`Content/`** — MonoGame Content Pipeline (`Content.mgcb`); currently minimal/no real assets, matching the "Graphics!" TODO in the README.
 
 ## Current state (per README + code)

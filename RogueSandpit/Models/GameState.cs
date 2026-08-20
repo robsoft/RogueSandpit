@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace RogueSandpit.Models;
 
@@ -12,7 +9,6 @@ public class GameState
 {
     public Map Map { get; private set; }
     public Player Player { get; private set; }
-    public bool PlayerTakenTurn { get; private set; } = false;
     public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
 
     public GameState(Map map, Player player)
@@ -21,61 +17,49 @@ public class GameState
         this.Player = player;
     }
 
-    public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState previousKeyboardState)
+    public void Update(PlayerCommand command)
     {
-        if (Outcome != GameOutcome.Playing) return;
+        if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
 
-        if (!PlayerTakenTurn)
+        switch (command)
         {
-            if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
-            {
+            case PlayerCommand.MoveUp:
                 AttemptMove(0, -1);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Down) && !previousKeyboardState.IsKeyDown(Keys.Down))
-            {
+                break;
+            case PlayerCommand.MoveDown:
                 AttemptMove(0, 1);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Left) && !previousKeyboardState.IsKeyDown(Keys.Left))
-            {
+                break;
+            case PlayerCommand.MoveLeft:
                 AttemptMove(-1, 0);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
-            {
+                break;
+            case PlayerCommand.MoveRight:
                 AttemptMove(1, 0);
-            }
-
-        }
-        if (!PlayerTakenTurn)
-        {
-            return;
+                break;
         }
 
         if (Outcome == GameOutcome.Won)
         {
-            PlayerTakenTurn = false;
             return;
         }
 
-        MoveNPCs(gameTime);
-        Player.Update(gameTime);
+        MoveNPCs();
+        Player.Update();
 
         if (Player.Dead)
         {
             Outcome = GameOutcome.Lost;
             Console.WriteLine("Player is dead! Game over.");
-            PlayerTakenTurn = false;
             return;
         }
-        PlayerTakenTurn = false;
     }
 
-    private void MoveNPCs(GameTime gameTime)
+    private void MoveNPCs()
     {
         foreach (BaseNPC npc in Map.NPCs)
         {
             if (npc.State == NPCState.Active)
             {
-                npc.Move(gameTime, Player);
+                npc.Move(Player);
                 if (Player.Dead) return;
             }
         }
@@ -90,7 +74,6 @@ public class GameState
         if (target != null)
         {
             target.TakeDamage(Player.Damage);
-            PlayerTakenTurn = true;
             return;
         }
 
@@ -123,7 +106,6 @@ public class GameState
                 Outcome = GameOutcome.Won;
             }
         }
-        PlayerTakenTurn = true;
     }
 
 }

@@ -14,6 +14,7 @@ namespace RogueSandpit
         private RenderTarget2D _renderTarget;
         private PrimitiveDrawer _uiDrawer;
         private PixelFont _pixelFont;
+        private MapRenderer _mapRenderer;
         private Rectangle _renderDestination;
         private bool _isResizing = false;
 
@@ -43,7 +44,7 @@ namespace RogueSandpit
 
         protected override void Initialize()
         {
-            _map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
+            _map = new Map(123);
             KickOffNewGame(false);
             base.Initialize();
         }
@@ -54,6 +55,7 @@ namespace RogueSandpit
             _renderTarget = new RenderTarget2D(GraphicsDevice, _nativeWidth, _nativeHeight);
             _uiDrawer = new PrimitiveDrawer(GraphicsDevice);
             _pixelFont = new PixelFont(GraphicsDevice);
+            _mapRenderer = new MapRenderer(GraphicsDevice, _map);
             // initial calculation of the render destination rectangle
             CalculateRenderDestination();
         }
@@ -125,10 +127,24 @@ namespace RogueSandpit
             if (!_player.Dead)
             {
                 // this will take care of the player's turn, and the computer's responses
-                _gameState.Update(gameTime, _currentKeyboardState, _previousKeyboardState);
+                _gameState.Update(GetPlayerCommand());
             }
 
             base.Update(gameTime);
+        }
+
+        private PlayerCommand GetPlayerCommand()
+        {
+            if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
+            if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
+            if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
+            if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
+            return PlayerCommand.None;
+        }
+
+        private bool WasPressed(Keys key)
+        {
+            return _currentKeyboardState.IsKeyDown(key) && !_previousKeyboardState.IsKeyDown(key);
         }
 
         protected override void Draw(GameTime gameTime)
@@ -139,7 +155,7 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
 
-            _map.Display(_spriteBatch);
+            _mapRenderer.Display(_spriteBatch);
             DrawHud();
 
             if (_gameState.Outcome != GameOutcome.Playing)

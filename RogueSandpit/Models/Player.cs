@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace RogueSandpit.Models;
 
@@ -26,7 +23,7 @@ public class Player
         Reset();
     }
 
-    public void Update(GameTime gameTime)
+    public void Update()
     {
         Console.WriteLine($"Player is at ({X}, {Y}) with {Health} HP and {Damage} damage.");
         // any per-turn updates to the player would go here

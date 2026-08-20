@@ -16,7 +16,7 @@ public class GameStateTests
         };
         map.NPCs.Add(npc);
 
-        gameState.AttemptMove(1, 0);
+        gameState.Update(PlayerCommand.MoveRight);
 
         Assert.Equal(x, player.X);
         Assert.Equal(y, player.Y);
@@ -34,7 +34,7 @@ public class GameStateTests
         };
         map.NPCs.Add(npc);
 
-        gameState.AttemptMove(1, 0);
+        gameState.Update(PlayerCommand.MoveRight);
 
         Assert.Equal(NPCState.Dead, npc.State);
         Assert.False(map.IsOccupiedByLivingNPC(x + 1, y));
@@ -46,7 +46,7 @@ public class GameStateTests
         (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
         map.MapCells[x + 1, y].SetCellType(MapCellType.Special);
 
-        gameState.AttemptMove(1, 0);
+        gameState.Update(PlayerCommand.MoveRight);
 
         Assert.True(player.HasSpecial);
         Assert.Equal(MapCellType.Floor, map.MapCells[x + 1, y].CellType);
@@ -56,7 +56,7 @@ public class GameStateTests
     [Fact]
     public void ReturningToEntranceWithSpecialWinsGame()
     {
-        var map = new Map(null, 800, 600, 123);
+        var map = new Map(123);
         map.NPCs.Clear();
         var player = new Player
         {
@@ -66,7 +66,7 @@ public class GameStateTests
         player.CollectSpecial();
         var gameState = new GameState(map, player);
 
-        gameState.AttemptMove(0, 1);
+        gameState.Update(PlayerCommand.MoveDown);
 
         Assert.Equal(GameOutcome.Won, gameState.Outcome);
         Assert.Equal(map.StartPosX, player.X);
@@ -91,7 +91,7 @@ public class GameStateTests
         map.NPCs.Add(blockingNpc);
         var distantPlayer = new Player { X = map.StartPosX, Y = map.StartPosY };
 
-        movingNpc.Move(null, distantPlayer);
+        movingNpc.Move(distantPlayer);
 
         Assert.False(movingNpc.X == blockingNpc.X && movingNpc.Y == blockingNpc.Y);
     }
@@ -99,7 +99,7 @@ public class GameStateTests
     [Fact]
     public void GeneratedSpecialIsReachableFromEntrance()
     {
-        var map = new Map(null, 800, 600, 123);
+        var map = new Map(123);
         var special = map.RoomList.SelectMany(room => room.Specials).Single();
         var visited = new HashSet<(int X, int Y)> { (map.StartPosX, map.StartPosY) };
         var frontier = new Queue<(int X, int Y)>();
@@ -121,9 +121,46 @@ public class GameStateTests
         Assert.Contains((special.X, special.Y), visited);
     }
 
+    [Fact]
+    public void NoCommandDoesNotAdvanceNpcTurn()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        var npc = new Orc(map, x, y + 1, map.MapCells[x, y].ParentElement)
+        {
+            State = NPCState.Active,
+            Damage = player.Health
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.None);
+
+        Assert.False(player.Dead);
+        Assert.Equal(GameOutcome.Playing, gameState.Outcome);
+    }
+
+    [Fact]
+    public void BlockedMoveConsumesTurnAndCanEndGame()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        map.MapCells[x + 1, y].SetCellType(MapCellType.Wall);
+        var npc = new Orc(map, x, y + 1, map.MapCells[x, y].ParentElement)
+        {
+            State = NPCState.Active,
+            Damage = player.Health
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.MoveRight);
+
+        Assert.Equal(x, player.X);
+        Assert.Equal(y, player.Y);
+        Assert.True(player.Dead);
+        Assert.Equal(GameOutcome.Lost, gameState.Outcome);
+    }
+
     private static (Map Map, Player Player, GameState GameState, int X, int Y) CreateGameOnOpenFloor()
     {
-        var map = new Map(null, 800, 600, 123);
+        var map = new Map(123);
         map.NPCs.Clear();
 
         for (int y = 1; y < map.Height - 1; y++)
