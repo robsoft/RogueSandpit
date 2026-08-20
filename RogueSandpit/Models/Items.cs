@@ -40,6 +40,10 @@ public class Inventory
     public int Capacity { get; }
     public IReadOnlyList<Item> Items => _items;
     public bool IsFull => _items.Count >= Capacity;
+    public int SelectedIndex { get; private set; } = -1;
+    public Item SelectedItem => SelectedIndex >= 0 && SelectedIndex < _items.Count
+        ? _items[SelectedIndex]
+        : null;
 
     public Inventory(int capacity = 8)
     {
@@ -50,6 +54,7 @@ public class Inventory
     {
         if (item == null || IsFull) return false;
         _items.Add(item);
+        if (SelectedIndex < 0) SelectedIndex = 0;
         return true;
     }
 
@@ -60,7 +65,28 @@ public class Inventory
 
     public bool Remove(Item item)
     {
-        return item != null && _items.Remove(item);
+        if (item == null) return false;
+        int removedIndex = _items.IndexOf(item);
+        if (removedIndex < 0) return false;
+
+        _items.RemoveAt(removedIndex);
+        if (_items.Count == 0) SelectedIndex = -1;
+        else if (removedIndex < SelectedIndex || SelectedIndex >= _items.Count) SelectedIndex--;
+        return true;
+    }
+
+    public bool SelectNext()
+    {
+        if (_items.Count == 0) return false;
+        SelectedIndex = (SelectedIndex + 1) % _items.Count;
+        return true;
+    }
+
+    public bool SelectPrevious()
+    {
+        if (_items.Count == 0) return false;
+        SelectedIndex = (SelectedIndex - 1 + _items.Count) % _items.Count;
+        return true;
     }
 }
 
@@ -73,6 +99,7 @@ public static class ItemFactory
             ItemType.HealingPotion => new Item("HEALING POTION", type, 35),
             ItemType.Weapon => new Item("IRON SWORD", type, 8),
             ItemType.Key => new Item("BRASS KEY", type),
+            ItemType.Armor => new Item("LEATHER ARMOR", type, 5),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }

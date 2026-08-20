@@ -87,8 +87,8 @@ public abstract class BaseNPC
             if (dx + dy == 1)
             {
                 Console.WriteLine($"{Name} attacked player with {Damage} damage!");
-                eventSink?.Invoke($"{Name} HIT PLAYER {Damage}");
-                player.TakeDamage(Damage);
+                int actualDamage = player.TakeDamage(Damage);
+                eventSink?.Invoke($"{Name} HIT PLAYER {actualDamage}");
                 return;
             }
 

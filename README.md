@@ -21,8 +21,9 @@ builds & runs on Mac and Windows
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - A compact event log shows recent combat and objective events
-- Reachable potions, weapons, and keys can be collected in an eight-slot inventory
-- H uses a healing potion; E equips a carried weapon; defeated NPCs may drop loot
+- Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
+- Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot
+- Equipped armor reduces incoming damage and is shown with defence in the HUD
 - Closed doors take a turn to open; locked doors require a carried, reusable key
 - Chasing and investigating NPCs can spend a turn opening closed doors, but not locked ones
  
@@ -38,8 +39,9 @@ builds & runs on Mac and Windows
 ## Controls
 - Arrow keys (WASD will come) to move the player character
 - H to use a healing potion
-- E to equip the next carried weapon
-- D to drop the most recently acquired item
+- E to equip the selected weapon or armor
+- D to drop the selected item
+- Left/right bracket to select an inventory item
 - Period or numpad 5 to wait one turn
 - F1 to toggle debug/map viewer  
 - In debug mode, hover a cell to inspect it and visualize NPC decisions

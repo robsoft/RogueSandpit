@@ -16,10 +16,12 @@ public class Player
     public int Health { get; private set; } = 0;
     public int BaseDamage { get; private set; } = 0;
     public int Damage => BaseDamage + (EquippedWeapon?.Power ?? 0);
+    public int Defence => EquippedArmor?.Power ?? 0;
     public bool Dead { get; private set; } = false;
     public bool HasSpecial { get; private set; } = false;
     public Inventory Inventory { get; private set; } = new();
     public Item EquippedWeapon { get; private set; }
+    public Item EquippedArmor { get; private set; }
     public BaseContainingElement CurrentRoom { get; set; } = null;
 
     public Player()
@@ -54,6 +56,7 @@ public class Player
         HasSpecial = false;
         Inventory = new Inventory();
         EquippedWeapon = null;
+        EquippedArmor = null;
     }
 
     public void CollectSpecial()
@@ -61,14 +64,16 @@ public class Player
         HasSpecial = true;
     }
 
-    public void TakeDamage(int damage)
+    public int TakeDamage(int damage)
     {
-        Health -= damage;
+        int actualDamage = Math.Max(1, damage - Defence);
+        Health -= actualDamage;
         if (Health < 0) Health = 0;
         if (Health == 0)
         {
             Dead = true;
         }
+        return actualDamage;
     }
 
     public int Heal(int amount)
@@ -86,10 +91,18 @@ public class Player
         return true;
     }
 
+    public bool EquipArmor(Item armor)
+    {
+        if (armor?.Type != ItemType.Armor || !Inventory.Items.Contains(armor)) return false;
+        EquippedArmor = armor;
+        return true;
+    }
+
     public bool RemoveFromInventory(Item item)
     {
         if (!Inventory.Remove(item)) return false;
         if (EquippedWeapon == item) EquippedWeapon = null;
+        if (EquippedArmor == item) EquippedArmor = null;
         return true;
     }
 
