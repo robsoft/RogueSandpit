@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace RogueSandpit.Models;
 
 public class Doorway
@@ -12,12 +7,14 @@ public class Doorway
     public int X1 { get; set; }
     public int Y1 { get; set; }
 
-    public bool CanTraverse { get; set; } = false;
+    public DoorState State { get; set; }
+    public bool CanTraverse => State == DoorState.Open;
 
-    public Doorway(int x1, int y1)
+    public Doorway(int x1, int y1, DoorState state = DoorState.Closed)
     {
         X1 = x1;
         Y1 = y1;
+        State = state;
     }
 
 }

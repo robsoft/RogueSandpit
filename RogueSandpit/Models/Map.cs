@@ -35,6 +35,8 @@ public class Map
     public List<Corridor> Exits { get; set; }
     public List<Room> RoomList { get; set; }
     public List<BaseNPC> NPCs { get; set; } = new List<BaseNPC>();
+    public List<GroundItem> GroundItems { get; set; } = new List<GroundItem>();
+    public List<Doorway> Doors { get; set; } = new List<Doorway>();
 
     // todo:
     // 1) create a kind of simple 'carved out' array so that we can easily do line-of-sight without thinking about rooms.
@@ -60,6 +62,8 @@ public class Map
         MapObstacles = new List<Obstacle>();
         Exits = new List<Corridor>();
         NPCs = new List<BaseNPC>();
+        GroundItems = new List<GroundItem>();
+        Doors = new List<Doorway>();
 
         // carve into spaces (this is the BSP routine)
         DivideIntoRooms();
@@ -83,15 +87,14 @@ public class Map
         // figure out a starting point for the map
         AddExits();
         AddNPCs();
-        AddLoot();
 
         // now flatten this into a single big 2-d array
         CreateMapCells();
+        AddDoorways();
 
         // Add the macguffin to a reachable, unoccupied floor cell
         AddSpecials();
-
-        //AddDoorways();
+        AddLoot();
 
         CurrentPlayerX = StartPosX;
         CurrentPlayerY = StartPosY;
@@ -155,6 +158,10 @@ public class Map
                 int characterType = RandGen.RandInt(0, Enum.GetValues(typeof(CharacterTypes)).Length);
                 var npc = NPCFactory.CreateNPC(this, (CharacterTypes)characterType, x, y, room);
                 npc.State = NPCState.Active;
+                if (RandGen.RandInt(0, 100) < 30)
+                {
+                    npc.HeldItem = ItemFactory.CreateRandom();
+                }
 
                 NPCs.Add(npc);
             }
@@ -173,49 +180,66 @@ public class Map
 
     private void AddDoorways()
     {
-        // post-flattening
-        foreach (Room room in RoomList)
+        var candidates = new List<Point>();
+        for (int x = 1; x < Width - 1; x++)
         {
-            // go through the horizontal corridors, and for each one, identify the room to the left and the right, adding a 'doorway' tile just inside the room
-            foreach (Corridor corridor in room.HCorridors)
+            for (int y = 1; y < Height - 1; y++)
             {
-                Room leftRoom = RoomList.Find(r => r.X2 == corridor.X1); //doesn't this need to factor in the y position otherwise corridors in the same x range but different y ranges will be confused?
-                Room rightRoom = RoomList.Find(r => r.X1 == corridor.X2);
-                if (leftRoom != null && rightRoom != null)
-                {
-                    leftRoom.Doorways.Add(new Doorway(leftRoom.X2 - 1, corridor.Y1));
-                    //rightRoom.Doorways.Add(new Doorway(rightRoom.X1, corridor.Y1));
-                    MapCells[leftRoom.X2 - 1, corridor.Y1].SetCellType(MapCellType.Door);
-                    //MapCells[rightRoom.X1, corridor.Y1].SetCellType(MapCellType.Door);
-                }
-                else
-                {
-                    Console.WriteLine($"Corridor problem {corridor.X1}, {corridor.Y1}, {corridor.X2}, {corridor.Y2} ");
-                    if (leftRoom == null) Console.WriteLine("Left room is null");
-                    if (rightRoom == null) Console.WriteLine("Right room is null");
-                }
-            }
+                if (MapCells[x, y].ParentElement is not Corridor corridor || Exits.Contains(corridor)) continue;
 
-            /*         
-                        // then repeat with the vertical corridors, identifying the room above and below, adding a 'doorway' tile just inside the room 
-                        foreach(Corridor corridor in room.VCorridors)
-                        {
-                            Room topRoom = RoomList.Find(r => r.Y2 == corridor.Y1);
-                            Room bottomRoom = RoomList.Find(r => r.Y1 == corridor.Y2);
-                            if (topRoom != null && bottomRoom != null)
-                            {
-                                topRoom.Doorways.Add(new Doorway(corridor.X1, topRoom.Y2 - 1));
-                                //bottomRoom.Doorways.Add(new Doorway(corridor.X1, bottomRoom.Y1));
-                                MapCells[corridor.X1, topRoom.Y2 - 1].SetCellType(MapCellType.Door);
-                                //MapCells[corridor.X1, bottomRoom.Y1].SetCellType(MapCellType.Door);
-                            }
-                        }
-                        */
+                bool touchesRoom = MapCells[x - 1, y].ParentElement is Room
+                    || MapCells[x + 1, y].ParentElement is Room
+                    || MapCells[x, y - 1].ParentElement is Room
+                    || MapCells[x, y + 1].ParentElement is Room;
+                if (touchesRoom) candidates.Add(new Point(x, y));
+            }
+        }
+
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            Point position = candidates[i];
+            DoorState state = i % 4 == 0 ? DoorState.Locked : DoorState.Closed;
+            Doors.Add(new Doorway(position.X, position.Y, state));
+            MapCells[position.X, position.Y].SetCellType(MapCellType.Door);
         }
     }
 
     private void AddLoot()
-    { }
+    {
+        int entranceKeyY = StartPosY - 1;
+        if (IsWalkable(StartPosX, entranceKeyY))
+        {
+            GroundItems.Add(new GroundItem(ItemFactory.Create(ItemType.Key), StartPosX, entranceKeyY));
+        }
+
+        var candidates = new List<Point>();
+        foreach (Room room in RoomList)
+        {
+            for (int x = room.X1; x < room.X2; x++)
+            {
+                for (int y = room.Y1; y < room.Y2; y++)
+                {
+                    if (MapCells[x, y].CellType == MapCellType.Floor
+                        && !IsOccupiedByLivingNPC(x, y)
+                        && GetGroundItemAt(x, y) == null
+                        && (x != StartPosX || y != StartPosY))
+                    {
+                        candidates.Add(new Point(x, y));
+                    }
+                }
+            }
+        }
+
+        const int lootCount = 6;
+        for (int i = 0; i < lootCount && candidates.Count > 0; i++)
+        {
+            int candidateIndex = RandGen.RandInt(0, candidates.Count);
+            Point position = candidates[candidateIndex];
+            candidates.RemoveAt(candidateIndex);
+            ItemType type = (ItemType)(i % Enum.GetValues<ItemType>().Length);
+            GroundItems.Add(new GroundItem(ItemFactory.Create(type), position.X, position.Y));
+        }
+    }
 
     private void AddSpecials()
     {
@@ -366,8 +390,13 @@ public class Map
     {
         if (x < 0 || x >= Width || y < 0 || y >= Height) return false;
         return MapCells[x, y].CellType == MapCellType.Floor
-            || MapCells[x, y].CellType == MapCellType.Door
+            || (MapCells[x, y].CellType == MapCellType.Door && GetDoorAt(x, y)?.CanTraverse == true)
             || MapCells[x, y].CellType == MapCellType.Special;
+    }
+
+    public Doorway GetDoorAt(int x, int y)
+    {
+        return Doors.FirstOrDefault(door => door.X1 == x && door.Y1 == y);
     }
 
     public BaseNPC GetLivingNPCAt(int x, int y, BaseNPC except = null)
@@ -382,6 +411,23 @@ public class Map
     public bool IsOccupiedByLivingNPC(int x, int y, BaseNPC except = null)
     {
         return GetLivingNPCAt(x, y, except) != null;
+    }
+
+    public GroundItem GetGroundItemAt(int x, int y)
+    {
+        return GroundItems.FirstOrDefault(groundItem => groundItem.X == x && groundItem.Y == y);
+    }
+
+    public bool RemoveGroundItem(GroundItem groundItem)
+    {
+        return groundItem != null && GroundItems.Remove(groundItem);
+    }
+
+    public bool DropItem(Item item, int x, int y)
+    {
+        if (item == null || !IsWalkable(x, y) || GetGroundItemAt(x, y) != null) return false;
+        GroundItems.Add(new GroundItem(item, x, y));
+        return true;
     }
 
     private void AddExits()

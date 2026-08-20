@@ -111,7 +111,7 @@ public class MapRenderer
                 {
                     MapCellType.Wall => Color.DarkGray,
                     MapCellType.Floor => Color.LightGray,
-                    MapCellType.Door => Color.Gray,
+                    MapCellType.Door => DoorColor(_map.GetDoorAt(x, y)),
                     MapCellType.Special => Color.Yellow,
                     _ => MapBackgroundColor
                 };
@@ -119,6 +119,8 @@ public class MapRenderer
                     new Rectangle(x * _map.CellScale, y * _map.CellScale, _map.CellScale, _map.CellScale), color);
             }
         }
+
+        DrawGroundItems(spriteBatch, false);
 
         foreach (BaseNPC npc in _map.NPCs)
         {
@@ -133,6 +135,7 @@ public class MapRenderer
                 new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
                 npcColor);
         }
+
     }
 
     private void RenderRooms(SpriteBatch spriteBatch)
@@ -190,8 +193,18 @@ public class MapRenderer
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(corridor.X1 * _map.CellScale, corridor.Y1 * _map.CellScale,
                     (1 + corridor.X2 - corridor.X1) * _map.CellScale,
-                    (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
+                (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
         }
+
+        foreach (Doorway door in _map.Doors)
+        {
+            if (!IsDoorVisible(door)) continue;
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(door.X1 * _map.CellScale, door.Y1 * _map.CellScale,
+                    _map.CellScale, _map.CellScale), DoorColor(door));
+        }
+
+        DrawGroundItems(spriteBatch, true);
 
         BaseContainingElement currentPlayerRoom =
             _map.MapCells[_map.CurrentPlayerX, _map.CurrentPlayerY].ParentElement;
@@ -220,5 +233,48 @@ public class MapRenderer
             new Rectangle(corridor.X1 * _map.CellScale, corridor.Y1 * _map.CellScale,
                 (1 + corridor.X2 - corridor.X1) * _map.CellScale,
                 (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
+    }
+
+    private void DrawGroundItems(SpriteBatch spriteBatch, bool visitedOnly)
+    {
+        foreach (GroundItem groundItem in _map.GroundItems)
+        {
+            BaseContainingElement parent = _map.MapCells[groundItem.X, groundItem.Y].ParentElement;
+            if (visitedOnly && parent != null && !parent.HasVisited) continue;
+
+            Color color = groundItem.Item.Type switch
+            {
+                ItemType.HealingPotion => Color.LimeGreen,
+                ItemType.Weapon => Color.Silver,
+                ItemType.Key => Color.Gold,
+                _ => Color.White
+            };
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(groundItem.X * _map.CellScale + 2, groundItem.Y * _map.CellScale + 2,
+                    _map.CellScale - 4, _map.CellScale - 4), color);
+        }
+    }
+
+    private static Color DoorColor(Doorway door)
+    {
+        return door?.State switch
+        {
+            DoorState.Locked => Color.Gold,
+            DoorState.Open => Color.SlateGray,
+            _ => Color.SaddleBrown
+        };
+    }
+
+    private bool IsDoorVisible(Doorway door)
+    {
+        if (_map.MapCells[door.X1, door.Y1].ParentElement?.HasVisited == true) return true;
+
+        foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
+        {
+            BaseContainingElement adjacent = _map.MapCells[door.X1 + dx, door.Y1 + dy].ParentElement;
+            if (adjacent?.HasVisited == true) return true;
+        }
+
+        return false;
     }
 }

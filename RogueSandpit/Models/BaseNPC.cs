@@ -17,6 +17,7 @@ public abstract class BaseNPC
     public int Y { get; set; }
     public int HP { get; set; }
     public int Damage { get; set; }
+    public Item HeldItem { get; set; }
 
     public int AssetID { get; set; }
     public int AnimFrame { get; set; }
