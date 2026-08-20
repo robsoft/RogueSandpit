@@ -35,8 +35,10 @@ public abstract class BaseNPC
     public bool HasSeenPlayer { get; private set; } = false;
     public NPCAwareness Awareness { get; private set; } = NPCAwareness.Unaware;
     public (int X, int Y)? LastKnownPlayerPosition { get; private set; }
+    public (int X, int Y)? InvestigationOrigin { get; private set; }
+    public NPCInvestigationSource InvestigationSource { get; private set; } = NPCInvestigationSource.None;
     public (int X, int Y)? InvestigationTarget =>
-        _searchTargets.Count > 0 ? _searchTargets.Peek() : LastKnownPlayerPosition;
+        _searchTargets.Count > 0 ? _searchTargets.Peek() : InvestigationOrigin;
     public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
 
 
@@ -66,6 +68,8 @@ public abstract class BaseNPC
             State = NPCState.Dead;
             Awareness = NPCAwareness.Unaware;
             LastKnownPlayerPosition = null;
+            InvestigationOrigin = null;
+            InvestigationSource = NPCInvestigationSource.None;
             _searchTargets.Clear();
             _isLocalSearching = false;
             Console.WriteLine($"{Name} has been killed!");
@@ -79,17 +83,28 @@ public abstract class BaseNPC
 
         if (dx + dy <= SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
         {
+            bool newlySpottedPlayer = Awareness != NPCAwareness.Pursuing;
             HasSeenPlayer = true;
             Awareness = NPCAwareness.Pursuing;
             LastKnownPlayerPosition = (player.X, player.Y);
+            InvestigationOrigin = (player.X, player.Y);
+            InvestigationSource = NPCInvestigationSource.LastSeen;
             _searchTargets.Clear();
             _isLocalSearching = false;
+
+            if (newlySpottedPlayer)
+            {
+                int alertedAllies = Map.AlertNearbyAllies(this, player.X, player.Y, 8);
+                if (alertedAllies > 0) eventSink?.Invoke($"{Name} ALERTED {alertedAllies} ALLIES");
+            }
 
             if (dx + dy == 1)
             {
                 Console.WriteLine($"{Name} attacked player with {Damage} damage!");
                 int actualDamage = player.TakeDamage(Damage);
                 eventSink?.Invoke($"{Name} HIT PLAYER {actualDamage}");
+                int listeners = Map.NotifyNoise(X, Y, 10, this);
+                if (listeners > 0) eventSink?.Invoke($"COMBAT DREW {listeners} NPCS");
                 return;
             }
 
@@ -97,18 +112,18 @@ public abstract class BaseNPC
             return;
         }
 
-        if (LastKnownPlayerPosition is { } lastKnownPosition)
+        if (InvestigationOrigin is { } investigationOrigin)
         {
             Awareness = NPCAwareness.Investigating;
-            if (!_isLocalSearching && (X != lastKnownPosition.X || Y != lastKnownPosition.Y))
+            if (!_isLocalSearching && (X != investigationOrigin.X || Y != investigationOrigin.Y))
             {
-                MoveToward(lastKnownPosition.X, lastKnownPosition.Y, eventSink);
+                MoveToward(investigationOrigin.X, investigationOrigin.Y, eventSink);
                 return;
             }
 
             if (!_isLocalSearching)
             {
-                BeginLocalSearch(lastKnownPosition);
+                BeginLocalSearch(investigationOrigin);
             }
 
             if (_searchTargets.Count > 0 && X == _searchTargets.Peek().X && Y == _searchTargets.Peek().Y)
@@ -119,6 +134,8 @@ public abstract class BaseNPC
             if (_searchTargets.Count == 0)
             {
                 LastKnownPlayerPosition = null;
+                InvestigationOrigin = null;
+                InvestigationSource = NPCInvestigationSource.None;
                 Awareness = NPCAwareness.Unaware;
                 _isLocalSearching = false;
                 return;
@@ -131,6 +148,20 @@ public abstract class BaseNPC
 
         Awareness = NPCAwareness.Unaware;
         Wander(player);
+    }
+
+    public bool ReceiveInvestigation((int X, int Y) origin, NPCInvestigationSource source)
+    {
+        if (State != NPCState.Active || Awareness == NPCAwareness.Pursuing) return false;
+        if (source < InvestigationSource) return false;
+
+        Awareness = NPCAwareness.Investigating;
+        InvestigationOrigin = origin;
+        InvestigationSource = source;
+        LastKnownPlayerPosition = source == NPCInvestigationSource.LastSeen ? origin : null;
+        _searchTargets.Clear();
+        _isLocalSearching = false;
+        return true;
     }
 
     private void BeginLocalSearch((int X, int Y) origin)
