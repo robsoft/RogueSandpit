@@ -72,9 +72,10 @@ public class MapRenderer
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
+            Color npcColor = npc.IsPursuingPlayer ? Color.OrangeRed : Color.Black;
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
-                Color.Black);
+                npcColor);
         }
     }
 
@@ -143,9 +144,10 @@ public class MapRenderer
             if (npc.State == NPCState.Dead) continue;
             if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
             {
+                Color npcColor = npc.IsPursuingPlayer ? Color.OrangeRed : Color.Red;
                 _drawer.DrawFilledRectangle(spriteBatch,
                     new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale,
-                        _map.CellScale, _map.CellScale), Color.Red);
+                        _map.CellScale, _map.CellScale), npcColor);
             }
         }
     }

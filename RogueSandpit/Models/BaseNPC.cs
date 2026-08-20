@@ -28,6 +28,7 @@ public abstract class BaseNPC
 
     public Visibility Visibility { get; set; } = Visibility.Hidden;
     public bool HasSeenPlayer { get; private set; } = false;
+    public bool IsPursuingPlayer { get; private set; } = false;
 
 
     // this is where the NPC starts out from, and is where it will 'home' back to when it can't find a target   
@@ -54,17 +55,21 @@ public abstract class BaseNPC
         if (HP <= 0)
         {
             State = NPCState.Dead;
+            IsPursuingPlayer = false;
             Console.WriteLine($"{Name} has been killed!");
         }
     }
 
     public void Move(Player player)
     {
+        IsPursuingPlayer = false;
+
         // Check if adjacent for attack
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
         if (dx + dy == 1)
         {
+            IsPursuingPlayer = true;
             // Attack
             Console.WriteLine($"{Name} attacked player with {Damage} damage!");
             player.TakeDamage(Damage);
@@ -77,6 +82,7 @@ public abstract class BaseNPC
             var path = Pathfinding.FindPath(Map, X, Y, player.X, player.Y, this);
             if (path.Count > 0)
             {
+                IsPursuingPlayer = true;
                 MoveTo(path[0].X, path[0].Y);
                 return;
             }

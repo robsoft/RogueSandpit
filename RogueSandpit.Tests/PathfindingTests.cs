@@ -70,6 +70,7 @@ public class PathfindingTests
 
         Assert.Equal((11, 10), (npc.X, npc.Y));
         Assert.True(npc.HasSeenPlayer);
+        Assert.True(npc.IsPursuingPlayer);
     }
 
     [Fact]
@@ -86,6 +87,25 @@ public class PathfindingTests
 
         Assert.Equal(startingHealth, player.Health);
         Assert.Equal(1, Math.Abs(npc.X - player.X) + Math.Abs(npc.Y - player.Y));
+        Assert.True(npc.IsPursuingPlayer);
+    }
+
+    [Fact]
+    public void NpcStopsPursuingWhenLineOfSightIsLost()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 13, Y = 10 };
+        map.NPCs.Add(npc);
+        npc.Move(player);
+        Assert.True(npc.IsPursuingPlayer);
+
+        map.MapCells[12, 10].SetCellType(MapCellType.Wall);
+        npc.Move(player);
+
+        Assert.False(npc.IsPursuingPlayer);
+        Assert.True(npc.HasSeenPlayer);
     }
 
     private static Map CreateBlankMap()

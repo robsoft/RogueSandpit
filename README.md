@@ -17,6 +17,7 @@ builds & runs on Mac and Windows
 - Retrieve the yellow special tile and return it to the entrance to win
 - HUD displays health, damage, and objective status
 - NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
+- Pursuing NPCs render orange-red during development so their current AI state is visible
  
 
 ## Pressing TODOs
