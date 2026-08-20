@@ -29,6 +29,8 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | Arrow keys | Move player (WASD not yet implemented, despite README saying "will come") |
 | H | Use the first carried healing potion |
 | E | Equip the next carried weapon |
+| D | Drop the most recently acquired item |
+| Period / numpad 5 | Wait one turn |
 | F1 | Toggle debug/map viewer (shows full map + NPCs) |
 | SPACE | Generate a new map / restart |
 | ESCAPE | Quit |

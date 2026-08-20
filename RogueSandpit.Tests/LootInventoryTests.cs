@@ -120,6 +120,71 @@ public class LootInventoryTests
     }
 
     [Fact]
+    public void DropPlacesMostRecentlyAcquiredItemOnCurrentCell()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item potion = ItemFactory.Create(ItemType.HealingPotion);
+        Item key = ItemFactory.Create(ItemType.Key);
+        player.Inventory.TryAdd(potion);
+        player.Inventory.TryAdd(key);
+
+        gameState.Update(PlayerCommand.DropItem);
+
+        Assert.Same(key, map.GetGroundItemAt(x, y)?.Item);
+        Assert.DoesNotContain(key, player.Inventory.Items);
+        Assert.Contains(potion, player.Inventory.Items);
+        Assert.Contains("DROPPED BRASS KEY", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void DroppingEquippedWeaponUnequipsItAndRemovesDamageBonus()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item weapon = ItemFactory.Create(ItemType.Weapon);
+        player.Inventory.TryAdd(weapon);
+        player.Equip(weapon);
+
+        gameState.Update(PlayerCommand.DropItem);
+
+        Assert.Null(player.EquippedWeapon);
+        Assert.Equal(player.BaseDamage, player.Damage);
+        Assert.Same(weapon, map.GetGroundItemAt(x, y)?.Item);
+    }
+
+    [Fact]
+    public void FailedDropDoesNotAdvanceNpcTurn()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        var npc = new Orc(map, x, y + 1, null)
+        {
+            State = NPCState.Active,
+            Damage = player.Health
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.DropItem);
+
+        Assert.False(player.Dead);
+        Assert.Contains("INVENTORY EMPTY", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void CannotDropOntoExistingGroundItem()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item carriedKey = ItemFactory.Create(ItemType.Key);
+        Item groundPotion = ItemFactory.Create(ItemType.HealingPotion);
+        player.Inventory.TryAdd(carriedKey);
+        map.GroundItems.Add(new GroundItem(groundPotion, x, y));
+
+        gameState.Update(PlayerCommand.DropItem);
+
+        Assert.Contains(carriedKey, player.Inventory.Items);
+        Assert.Same(groundPotion, map.GetGroundItemAt(x, y)?.Item);
+        Assert.Contains("CANNOT DROP HERE", gameState.EventLog.Entries);
+    }
+
+    [Fact]
     public void GeneratedLootUsesReachableUnoccupiedCells()
     {
         var map = new Map(123);

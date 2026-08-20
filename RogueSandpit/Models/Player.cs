@@ -86,6 +86,13 @@ public class Player
         return true;
     }
 
+    public bool RemoveFromInventory(Item item)
+    {
+        if (!Inventory.Remove(item)) return false;
+        if (EquippedWeapon == item) EquippedWeapon = null;
+        return true;
+    }
+
 
 
 }

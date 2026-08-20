@@ -39,6 +39,8 @@ builds & runs on Mac and Windows
 - Arrow keys (WASD will come) to move the player character
 - H to use a healing potion
 - E to equip the next carried weapon
+- D to drop the most recently acquired item
+- Period or numpad 5 to wait one turn
 - F1 to toggle debug/map viewer  
 - In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
@@ -52,6 +54,6 @@ builds & runs on Mac and Windows
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
 - Expand doors with distinct keys or consumable keys
-- Extend the current count-limited inventory with menus, dropping, and possibly weight
+- Extend the current count-limited inventory with menus and possibly weight
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    

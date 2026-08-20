@@ -139,8 +139,10 @@ namespace RogueSandpit
             if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
             if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
+            if (WasPressed(Keys.OemPeriod) || WasPressed(Keys.NumPad5)) return PlayerCommand.Wait;
             if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
             if (WasPressed(Keys.E)) return PlayerCommand.EquipWeapon;
+            if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
         }
 
