@@ -10,6 +10,7 @@ public class GameState
     public Map Map { get; private set; }
     public Player Player { get; private set; }
     public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
+    public GameEventLog EventLog { get; } = new();
 
     public GameState(Map map, Player player)
     {
@@ -48,6 +49,7 @@ public class GameState
         if (Player.Dead)
         {
             Outcome = GameOutcome.Lost;
+            EventLog.Add("PLAYER DIED");
             Console.WriteLine("Player is dead! Game over.");
             return;
         }
@@ -59,7 +61,7 @@ public class GameState
         {
             if (npc.State == NPCState.Active)
             {
-                npc.Move(Player);
+                npc.Move(Player, EventLog.Add);
                 if (Player.Dead) return;
             }
         }
@@ -74,6 +76,11 @@ public class GameState
         if (target != null)
         {
             target.TakeDamage(Player.Damage);
+            EventLog.Add($"PLAYER HIT {target.Name} {Player.Damage}");
+            if (target.State == NPCState.Dead)
+            {
+                EventLog.Add($"{target.Name} DIED");
+            }
             return;
         }
 
@@ -99,11 +106,13 @@ public class GameState
             {
                 Player.CollectSpecial();
                 cell.SetCellType(MapCellType.Floor);
+                EventLog.Add("SPECIAL COLLECTED");
             }
 
             if (Player.HasSpecial && newX == Map.StartPosX && newY == Map.StartPosY)
             {
                 Outcome = GameOutcome.Won;
+                EventLog.Add("YOU ESCAPED WITH SPECIAL");
             }
         }
     }

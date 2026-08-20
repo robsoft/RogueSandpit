@@ -62,7 +62,7 @@ public abstract class BaseNPC
         }
     }
 
-    public void Move(Player player)
+    public void Move(Player player, Action<string> eventSink = null)
     {
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
@@ -76,6 +76,7 @@ public abstract class BaseNPC
             if (dx + dy == 1)
             {
                 Console.WriteLine($"{Name} attacked player with {Damage} damage!");
+                eventSink?.Invoke($"{Name} HIT PLAYER {Damage}");
                 player.TakeDamage(Damage);
                 return;
             }

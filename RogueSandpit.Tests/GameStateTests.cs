@@ -21,6 +21,7 @@ public class GameStateTests
         Assert.Equal(x, player.X);
         Assert.Equal(y, player.Y);
         Assert.Equal(1, npc.HP);
+        Assert.Contains($"PLAYER HIT {npc.Name} {player.Damage}", gameState.EventLog.Entries);
     }
 
     [Fact]
@@ -40,6 +41,7 @@ public class GameStateTests
         Assert.False(map.IsOccupiedByLivingNPC(x + 1, y));
         Assert.Equal(NPCAwareness.Unaware, npc.Awareness);
         Assert.Null(npc.LastKnownPlayerPosition);
+        Assert.Contains($"{npc.Name} DIED", gameState.EventLog.Entries);
     }
 
     [Fact]
@@ -53,6 +55,7 @@ public class GameStateTests
         Assert.True(player.HasSpecial);
         Assert.Equal(MapCellType.Floor, map.MapCells[x + 1, y].CellType);
         Assert.Equal(x + 1, player.X);
+        Assert.Contains("SPECIAL COLLECTED", gameState.EventLog.Entries);
     }
 
     [Fact]
@@ -73,6 +76,7 @@ public class GameStateTests
         Assert.Equal(GameOutcome.Won, gameState.Outcome);
         Assert.Equal(map.StartPosX, player.X);
         Assert.Equal(map.StartPosY, player.Y);
+        Assert.Contains("YOU ESCAPED WITH SPECIAL", gameState.EventLog.Entries);
     }
 
     [Fact]
@@ -158,6 +162,8 @@ public class GameStateTests
         Assert.Equal(y, player.Y);
         Assert.True(player.Dead);
         Assert.Equal(GameOutcome.Lost, gameState.Outcome);
+        Assert.Contains($"{npc.Name} HIT PLAYER {npc.Damage}", gameState.EventLog.Entries);
+        Assert.Contains("PLAYER DIED", gameState.EventLog.Entries);
     }
 
     private static (Map Map, Player Player, GameState GameState, int X, int Y) CreateGameOnOpenFloor()

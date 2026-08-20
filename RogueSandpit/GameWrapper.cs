@@ -155,8 +155,15 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
 
-            _mapRenderer.Display(_spriteBatch);
+            Point? hoveredCell = GetHoveredMapCell();
+            _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
+            DrawEventLog();
             DrawHud();
+
+            if (_map.RenderMode == RenderMode.Cells && hoveredCell.HasValue)
+            {
+                DrawDebugInspection(hoveredCell.Value);
+            }
 
             if (_gameState.Outcome != GameOutcome.Playing)
             {
@@ -181,6 +188,74 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}  DMG {_player.Damage}  SPECIAL {specialStatus}",
                 new Vector2(6, 583), 2, Color.White);
+        }
+
+        private void DrawEventLog()
+        {
+            if (_gameState.EventLog.Entries.Count == 0) return;
+
+            const int panelX = 5;
+            const int panelY = 5;
+            int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, 285, panelHeight), Color.Black * 0.75f);
+
+            for (int i = 0; i < _gameState.EventLog.Entries.Count; i++)
+            {
+                _pixelFont.DrawText(_spriteBatch, _gameState.EventLog.Entries[i],
+                    new Vector2(panelX + 5, panelY + 5 + i * 12), 1, Color.White);
+            }
+        }
+
+        private Point? GetHoveredMapCell()
+        {
+            if (_map.RenderMode != RenderMode.Cells) return null;
+
+            Point mousePosition = Mouse.GetState().Position;
+            return ViewportMapper.TryWindowToMapCell(mousePosition, _renderDestination,
+                _nativeWidth, _nativeHeight, _map, out Point mapCell)
+                ? mapCell
+                : null;
+        }
+
+        private void DrawDebugInspection(Point position)
+        {
+            const int panelX = 485;
+            const int panelY = 5;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 112), Color.Black * 0.9f);
+
+            MapCell cell = _map.MapCells[position.X, position.Y];
+            _pixelFont.DrawText(_spriteBatch,
+                $"CELL {position.X} {position.Y} {cell.CellType}",
+                new Vector2(panelX + 6, panelY + 6), 2, Color.White);
+
+            string parentType = cell.ParentElement?.GetType().Name ?? "NONE";
+            string parentName = cell.ParentElement?.Name ?? "";
+            _pixelFont.DrawText(_spriteBatch, $"PARENT {parentType} {parentName}",
+                new Vector2(panelX + 6, panelY + 27), 1, Color.LightGray);
+
+            BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
+            if (npc == null)
+            {
+                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
+                return;
+            }
+
+            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.Name} HP {npc.HP} DMG {npc.Damage}",
+                new Vector2(panelX + 6, panelY + 43), 1, Color.White);
+            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
+                new Vector2(panelX + 6, panelY + 59), 1, Color.White);
+
+            string lastKnown = npc.LastKnownPlayerPosition is { } target
+                ? $"{target.X} {target.Y}"
+                : "NONE";
+            _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown}",
+                new Vector2(panelX + 6, panelY + 75), 1, Color.White);
+
+            bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
+            _pixelFont.DrawText(_spriteBatch, $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")}",
+                new Vector2(panelX + 6, panelY + 91), 1,
+                hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
         }
 
         private void DrawEndScreen()

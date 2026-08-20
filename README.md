@@ -19,10 +19,11 @@ builds & runs on Mac and Windows
 - NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
 - NPCs remember and investigate the last place they saw the player
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
+- F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
+- A compact event log shows recent combat and objective events
  
 
 ## Pressing TODOs
-- when in debug mode, hover over a cell to find out what it is (eg Goblin-20, Room-4 etc)
 - investigate better placement of the 'special' tile
 - continue consolidating initial placement and live actor occupancy
 - refactor Player class so it handles it's own moves, knows about Map etc  
@@ -36,6 +37,7 @@ builds & runs on Mac and Windows
 ## Controls
 - Arrow keys (WASD will come) to move the player character
 - F1 to toggle debug/map viewer  
+- In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
 - ESCAPE to quit the game
 

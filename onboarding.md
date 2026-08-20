@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, bump into NPCs to attack, retrieve the yellow special tile and return it to the entrance to win. NPCs adjacent to the player deal damage. F1 toggles a debug map view that reveals the whole map and NPCs; SPACE restarts with a new map.
+Current gameplay: move with arrow keys, bump into NPCs to attack, retrieve the yellow special tile and return it to the entrance to win. NPCs adjacent to the player deal damage. F1 toggles a debug map view that reveals the whole map; hovering a cell inspects it and hovering an NPC shows its path and line of sight. SPACE restarts with a new map.
 
 ## Build & run
 
@@ -35,13 +35,13 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
 - **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
-- **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement.
+- **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement. It also owns the bounded `GameEventLog` used by the on-screen event feed.
 - **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering. `Awareness` and `LastKnownPlayerPosition` describe current tactical state while `HasSeenPlayer` records historical awareness.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").
-- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, and **`PixelFont.cs`** — map/UI presentation kept separate from simulation rules; simple primitives are used since there's no sprite art yet. Pursuing NPCs are temporarily orange-red and investigating NPCs yellow for AI debugging.
+- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, **`PixelFont.cs`**, and **`ViewportMapper.cs`** — map/UI presentation kept separate from simulation rules. Debug mode supports scaled mouse-to-cell inspection, path overlays, and line-of-sight lines. Pursuing NPCs are temporarily orange-red and investigating NPCs yellow.
 - **`Content/`** — MonoGame Content Pipeline (`Content.mgcb`); currently minimal/no real assets, matching the "Graphics!" TODO in the README.
 
 ## Current state (per README + code)
@@ -49,7 +49,6 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 Working: map generation, player movement and bump combat, non-overlapping actors, NPC attacks and death, a retrieve-and-return objective, HUD, visible win/loss states, debug map view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
-- No hover-to-inspect in debug mode yet.
 - Initial placement and live actor occupancy could be consolidated further.
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
