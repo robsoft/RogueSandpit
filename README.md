@@ -24,6 +24,7 @@ builds & runs on Mac and Windows
 - Reachable potions, weapons, and keys can be collected in an eight-slot inventory
 - H uses a healing potion; E equips a carried weapon; defeated NPCs may drop loot
 - Closed doors take a turn to open; locked doors require a carried, reusable key
+- Chasing and investigating NPCs can spend a turn opening closed doors, but not locked ones
  
 
 ## Pressing TODOs
@@ -32,7 +33,7 @@ builds & runs on Mac and Windows
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - Names & class variation for NPCs - Markov-chain generation of names? 
-- Add richer search behaviour after an NPC reaches the last-known player position
+- Extend local NPC searching with prediction, hearing, or shared awareness
 - Graphics!  
 
 
@@ -52,7 +53,7 @@ builds & runs on Mac and Windows
 - Items that can be collected and used, with additional item types to come
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
-- Expand doors with distinct keys, consumable keys, or NPC door-opening behaviours
+- Expand doors with distinct keys or consumable keys
 - Extend the current count-limited inventory with menus, dropping, and possibly weight
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    

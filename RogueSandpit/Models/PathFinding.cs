@@ -24,7 +24,7 @@ public static class Pathfinding
         var start = (X: startX, Y: startY);
         var goal = (X: goalX, Y: goalY);
         if (start == goal) return [];
-        if (!map.IsWalkable(goalX, goalY)) return [];
+        if (!CanTraverseTerrain(map, goalX, goalY, movingNpc)) return [];
 
         var frontier = new PriorityQueue<(int X, int Y), int>();
         var cameFrom = new Dictionary<(int X, int Y), (int X, int Y)>();
@@ -60,8 +60,16 @@ public static class Pathfinding
         (int X, int Y) position,
         BaseNPC movingNpc)
     {
-        if (!map.IsWalkable(position.X, position.Y)) return false;
+        if (!CanTraverseTerrain(map, position.X, position.Y, movingNpc)) return false;
         return !map.IsOccupiedByLivingNPC(position.X, position.Y, movingNpc);
+    }
+
+    private static bool CanTraverseTerrain(Map map, int x, int y, BaseNPC movingNpc)
+    {
+        if (map.IsWalkable(x, y)) return true;
+        if (movingNpc == null) return false;
+
+        return map.GetDoorAt(x, y)?.State == DoorState.Closed;
     }
 
     private static int Heuristic((int X, int Y) from, (int X, int Y) to)

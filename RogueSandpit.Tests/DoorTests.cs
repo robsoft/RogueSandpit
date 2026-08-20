@@ -76,6 +76,71 @@ public class DoorTests
         Assert.NotEmpty(Pathfinding.FindPath(map, doorX - 1, doorY, doorX, doorY));
     }
 
+    [Fact]
+    public void InvestigatingNpcSpendsTurnOpeningClosedDoorThenCrossesIt()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 13, Y = 10 };
+        var events = new List<string>();
+        map.NPCs.Add(npc);
+        npc.Move(player);
+        player.X = 20;
+        player.Y = 20;
+        Doorway door = AddDoor(map, 12, 10, DoorState.Closed);
+
+        npc.Move(player, events.Add);
+
+        Assert.Equal(DoorState.Open, door.State);
+        Assert.Equal((11, 10), (npc.X, npc.Y));
+        Assert.Contains($"{npc.Name} OPENED DOOR", events);
+
+        npc.Move(player, events.Add);
+
+        Assert.Equal((12, 10), (npc.X, npc.Y));
+    }
+
+    [Fact]
+    public void InvestigatingNpcCannotOpenLockedDoor()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 13, Y = 10 };
+        map.NPCs.Add(npc);
+        npc.Move(player);
+        player.X = 20;
+        player.Y = 20;
+        Doorway door = AddDoor(map, 12, 10, DoorState.Locked);
+
+        npc.Move(player);
+
+        Assert.Equal(DoorState.Locked, door.State);
+        Assert.Equal((11, 10), (npc.X, npc.Y));
+        Assert.Equal(NPCAwareness.Investigating, npc.Awareness);
+    }
+
+    [Fact]
+    public void UnawareNpcDoesNotOpenClosedDoorWhileWandering()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10));
+        Doorway door = AddDoor(map, 11, 10, DoorState.Closed);
+        var npc = new Goblin(map, 10, 10, null)
+        {
+            State = NPCState.Active,
+            Direction = Direction.Right
+        };
+        map.NPCs.Add(npc);
+        var player = new Player { X = 20, Y = 20 };
+
+        npc.Move(player);
+
+        Assert.Equal(DoorState.Closed, door.State);
+        Assert.Equal((10, 10), (npc.X, npc.Y));
+    }
+
     private static (Map Map, Player Player, GameState Game, int DoorX, int DoorY) CreateDoorScenario(DoorState state)
     {
         var map = new Map(123);
@@ -99,5 +164,36 @@ public class DoorTests
         }
 
         throw new InvalidOperationException("Generated map contained no three adjacent open cells.");
+    }
+
+    private static Map CreateBlankMap()
+    {
+        var map = new Map(123);
+        map.NPCs.Clear();
+        map.Doors.Clear();
+        for (int x = 0; x < map.Width; x++)
+        {
+            for (int y = 0; y < map.Height; y++)
+            {
+                map.MapCells[x, y].SetCellType(MapCellType.Wall);
+            }
+        }
+        return map;
+    }
+
+    private static void AddFloor(Map map, params (int X, int Y)[] positions)
+    {
+        foreach ((int x, int y) in positions)
+        {
+            map.MapCells[x, y].SetCellType(MapCellType.Floor);
+        }
+    }
+
+    private static Doorway AddDoor(Map map, int x, int y, DoorState state)
+    {
+        var door = new Doorway(x, y, state);
+        map.Doors.Add(door);
+        map.MapCells[x, y].SetCellType(MapCellType.Door);
+        return door;
     }
 }

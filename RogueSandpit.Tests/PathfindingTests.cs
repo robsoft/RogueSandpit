@@ -111,7 +111,7 @@ public class PathfindingTests
     }
 
     [Fact]
-    public void NpcForgetsPlayerAfterInvestigatingLastKnownPosition()
+    public void NpcSearchesNearbyCellBeforeForgettingPlayer()
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
@@ -129,8 +129,43 @@ public class PathfindingTests
 
         npc.Move(player);
 
+        Assert.Equal((12, 10), (npc.X, npc.Y));
+        Assert.Equal(NPCAwareness.Investigating, npc.Awareness);
+        Assert.Equal((12, 10), npc.InvestigationTarget);
+
+        npc.Move(player);
+
         Assert.Equal(NPCAwareness.Unaware, npc.Awareness);
         Assert.Null(npc.LastKnownPlayerPosition);
+        Assert.Null(npc.InvestigationTarget);
+    }
+
+    [Fact]
+    public void LocalSearchVisitsWalkableCardinalTargetsInStableOrder()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map,
+            (10, 10), (11, 10), (12, 10), (13, 10),
+            (13, 9), (14, 10), (13, 11), (12, 11), (12, 9));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 13, Y = 10 };
+        map.NPCs.Add(npc);
+
+        npc.Move(player);
+        player.X = 20;
+        player.Y = 20;
+        npc.Move(player);
+        npc.Move(player);
+        npc.Move(player);
+
+        Assert.Equal((13, 9), (npc.X, npc.Y));
+        Assert.Equal((13, 9), npc.InvestigationTarget);
+        Assert.Equal(NPCAwareness.Investigating, npc.Awareness);
+
+        npc.Move(player);
+
+        Assert.Equal((14, 10), npc.InvestigationTarget);
+        Assert.Equal(NPCAwareness.Investigating, npc.Awareness);
     }
 
     [Fact]

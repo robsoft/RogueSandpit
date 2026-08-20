@@ -264,7 +264,10 @@ namespace RogueSandpit
             string lastKnown = npc.LastKnownPlayerPosition is { } target
                 ? $"{target.X} {target.Y}"
                 : "NONE";
-            _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown}",
+            string investigationTarget = npc.InvestigationTarget is { } searchTarget
+                ? $"{searchTarget.X} {searchTarget.Y}"
+                : "NONE";
+            _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown} TARGET {investigationTarget}",
                 new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);

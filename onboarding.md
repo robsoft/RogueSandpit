@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, bump into NPCs to attack, collect potions/weapons/keys, and retrieve the yellow special tile before returning to the entrance. Closed doors take a turn to open; locked doors need a carried reusable key. H uses a potion and E equips a weapon. NPCs attack, pursue, investigate, and may drop carried loot. F1 toggles a debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
+Current gameplay: move with arrow keys, bump into NPCs to attack, collect potions/weapons/keys, and retrieve the yellow special tile before returning to the entrance. Closed doors take a turn to open; locked doors need a carried reusable key. Chasing NPCs can open closed doors but cannot unlock them. H uses a potion and E equips a weapon. NPCs attack, pursue, investigate, and may drop carried loot. F1 toggles a debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
 
 ## Build & run
 
@@ -55,7 +55,7 @@ Known rough edges (from the README's "Pressing TODOs"):
 - Initial placement and live actor occupancy could be consolidated further.
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
-- Investigation currently ends immediately at the last-known cell; NPCs do not yet search nearby branches or share awareness.
+- NPC local searches are deliberately short and do not yet predict exits, react to sound, or share awareness.
 
 ## Where to look for "what's next"
 
