@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect potions/weapons/keys/armor, and retrieve the yellow special tile before returning to the entrance. Closed doors take a turn to open; locked doors need a carried reusable key. Chasing NPCs can open closed doors but cannot unlock them. Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and D drops the selected item. Named Orcs, Goblins, Skeletons, Trolls, and Wretches have distinct combat profiles and may drop carried loot. F1 toggles an omniscient debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
+Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect potions/weapons/keys/armor, and retrieve the yellow special tile before returning to the entrance. The first collected weapon auto-equips if the weapon slot is empty. Closed doors take a turn to open; locked doors need a carried reusable key. Chasing NPCs can open closed doors but cannot unlock them. Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and D drops the selected item. Named Orcs, Goblins, Skeletons, Trolls, and Wretches have distinct combat profiles and may drop carried loot. F1 toggles an omniscient debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
 
 ## Build & run
 

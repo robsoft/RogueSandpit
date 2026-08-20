@@ -122,6 +122,19 @@ public class Player
         return next ? Inventory.SelectNext() : Inventory.SelectPrevious();
     }
 
+    public bool TryCollectItem(Item item, out bool autoEquipped)
+    {
+        autoEquipped = false;
+        if (!Inventory.TryAdd(item)) return false;
+
+        if (item.Type == ItemType.Weapon && EquippedWeapon == null)
+        {
+            autoEquipped = Equip(item);
+        }
+
+        return true;
+    }
+
     public PlayerItemActionResult UseSelectedPotion(out int healed)
     {
         healed = 0;
