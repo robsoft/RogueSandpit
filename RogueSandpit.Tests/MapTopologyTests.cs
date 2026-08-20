@@ -38,6 +38,27 @@ public class MapTopologyTests
         }
     }
 
+    [Fact]
+    public void SpecialUsesGreatestEligiblePathDistanceAcrossManySeeds()
+    {
+        for (int seed = 0; seed < 50; seed++)
+        {
+            var map = new Map(seed);
+            Dictionary<(int X, int Y), int> distances = TerrainDistances(map);
+            Special special = map.RoomList.SelectMany(room => room.Specials).Single();
+
+            int greatestEligibleDistance = map.RoomList
+                .SelectMany(room => Enumerable.Range(room.X1, room.X2 - room.X1)
+                    .SelectMany(x => Enumerable.Range(room.Y1, room.Y2 - room.Y1).Select(y => (X: x, Y: y))))
+                .Where(position => map.MapCells[position.X, position.Y].CellType is MapCellType.Floor or MapCellType.Special)
+                .Where(position => !map.IsOccupiedByLivingNPC(position.X, position.Y))
+                .Where(distances.ContainsKey)
+                .Max(position => distances[position]);
+
+            Assert.Equal(greatestEligibleDistance, distances[(special.X, special.Y)]);
+        }
+    }
+
     private static void AssertNotDifferentRooms(Map map, int seed, int x1, int y1, int x2, int y2)
     {
         if (map.MapCells[x1, y1].ParentElement is not Room firstRoom
@@ -52,7 +73,12 @@ public class MapTopologyTests
 
     private static HashSet<(int X, int Y)> ReachableTerrain(Map map)
     {
-        var reachable = new HashSet<(int X, int Y)> { (map.StartPosX, map.StartPosY) };
+        return TerrainDistances(map).Keys.ToHashSet();
+    }
+
+    private static Dictionary<(int X, int Y), int> TerrainDistances(Map map)
+    {
+        var distances = new Dictionary<(int X, int Y), int> { [(map.StartPosX, map.StartPosY)] = 0 };
         var frontier = new Queue<(int X, int Y)>();
         frontier.Enqueue((map.StartPosX, map.StartPosY));
 
@@ -62,11 +88,12 @@ public class MapTopologyTests
             {
                 var next = (X: current.X + dx, Y: current.Y + dy);
                 if (next.X < 0 || next.X >= map.Width || next.Y < 0 || next.Y >= map.Height) continue;
-                if (map.MapCells[next.X, next.Y].CellType == MapCellType.Wall || !reachable.Add(next)) continue;
+                if (map.MapCells[next.X, next.Y].CellType == MapCellType.Wall || distances.ContainsKey(next)) continue;
+                distances[next] = distances[current] + 1;
                 frontier.Enqueue(next);
             }
         }
 
-        return reachable;
+        return distances;
     }
 }

@@ -246,6 +246,7 @@ public class Map
         Room specialRoom = null;
         Point specialPosition = Point.Zero;
         int greatestDistance = -1;
+        Dictionary<(int X, int Y), int> distances = CalculateTerrainDistances();
 
         foreach (Room room in RoomList)
         {
@@ -254,8 +255,8 @@ public class Map
                 for (int y = room.Y1; y < room.Y2; y++)
                 {
                     if (MapCells[x, y].CellType != MapCellType.Floor || IsOccupiedByLivingNPC(x, y)) continue;
+                    if (!distances.TryGetValue((x, y), out int distance)) continue;
 
-                    int distance = Math.Abs(x - StartPosX) + Math.Abs(y - StartPosY);
                     if (distance > greatestDistance)
                     {
                         greatestDistance = distance;
@@ -270,6 +271,31 @@ public class Map
 
         specialRoom.Specials.Add(new Special(specialPosition.X, specialPosition.Y, specialRoom));
         MapCells[specialPosition.X, specialPosition.Y].SetCellType(MapCellType.Special);
+    }
+
+    private Dictionary<(int X, int Y), int> CalculateTerrainDistances()
+    {
+        var distances = new Dictionary<(int X, int Y), int>
+        {
+            [(StartPosX, StartPosY)] = 0
+        };
+        var frontier = new Queue<(int X, int Y)>();
+        frontier.Enqueue((StartPosX, StartPosY));
+
+        while (frontier.TryDequeue(out (int X, int Y) current))
+        {
+            foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
+            {
+                var next = (X: current.X + dx, Y: current.Y + dy);
+                if (next.X < 0 || next.X >= Width || next.Y < 0 || next.Y >= Height) continue;
+                if (MapCells[next.X, next.Y].CellType == MapCellType.Wall || distances.ContainsKey(next)) continue;
+
+                distances[next] = distances[current] + 1;
+                frontier.Enqueue(next);
+            }
+        }
+
+        return distances;
     }
 
     // this flattens the room/corridor/obstacle structure into a single 2-d array of 'cells' that we can easily query for line-of-sight and pathfinding, without having to think about rooms and corridors etc. We can still use the room/corridor/obstacle structure for rendering, and for any room-specific logic we want to add later on

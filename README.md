@@ -28,7 +28,6 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- investigate better placement of the 'special' tile
 - continue consolidating initial placement and live actor occupancy
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - Names & class variation for NPCs - Markov-chain generation of names? 
