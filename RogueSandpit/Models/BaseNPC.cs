@@ -14,6 +14,7 @@ public abstract class BaseNPC
     public BaseContainingElement CurrentRoom { get; private set; }
     public string Description { get; set; } = String.Empty;
     public string Name { get; set; } = String.Empty;
+    public CharacterTypes CharacterType { get; protected set; }
     public Map Map { get; private set; }
 
     public Direction Direction { get; set; } = Direction.Up;
@@ -157,6 +158,7 @@ public abstract class BaseNPC
             {
                 door.State = DoorState.Open;
                 eventSink?.Invoke($"{Name} OPENED DOOR");
+                Map.UpdateVisibility(Map.CurrentPlayerX, Map.CurrentPlayerY);
                 return;
             }
 

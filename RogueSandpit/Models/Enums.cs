@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RogueSandpit.Models;
 
-public enum CharacterTypes {Orc, Goblin, Skeleton};
+public enum CharacterTypes { Orc, Goblin, Skeleton, Troll, Wretch };
 
 
 public enum Direction { Up, Down, Left, Right };

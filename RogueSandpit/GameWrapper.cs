@@ -67,10 +67,9 @@ namespace RogueSandpit
                 _map.Initialise();
             }
             _player = new Player();
-            _gameState = new GameState(_map, _player);
-
             _player.X = _map.StartPosX;
             _player.Y = _map.StartPosY;
+            _gameState = new GameState(_map, _player);
 
             Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
         }
@@ -262,7 +261,7 @@ namespace RogueSandpit
                 return;
             }
 
-            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.Name} HP {npc.HP} DMG {npc.Damage}",
+            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.CharacterType} {npc.Name} HP {npc.HP} DMG {npc.Damage}",
                 new Vector2(panelX + 6, panelY + 59), 1, Color.White);
             _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
                 new Vector2(panelX + 6, panelY + 75), 1, Color.White);

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RogueSandpit.Models;
@@ -125,12 +126,7 @@ public class MapRenderer
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
-            Color npcColor = npc.Awareness switch
-            {
-                NPCAwareness.Pursuing => Color.OrangeRed,
-                NPCAwareness.Investigating => Color.Yellow,
-                _ => Color.Black
-            };
+            Color npcColor = NpcColor(npc);
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
                 npcColor);
@@ -151,7 +147,7 @@ public class MapRenderer
                 DrawVisitedCorridor(spriteBatch, corridor);
             }
 
-            if (!room.HasVisited) continue;
+            if (!room.HasVisited && !IsElementDiscovered(room)) continue;
 
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(room.X1 * _map.CellScale, room.Y1 * _map.CellScale,
@@ -206,41 +202,35 @@ public class MapRenderer
 
         DrawGroundItems(spriteBatch, true);
 
-        BaseContainingElement currentPlayerRoom =
-            _map.MapCells[_map.CurrentPlayerX, _map.CurrentPlayerY].ParentElement;
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
-            if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
+            if (_map.MapCells[npc.X, npc.Y].IsVisible)
             {
-                Color npcColor = npc.Awareness switch
-                {
-                    NPCAwareness.Pursuing => Color.OrangeRed,
-                    NPCAwareness.Investigating => Color.Yellow,
-                    _ => Color.Red
-                };
+                Color npcColor = NpcColor(npc);
                 _drawer.DrawFilledRectangle(spriteBatch,
                     new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale,
                         _map.CellScale, _map.CellScale), npcColor);
             }
         }
+
+        DrawFogOfWar(spriteBatch);
     }
 
     private void DrawVisitedCorridor(SpriteBatch spriteBatch, Corridor corridor)
     {
-        if (!corridor.HasVisited) return;
+        if (!corridor.HasVisited && !IsElementDiscovered(corridor)) return;
         _drawer.DrawFilledRectangle(spriteBatch,
             new Rectangle(corridor.X1 * _map.CellScale, corridor.Y1 * _map.CellScale,
                 (1 + corridor.X2 - corridor.X1) * _map.CellScale,
                 (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
     }
 
-    private void DrawGroundItems(SpriteBatch spriteBatch, bool visitedOnly)
+    private void DrawGroundItems(SpriteBatch spriteBatch, bool visibleOnly)
     {
         foreach (GroundItem groundItem in _map.GroundItems)
         {
-            BaseContainingElement parent = _map.MapCells[groundItem.X, groundItem.Y].ParentElement;
-            if (visitedOnly && parent != null && !parent.HasVisited) continue;
+            if (visibleOnly && !_map.MapCells[groundItem.X, groundItem.Y].IsVisible) continue;
 
             Color color = groundItem.Item.Type switch
             {
@@ -268,6 +258,7 @@ public class MapRenderer
 
     private bool IsDoorVisible(Doorway door)
     {
+        if (_map.MapCells[door.X1, door.Y1].IsDiscovered) return true;
         if (_map.MapCells[door.X1, door.Y1].ParentElement?.HasVisited == true) return true;
 
         foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
@@ -277,5 +268,54 @@ public class MapRenderer
         }
 
         return false;
+    }
+
+    private bool IsElementDiscovered(BaseContainingElement element)
+    {
+        for (int x = Math.Max(0, element.X1); x <= Math.Min(_map.Width - 1, element.X2); x++)
+        {
+            for (int y = Math.Max(0, element.Y1); y <= Math.Min(_map.Height - 1, element.Y2); y++)
+            {
+                if (_map.MapCells[x, y].ParentElement == element && _map.MapCells[x, y].IsDiscovered)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void DrawFogOfWar(SpriteBatch spriteBatch)
+    {
+        for (int x = 0; x < _map.Width; x++)
+        {
+            for (int y = 0; y < _map.Height; y++)
+            {
+                MapCell cell = _map.MapCells[x, y];
+                if (cell.IsVisible) continue;
+
+                Color fog = cell.IsDiscovered ? Color.Black * 0.65f : Color.Black;
+                _drawer.DrawFilledRectangle(spriteBatch,
+                    new Rectangle(x * _map.CellScale, y * _map.CellScale,
+                        _map.CellScale, _map.CellScale), fog);
+            }
+        }
+    }
+
+    private static Color NpcColor(BaseNPC npc)
+    {
+        if (npc.Awareness == NPCAwareness.Pursuing) return Color.OrangeRed;
+        if (npc.Awareness == NPCAwareness.Investigating) return Color.Yellow;
+
+        return npc.CharacterType switch
+        {
+            CharacterTypes.Orc => Color.DarkOliveGreen,
+            CharacterTypes.Goblin => Color.LimeGreen,
+            CharacterTypes.Skeleton => Color.AntiqueWhite,
+            CharacterTypes.Troll => Color.DarkSlateBlue,
+            CharacterTypes.Wretch => Color.MediumPurple,
+            _ => Color.Red
+        };
     }
 }

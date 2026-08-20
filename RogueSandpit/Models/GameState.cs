@@ -16,6 +16,9 @@ public class GameState
     {
         this.Map = map;
         this.Player = player;
+        Map.CurrentPlayerX = player.X;
+        Map.CurrentPlayerY = player.Y;
+        Map.UpdateVisibility(player.X, player.Y);
     }
 
     public void Update(PlayerCommand command)
@@ -85,6 +88,7 @@ public class GameState
 
             door.State = DoorState.Open;
             EventLog.Add(wasLocked ? "UNLOCKED DOOR" : "OPENED DOOR");
+            Map.UpdateVisibility(Player.X, Player.Y);
             return true;
         }
 
@@ -111,6 +115,7 @@ public class GameState
             Player.Y = newY;
             Map.CurrentPlayerX = newX;
             Map.CurrentPlayerY = newY;
+            Map.UpdateVisibility(newX, newY);
 
             // have we now visited a new cell?
             var cell = Map.MapCells[newX, newY];
