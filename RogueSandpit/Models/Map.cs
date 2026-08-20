@@ -296,41 +296,23 @@ public class Map
                 }
             }
 
-            foreach (Special special in room.Specials)
-            {
-                MapCells[special.X, special.Y] = new MapCell(special.X, special.Y, MapCellType.Special, null);
-            }
+        }
 
+        foreach (Room room in RoomList)
+        {
             foreach (Corridor corridor in room.HCorridors)
             {
-                Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
-
-                for (int x = corridor.X1; x <= corridor.X2; x++)
-                {
-                    for (int y = corridor.Y1; y <= corridor.Y2; y++)
-                    {
-                        MapCells[x, y] = new MapCell(x, y, MapCellType.Floor, corridor);
-                    }
-                }
-                //MapCells[corridor.X1, corridor.Y1] = new MapCell(corridor.X1, corridor.Y1, MapCellType.Door);
-                //MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
+                PaintCorridor(corridor);
             }
 
             foreach (Corridor corridor in room.VCorridors)
             {
-                Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
-
-                for (int x = corridor.X1; x <= corridor.X2; x++)
-                {
-                    for (int y = corridor.Y1; y <= corridor.Y2; y++)
-                    {
-                        MapCells[x, y] = new MapCell(x, y, MapCellType.Floor, corridor);
-                    }
-                }
-                //MapCells[corridor.X1, corridor.Y1] = new MapCell(corridor.X1, corridor.Y1, MapCellType.Door);
-                //MapCells[corridor.X2, corridor.Y2] = new MapCell(corridor.X2, corridor.Y2, MapCellType.Door);
+                PaintCorridor(corridor);
             }
+        }
 
+        foreach (Room room in RoomList)
+        {
             foreach (Obstacle obstacle in room.Obstacles)
             {
                 Console.WriteLine($"Obstacle at {obstacle.X1}, {obstacle.Y1}, to {obstacle.X2}, {obstacle.Y2}");
@@ -348,12 +330,18 @@ public class Map
         // exits are a special case of corridors where one side doesn't have a room        
         foreach (Corridor corridor in Exits)
         {
-            for (int x = corridor.X1; x <= corridor.X2; x++)
+            PaintCorridor(corridor);
+        }
+    }
+
+    private void PaintCorridor(Corridor corridor)
+    {
+        Console.WriteLine($"Corridor at {corridor.X1}, {corridor.Y1}, to {corridor.X2}, {corridor.Y2}");
+        for (int x = corridor.X1; x <= corridor.X2; x++)
+        {
+            for (int y = corridor.Y1; y <= corridor.Y2; y++)
             {
-                for (int y = corridor.Y1; y <= corridor.Y2; y++)
-                {
-                    MapCells[x, y] = new MapCell(x, y, MapCellType.Floor);
-                }
+                MapCells[x, y] = new MapCell(x, y, MapCellType.Floor, corridor);
             }
         }
     }
@@ -535,14 +523,14 @@ public class Map
             {
                 if (cell != other)
                 {
-                    if (cell.X2 == other.X1)
+                    if (cell.X2 + 1 == other.X1)
                     {
                         if (Math.Max(cell.Y1, other.Y1) < Math.Min(cell.Y2, other.Y2))
                         {
                             cell.RightNeighbours.Add(other);
                         }
                     }
-                    if (cell.Y2 == other.Y1)
+                    if (cell.Y2 + 1 == other.Y1)
                     {
                         if (Math.Max(cell.X1, other.X1) < Math.Min(cell.X2, other.X2))
                         {
