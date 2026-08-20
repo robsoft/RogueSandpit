@@ -339,7 +339,7 @@ namespace RogueSandpit
             string investigationTarget = npc.InvestigationTarget is { } searchTarget
                 ? $"{searchTarget.X} {searchTarget.Y}"
                 : "NONE";
-            _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown} TARGET {investigationTarget}",
+            _pixelFont.DrawText(_spriteBatch, $"SRC {npc.InvestigationSource} LAST {lastKnown} AT {investigationTarget}",
                 new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);

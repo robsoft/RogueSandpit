@@ -455,6 +455,39 @@ public class Map
             && (player == null || x != player.X || y != player.Y);
     }
 
+    public int NotifyNoise(int x, int y, int radius, BaseNPC sourceNpc = null)
+    {
+        int notified = 0;
+        foreach (BaseNPC npc in NPCs)
+        {
+            if (npc == sourceNpc) continue;
+            int distance = Math.Abs(npc.X - x) + Math.Abs(npc.Y - y);
+            if (distance <= radius
+                && npc.ReceiveInvestigation((x, y), NPCInvestigationSource.Noise))
+            {
+                notified++;
+            }
+        }
+        return notified;
+    }
+
+    public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY, int radius)
+    {
+        int alerted = 0;
+        foreach (BaseNPC npc in NPCs)
+        {
+            if (npc == sourceNpc) continue;
+            int distance = Math.Abs(npc.X - sourceNpc.X) + Math.Abs(npc.Y - sourceNpc.Y);
+            if (distance <= radius
+                && npc.ReceiveInvestigation(
+                    (observedPlayerX, observedPlayerY), NPCInvestigationSource.AllyAlert))
+            {
+                alerted++;
+            }
+        }
+        return alerted;
+    }
+
     public GroundItem GetGroundItemAt(int x, int y)
     {
         return GroundItems.FirstOrDefault(groundItem => groundItem.X == x && groundItem.Y == y);

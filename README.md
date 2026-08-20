@@ -21,6 +21,8 @@ builds & runs on Mac and Windows
 - HUD displays health, damage, and objective status
 - NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
 - NPCs remember and investigate the last place they saw the player
+- NPCs hear nearby combat, opened doors, and dropped items, then investigate the sound
+- NPCs alert nearby allies when they first spot the player, sharing the observed location once
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names and distinct combat profiles
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -35,7 +37,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Extend local NPC searching with prediction, hearing, or shared awareness
+- Extend local NPC searching with prediction, environmental clues, or memory decay
 - Graphics!  
 
 

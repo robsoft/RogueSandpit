@@ -86,6 +86,7 @@ public class GameState
 
             door.State = DoorState.Open;
             EventLog.Add(wasLocked ? "UNLOCKED DOOR" : "OPENED DOOR");
+            EmitNoise("DOOR NOISE", 6);
             Map.UpdateVisibility(Player.X, Player.Y);
             return true;
         }
@@ -95,6 +96,7 @@ public class GameState
         {
             target.TakeDamage(Player.Damage);
             EventLog.Add($"PLAYER HIT {target.Name} {Player.Damage}");
+            EmitNoise("COMBAT", 10);
             if (target.State == NPCState.Dead)
             {
                 EventLog.Add($"{target.Name} DIED");
@@ -186,6 +188,7 @@ public class GameState
         }
 
         EventLog.Add($"DROPPED {item.Name}");
+        EmitNoise("DROP NOISE", 4);
         return true;
     }
 
@@ -213,6 +216,12 @@ public class GameState
 
         EventLog.Add("SELECT EQUIPMENT");
         return false;
+    }
+
+    private void EmitNoise(string label, int radius)
+    {
+        int listeners = Map.NotifyNoise(Player.X, Player.Y, radius);
+        if (listeners > 0) EventLog.Add($"{label} DREW {listeners} NPCS");
     }
 
 }
