@@ -13,19 +13,23 @@ builds & runs on Mac and Windows
 - Player can see entire map & NPCs in debug mode  
 - Fully turn-based, so NPCs 'pause' until the player makes a move  
 - Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
+- Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
+- Retrieve the yellow special tile and return it to the entrance to win
+- HUD displays health, damage, and objective status
+- NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
+- NPCs remember and investigate the last place they saw the player
+- Pursuing NPCs render orange-red and investigating NPCs render yellow during development
+- F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
+- A compact event log shows recent combat and objective events
  
 
 ## Pressing TODOs
-- when in debug mode, hover over a cell to find out what it is (eg Goblin-20, Room-4 etc)
 - investigate better placement of the 'special' tile
-- setting speed to !=1.0 values caused NPCs to stand on each other and warp around too much, look at this  
-- clean-up the MapCell and 'occupiedSpaces' kind of stuff into one, simpler approach  
+- continue consolidating initial placement and live actor occupancy
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
-- UI for HP, Damage etc  
 - Names & class variation for NPCs - Markov-chain generation of names? 
-- Implement the A* and Line-Of-Sight mechanics as per the RogueALike project  
-- Player to attack NPCs
+- Add richer search behaviour after an NPC reaches the last-known player position
 - Loot
 - Graphics!  
 
@@ -33,6 +37,7 @@ builds & runs on Mac and Windows
 ## Controls
 - Arrow keys (WASD will come) to move the player character
 - F1 to toggle debug/map viewer  
+- In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
 - ESCAPE to quit the game
 

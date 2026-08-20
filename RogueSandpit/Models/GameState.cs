@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace RogueSandpit.Models;
 
@@ -12,7 +9,8 @@ public class GameState
 {
     public Map Map { get; private set; }
     public Player Player { get; private set; }
-    public bool PlayerTakenTurn { get; private set; } = false;
+    public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
+    public GameEventLog EventLog { get; } = new();
 
     public GameState(Map map, Player player)
     {
@@ -20,59 +18,71 @@ public class GameState
         this.Player = player;
     }
 
-    public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState previousKeyboardState)
+    public void Update(PlayerCommand command)
     {
-        if (!PlayerTakenTurn)
-        {
-            if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
-            {
-                AttemptMove(0, -1);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Down) && !previousKeyboardState.IsKeyDown(Keys.Down))
-            {
-                AttemptMove(0, 1);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Left) && !previousKeyboardState.IsKeyDown(Keys.Left))
-            {
-                AttemptMove(-1, 0);
-            }
-            else if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
-            {
-                AttemptMove(1, 0);
-            }
+        if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
 
+        switch (command)
+        {
+            case PlayerCommand.MoveUp:
+                AttemptMove(0, -1);
+                break;
+            case PlayerCommand.MoveDown:
+                AttemptMove(0, 1);
+                break;
+            case PlayerCommand.MoveLeft:
+                AttemptMove(-1, 0);
+                break;
+            case PlayerCommand.MoveRight:
+                AttemptMove(1, 0);
+                break;
         }
-        if (!PlayerTakenTurn)
+
+        if (Outcome == GameOutcome.Won)
         {
             return;
         }
 
-        MoveNPCs(gameTime);
-        Player.Update(gameTime);
+        MoveNPCs();
+        Player.Update();
 
         if (Player.Dead)
         {
+            Outcome = GameOutcome.Lost;
+            EventLog.Add("PLAYER DIED");
             Console.WriteLine("Player is dead! Game over.");
-            return; // by bailing before resetting PlayerTakenTurn, we stop the game
+            return;
         }
-        PlayerTakenTurn = false;
     }
 
-    private void MoveNPCs(GameTime gameTime)
+    private void MoveNPCs()
     {
         foreach (BaseNPC npc in Map.NPCs)
         {
             if (npc.State == NPCState.Active)
             {
-                npc.Move(gameTime, Player);
+                npc.Move(Player, EventLog.Add);
+                if (Player.Dead) return;
             }
         }
     }
 
-    private void AttemptMove(int deltaX, int deltaY)
+    internal void AttemptMove(int deltaX, int deltaY)
     {
         int newX = Player.X + deltaX;
         int newY = Player.Y + deltaY;
+
+        BaseNPC target = Map.GetLivingNPCAt(newX, newY);
+        if (target != null)
+        {
+            target.TakeDamage(Player.Damage);
+            EventLog.Add($"PLAYER HIT {target.Name} {Player.Damage}");
+            if (target.State == NPCState.Dead)
+            {
+                EventLog.Add($"{target.Name} DIED");
+            }
+            return;
+        }
 
         if (Map.IsWalkable(newX, newY))
         {
@@ -92,8 +102,19 @@ public class GameState
                 // TODO: open the door, for now just remove it
                 Map.MapCells[newX, newY].SetCellType(MapCellType.Floor);
             }
+            else if (cell.CellType == MapCellType.Special)
+            {
+                Player.CollectSpecial();
+                cell.SetCellType(MapCellType.Floor);
+                EventLog.Add("SPECIAL COLLECTED");
+            }
+
+            if (Player.HasSpecial && newX == Map.StartPosX && newY == Map.StartPosY)
+            {
+                Outcome = GameOutcome.Won;
+                EventLog.Add("YOU ESCAPED WITH SPECIAL");
+            }
         }
-        PlayerTakenTurn = true;
     }
 
 }

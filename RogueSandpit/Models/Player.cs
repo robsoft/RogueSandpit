@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace RogueSandpit.Models;
 
@@ -18,6 +15,7 @@ public class Player
     public int Health { get; private set; } = 0;
     public int Damage { get; private set; } = 0;
     public bool Dead { get; private set; } = false;
+    public bool HasSpecial { get; private set; } = false;
     public BaseContainingElement CurrentRoom { get; set; } = null;
 
     public Player()
@@ -25,7 +23,7 @@ public class Player
         Reset();
     }
 
-    public void Update(GameTime gameTime)
+    public void Update()
     {
         Console.WriteLine($"Player is at ({X}, {Y}) with {Health} HP and {Damage} damage.");
         // any per-turn updates to the player would go here
@@ -48,6 +46,12 @@ public class Player
         Health = 100 + (RandGen.RandInt(0, 50));
         Damage = 10 + (RandGen.RandInt(0, 20));
         Dead = false;
+        HasSpecial = false;
+    }
+
+    public void CollectSpecial()
+    {
+        HasSpecial = true;
     }
 
     public void TakeDamage(int damage)

@@ -63,7 +63,6 @@ public class Goblin : BaseNPC
         Name = $"Goblin-{NPCFactory.CharacterTypeCounts[CharacterTypes.Goblin]}";
         Damage = 10 + RandGen.RandInt(0, 10);
         HP = 30 + RandGen.RandInt(0, 10);
-        Speed = 1.0f;
     }
 }
 
@@ -75,7 +74,6 @@ public class Skeleton : BaseNPC
         Name = $"Skeleton-{NPCFactory.CharacterTypeCounts[CharacterTypes.Skeleton]}";
         Damage = 5 + RandGen.RandInt(0, 10);
         HP = 40 + RandGen.RandInt(0, 10);
-        Speed = 1.0f;
     }
 }
 

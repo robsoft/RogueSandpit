@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSandpit.Models;
+using RogueSandpit.Graphics;
 
 namespace RogueSandpit
 {
@@ -12,6 +12,9 @@ namespace RogueSandpit
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private RenderTarget2D _renderTarget;
+        private PrimitiveDrawer _uiDrawer;
+        private PixelFont _pixelFont;
+        private MapRenderer _mapRenderer;
         private Rectangle _renderDestination;
         private bool _isResizing = false;
 
@@ -41,8 +44,8 @@ namespace RogueSandpit
 
         protected override void Initialize()
         {
-            _map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
-            KickOffNewGame();
+            _map = new Map(123);
+            KickOffNewGame(false);
             base.Initialize();
         }
 
@@ -50,13 +53,19 @@ namespace RogueSandpit
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             _renderTarget = new RenderTarget2D(GraphicsDevice, _nativeWidth, _nativeHeight);
+            _uiDrawer = new PrimitiveDrawer(GraphicsDevice);
+            _pixelFont = new PixelFont(GraphicsDevice);
+            _mapRenderer = new MapRenderer(GraphicsDevice, _map);
             // initial calculation of the render destination rectangle
             CalculateRenderDestination();
         }
 
-        private void KickOffNewGame()
+        private void KickOffNewGame(bool regenerateMap = true)
         {
-            _map.Initialise();
+            if (regenerateMap)
+            {
+                _map.Initialise();
+            }
             _player = new Player();
             _gameState = new GameState(_map, _player);
 
@@ -77,7 +86,7 @@ namespace RogueSandpit
             if (_currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (_player.Dead)
+            if (_gameState.Outcome != GameOutcome.Playing)
             {
                 UpdateDead(gameTime);           
             }
@@ -118,10 +127,24 @@ namespace RogueSandpit
             if (!_player.Dead)
             {
                 // this will take care of the player's turn, and the computer's responses
-                _gameState.Update(gameTime, _currentKeyboardState, _previousKeyboardState);
+                _gameState.Update(GetPlayerCommand());
             }
 
             base.Update(gameTime);
+        }
+
+        private PlayerCommand GetPlayerCommand()
+        {
+            if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
+            if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
+            if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
+            if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
+            return PlayerCommand.None;
+        }
+
+        private bool WasPressed(Keys key)
+        {
+            return _currentKeyboardState.IsKeyDown(key) && !_previousKeyboardState.IsKeyDown(key);
         }
 
         protected override void Draw(GameTime gameTime)
@@ -132,9 +155,19 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
 
-            if (!_player.Dead)
+            Point? hoveredCell = GetHoveredMapCell();
+            _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
+            DrawEventLog();
+            DrawHud();
+
+            if (_map.RenderMode == RenderMode.Cells && hoveredCell.HasValue)
             {
-                _map.Display(_spriteBatch);
+                DrawDebugInspection(hoveredCell.Value);
+            }
+
+            if (_gameState.Outcome != GameOutcome.Playing)
+            {
+                DrawEndScreen();
             }
             _spriteBatch.End();
 
@@ -146,6 +179,99 @@ namespace RogueSandpit
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void DrawHud()
+        {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, _nativeWidth, 20), Color.Black);
+            string specialStatus = _player.HasSpecial ? "YES" : "NO";
+            _pixelFont.DrawText(_spriteBatch,
+                $"HP {_player.Health}  DMG {_player.Damage}  SPECIAL {specialStatus}",
+                new Vector2(6, 583), 2, Color.White);
+        }
+
+        private void DrawEventLog()
+        {
+            if (_gameState.EventLog.Entries.Count == 0) return;
+
+            const int panelX = 5;
+            const int panelY = 5;
+            int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, 285, panelHeight), Color.Black * 0.75f);
+
+            for (int i = 0; i < _gameState.EventLog.Entries.Count; i++)
+            {
+                _pixelFont.DrawText(_spriteBatch, _gameState.EventLog.Entries[i],
+                    new Vector2(panelX + 5, panelY + 5 + i * 12), 1, Color.White);
+            }
+        }
+
+        private Point? GetHoveredMapCell()
+        {
+            if (_map.RenderMode != RenderMode.Cells) return null;
+
+            Point mousePosition = Mouse.GetState().Position;
+            return ViewportMapper.TryWindowToMapCell(mousePosition, _renderDestination,
+                _nativeWidth, _nativeHeight, _map, out Point mapCell)
+                ? mapCell
+                : null;
+        }
+
+        private void DrawDebugInspection(Point position)
+        {
+            const int panelX = 485;
+            const int panelY = 5;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 112), Color.Black * 0.9f);
+
+            MapCell cell = _map.MapCells[position.X, position.Y];
+            _pixelFont.DrawText(_spriteBatch,
+                $"CELL {position.X} {position.Y} {cell.CellType}",
+                new Vector2(panelX + 6, panelY + 6), 2, Color.White);
+
+            string parentType = cell.ParentElement?.GetType().Name ?? "NONE";
+            string parentName = cell.ParentElement?.Name ?? "";
+            _pixelFont.DrawText(_spriteBatch, $"PARENT {parentType} {parentName}",
+                new Vector2(panelX + 6, panelY + 27), 1, Color.LightGray);
+
+            BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
+            if (npc == null)
+            {
+                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
+                return;
+            }
+
+            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.Name} HP {npc.HP} DMG {npc.Damage}",
+                new Vector2(panelX + 6, panelY + 43), 1, Color.White);
+            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
+                new Vector2(panelX + 6, panelY + 59), 1, Color.White);
+
+            string lastKnown = npc.LastKnownPlayerPosition is { } target
+                ? $"{target.X} {target.Y}"
+                : "NONE";
+            _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown}",
+                new Vector2(panelX + 6, panelY + 75), 1, Color.White);
+
+            bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
+            _pixelFont.DrawText(_spriteBatch, $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")}",
+                new Vector2(panelX + 6, panelY + 91), 1,
+                hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
+        }
+
+        private void DrawEndScreen()
+        {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(150, 205, 500, 170), Color.Black * 0.9f);
+
+            string heading = _gameState.Outcome == GameOutcome.Won ? "YOU WIN" : "GAME OVER";
+            Color headingColor = _gameState.Outcome == GameOutcome.Won ? Color.Yellow : Color.Red;
+            int headingScale = 5;
+            int headingX = (_nativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
+            _pixelFont.DrawText(_spriteBatch, heading, new Vector2(headingX, 240), headingScale, headingColor);
+
+            const string restartText = "SPACE TO RESTART";
+            int restartScale = 3;
+            int restartX = (_nativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
+            _pixelFont.DrawText(_spriteBatch, restartText, new Vector2(restartX, 320), restartScale, Color.White);
         }
 
 

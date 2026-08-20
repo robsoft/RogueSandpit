@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, NPCs adjacent to the player deal damage, F1 toggles a debug map view that reveals the whole map and NPCs, SPACE restarts with a new map.
+Current gameplay: move with arrow keys, bump into NPCs to attack, retrieve the yellow special tile and return it to the entrance to win. NPCs adjacent to the player deal damage. F1 toggles a debug map view that reveals the whole map; hovering a cell inspects it and hovering an NPC shows its path and line of sight. SPACE restarts with a new map.
 
 ## Build & run
 
@@ -20,7 +20,7 @@ dotnet run        # launches the game window
 
 There's also a VS Code launch config (`RogueSandpit/.vscode/launch.json`, "C#: RogueSandpit Debug") and a solution file at the repo root (`RogueSandpit.slnx`) if you'd rather open it in an IDE. The README states it builds & runs on both Mac and Windows.
 
-No test project exists yet — there's nothing to run beyond building/launching.
+Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from the repository root.
 
 ## Controls
 
@@ -34,31 +34,26 @@ No test project exists yet — there's nothing to run beyond building/launching.
 ## Architecture
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
-- **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, keyboard state diffing (current vs previous frame, to detect key-*press* rather than key-*down*), and window resize/aspect-ratio handling (renders to a fixed-size `RenderTarget2D` then scales it to the window). Delegates actual gameplay to `GameState`.
-- **`Models/GameState.cs`** — turn logic. Reads player input, calls `Map.IsWalkable` before moving, then advances NPCs and the player for that turn. A move only "counts" (`PlayerTakenTurn`) once an arrow key is pressed, even if the player walked into a wall.
-- **`Models/Map.cs`** (the biggest file) — procedural map generation: rooms, corridors, doorways, cell types (`Wall`/`Floor`/`Door`/`Special`), plus rendering (`RenderMode.Rooms` vs `RenderMode.Cells` for debug view).
-- **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI (currently: random wandering within a room, attacks when adjacent to the player; chase/line-of-sight/A* logic is stubbed out in comments, not wired up).
-- **`Models/PathFinding.cs`** — A* groundwork referenced by NPC comments but not yet in use.
+- **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
+- **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement. It also owns the bounded `GameEventLog` used by the on-screen event feed.
+- **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
+- **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering. `Awareness` and `LastKnownPlayerPosition` describe current tactical state while `HasSeenPlayer` records historical awareness.
+- **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").
-- **`Graphics/PrimitiveDrawer.cs`** — simple shape/primitive rendering helpers used since there's no sprite art yet.
+- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, **`PixelFont.cs`**, and **`ViewportMapper.cs`** — map/UI presentation kept separate from simulation rules. Debug mode supports scaled mouse-to-cell inspection, path overlays, and line-of-sight lines. Pursuing NPCs are temporarily orange-red and investigating NPCs yellow.
 - **`Content/`** — MonoGame Content Pipeline (`Content.mgcb`); currently minimal/no real assets, matching the "Graphics!" TODO in the README.
 
 ## Current state (per README + code)
 
-Working: map generation, player movement, NPCs that damage the player on contact, debug map view, turn-based flow.
-
-**Uncommitted work in progress** (`RogueSandpit/GameWrapper.cs` has local changes not yet committed): splitting `Update`/`Draw` into live vs. dead-player states — when the player's `Health` hits 0 (`Player.Dead`), the map stops rendering and the only input handled is SPACE to restart. This looks like an in-progress "game over" screen; worth finishing (e.g. actually showing a game-over message rather than just blanking the screen) or committing once it feels done.
+Working: map generation, player movement and bump combat, non-overlapping actors, NPC attacks and death, a retrieve-and-return objective, HUD, visible win/loss states, debug map view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
-- No hover-to-inspect in debug mode yet.
-- `Special` tile placement needs better logic.
-- NPC `Speed != 1.0` causes stacking/warping bugs.
-- `MapCell`/`occupiedSpaces` tracking should be simplified/unified.
+- Initial placement and live actor occupancy could be consolidated further.
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
-- No combat from the player side yet (NPCs can hit the player; the player can't hit back), no loot, no UI (HP/damage aren't displayed anywhere on screen).
-- A*/line-of-sight NPC AI is scaffolded (see `PathFinding.cs` and commented-out code in `BaseNPC.Move`) but disabled.
+- There is no general inventory or loot yet.
+- Investigation currently ends immediately at the last-known cell; NPCs do not yet search nearby branches or share awareness.
 
 ## Where to look for "what's next"
 
