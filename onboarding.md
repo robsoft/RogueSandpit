@@ -37,11 +37,11 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 - **`GameWrapper.cs`** — the MonoGame `Game` subclass. Owns the update/draw loop, translates key presses into `PlayerCommand` values, and handles window resizing/aspect ratio. Delegates gameplay to `GameState` and drawing to renderers.
 - **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement.
 - **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
-- **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, and otherwise wander. `IsPursuingPlayer` describes current tactical state while `HasSeenPlayer` records historical awareness.
+- **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering. `Awareness` and `LastKnownPlayerPosition` describe current tactical state while `HasSeenPlayer` records historical awareness.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").
-- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, and **`PixelFont.cs`** — map/UI presentation kept separate from simulation rules; simple primitives are used since there's no sprite art yet. Pursuing NPCs are temporarily rendered orange-red for AI debugging.
+- **`Graphics/MapRenderer.cs`**, **`PrimitiveDrawer.cs`**, and **`PixelFont.cs`** — map/UI presentation kept separate from simulation rules; simple primitives are used since there's no sprite art yet. Pursuing NPCs are temporarily orange-red and investigating NPCs yellow for AI debugging.
 - **`Content/`** — MonoGame Content Pipeline (`Content.mgcb`); currently minimal/no real assets, matching the "Graphics!" TODO in the README.
 
 ## Current state (per README + code)
@@ -54,7 +54,7 @@ Known rough edges (from the README's "Pressing TODOs"):
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
 - There is no general inventory or loot yet.
-- NPC awareness has no memory yet: an enemy that loses line of sight immediately returns to wandering.
+- Investigation currently ends immediately at the last-known cell; NPCs do not yet search nearby branches or share awareness.
 
 ## Where to look for "what's next"
 

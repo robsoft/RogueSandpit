@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Intrinsics.X86;
 namespace RogueSandpit.Models;
 
 
@@ -28,7 +27,9 @@ public abstract class BaseNPC
 
     public Visibility Visibility { get; set; } = Visibility.Hidden;
     public bool HasSeenPlayer { get; private set; } = false;
-    public bool IsPursuingPlayer { get; private set; } = false;
+    public NPCAwareness Awareness { get; private set; } = NPCAwareness.Unaware;
+    public (int X, int Y)? LastKnownPlayerPosition { get; private set; }
+    public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
 
 
     // this is where the NPC starts out from, and is where it will 'home' back to when it can't find a target   
@@ -55,40 +56,64 @@ public abstract class BaseNPC
         if (HP <= 0)
         {
             State = NPCState.Dead;
-            IsPursuingPlayer = false;
+            Awareness = NPCAwareness.Unaware;
+            LastKnownPlayerPosition = null;
             Console.WriteLine($"{Name} has been killed!");
         }
     }
 
     public void Move(Player player)
     {
-        IsPursuingPlayer = false;
-
-        // Check if adjacent for attack
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
-        if (dx + dy == 1)
-        {
-            IsPursuingPlayer = true;
-            // Attack
-            Console.WriteLine($"{Name} attacked player with {Damage} damage!");
-            player.TakeDamage(Damage);
-            return;
-        }
 
         if (dx + dy <= SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
         {
             HasSeenPlayer = true;
-            var path = Pathfinding.FindPath(Map, X, Y, player.X, player.Y, this);
-            if (path.Count > 0)
+            Awareness = NPCAwareness.Pursuing;
+            LastKnownPlayerPosition = (player.X, player.Y);
+
+            if (dx + dy == 1)
             {
-                IsPursuingPlayer = true;
-                MoveTo(path[0].X, path[0].Y);
+                Console.WriteLine($"{Name} attacked player with {Damage} damage!");
+                player.TakeDamage(Damage);
                 return;
             }
+
+            MoveToward(player.X, player.Y);
+            return;
         }
 
-        // Player not seen, random move within room
+        if (LastKnownPlayerPosition is { } lastKnownPosition)
+        {
+            Awareness = NPCAwareness.Investigating;
+            if (X == lastKnownPosition.X && Y == lastKnownPosition.Y)
+            {
+                LastKnownPlayerPosition = null;
+                Awareness = NPCAwareness.Unaware;
+                Wander(player);
+                return;
+            }
+
+            MoveToward(lastKnownPosition.X, lastKnownPosition.Y);
+            return;
+        }
+
+        Awareness = NPCAwareness.Unaware;
+        Wander(player);
+    }
+
+    private void MoveToward(int targetX, int targetY)
+    {
+        var path = Pathfinding.FindPath(Map, X, Y, targetX, targetY, this);
+        if (path.Count > 0)
+        {
+            MoveTo(path[0].X, path[0].Y);
+        }
+    }
+
+    private void Wander(Player player)
+    {
         var newX = X;
         var newY = Y;
         // chance of just changing direction mid-flight

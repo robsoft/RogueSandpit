@@ -17,7 +17,8 @@ builds & runs on Mac and Windows
 - Retrieve the yellow special tile and return it to the entrance to win
 - HUD displays health, damage, and objective status
 - NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
-- Pursuing NPCs render orange-red during development so their current AI state is visible
+- NPCs remember and investigate the last place they saw the player
+- Pursuing NPCs render orange-red and investigating NPCs render yellow during development
  
 
 ## Pressing TODOs
@@ -27,7 +28,7 @@ builds & runs on Mac and Windows
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - Names & class variation for NPCs - Markov-chain generation of names? 
-- Add last-known-position investigation or other richer NPC awareness
+- Add richer search behaviour after an NPC reaches the last-known player position
 - Loot
 - Graphics!  
 

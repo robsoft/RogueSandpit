@@ -72,7 +72,12 @@ public class MapRenderer
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
-            Color npcColor = npc.IsPursuingPlayer ? Color.OrangeRed : Color.Black;
+            Color npcColor = npc.Awareness switch
+            {
+                NPCAwareness.Pursuing => Color.OrangeRed,
+                NPCAwareness.Investigating => Color.Yellow,
+                _ => Color.Black
+            };
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
                 npcColor);
@@ -144,7 +149,12 @@ public class MapRenderer
             if (npc.State == NPCState.Dead) continue;
             if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
             {
-                Color npcColor = npc.IsPursuingPlayer ? Color.OrangeRed : Color.Red;
+                Color npcColor = npc.Awareness switch
+                {
+                    NPCAwareness.Pursuing => Color.OrangeRed,
+                    NPCAwareness.Investigating => Color.Yellow,
+                    _ => Color.Red
+                };
                 _drawer.DrawFilledRectangle(spriteBatch,
                     new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale,
                         _map.CellScale, _map.CellScale), npcColor);

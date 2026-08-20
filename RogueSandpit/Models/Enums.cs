@@ -17,4 +17,5 @@ public enum RenderMode { Rooms, Cells };
 public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };
 public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight };
+public enum NPCAwareness { Unaware, Pursuing, Investigating };
 

@@ -38,6 +38,8 @@ public class GameStateTests
 
         Assert.Equal(NPCState.Dead, npc.State);
         Assert.False(map.IsOccupiedByLivingNPC(x + 1, y));
+        Assert.Equal(NPCAwareness.Unaware, npc.Awareness);
+        Assert.Null(npc.LastKnownPlayerPosition);
     }
 
     [Fact]
