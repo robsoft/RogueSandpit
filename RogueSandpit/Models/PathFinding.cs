@@ -1,98 +1,89 @@
-using System.Collections.Generic;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace RogueSandpit.Models;
 
 public static class Pathfinding
 {
-    /*
-    public static List<(int, int)> AStar(Dungeon dungeon, int startX, int startY, int goalX, int goalY)
+    private static readonly (int X, int Y)[] Directions =
+    [
+        (0, -1),
+        (-1, 0),
+        (1, 0),
+        (0, 1)
+    ];
+
+    public static List<(int X, int Y)> FindPath(
+        Map map,
+        int startX,
+        int startY,
+        int goalX,
+        int goalY,
+        BaseNPC movingNpc = null)
     {
-        var openSet = new List<Node>();
-        var closedSet = new HashSet<(int, int)>();
-        var cameFrom = new Dictionary<(int, int), (int, int)>();
+        var start = (X: startX, Y: startY);
+        var goal = (X: goalX, Y: goalY);
+        if (start == goal) return [];
+        if (!map.IsWalkable(goalX, goalY)) return [];
 
-        openSet.Add(new Node(startX, startY, 0, Heuristic(startX, startY, goalX, goalY)));
+        var frontier = new PriorityQueue<(int X, int Y), int>();
+        var cameFrom = new Dictionary<(int X, int Y), (int X, int Y)>();
+        var costSoFar = new Dictionary<(int X, int Y), int> { [start] = 0 };
+        frontier.Enqueue(start, Heuristic(start, goal));
 
-        while (openSet.Count > 0)
+        while (frontier.TryDequeue(out var current, out _))
         {
-            openSet.Sort((a, b) => a.F.CompareTo(b.F));
-            var current = openSet[0];
-            openSet.RemoveAt(0);
-
-            if (current.X == goalX && current.Y == goalY)
+            if (current == goal)
             {
-                return ReconstructPath(cameFrom, (goalX, goalY));
+                return ReconstructPath(cameFrom, start, goal);
             }
 
-            closedSet.Add((current.X, current.Y));
-
-            foreach (var neighbor in GetNeighbors(dungeon, current.X, current.Y))
+            foreach ((int dx, int dy) in Directions)
             {
-                if (closedSet.Contains(neighbor)) continue;
+                var next = (X: current.X + dx, Y: current.Y + dy);
+                if (!CanEnter(map, next, movingNpc)) continue;
 
-                var tentativeG = current.G + 1;
-                var node = openSet.Find(n => n.X == neighbor.Item1 && n.Y == neighbor.Item2);
-                if (node == null)
-                {
-                    node = new Node(neighbor.Item1, neighbor.Item2, tentativeG, Heuristic(neighbor.Item1, neighbor.Item2, goalX, goalY));
-                    openSet.Add(node);
-                    cameFrom[neighbor] = (current.X, current.Y);
-                }
-                else if (tentativeG < node.G)
-                {
-                    node.G = tentativeG;
-                    node.F = node.G + node.H;
-                    cameFrom[neighbor] = (current.X, current.Y);
-                }
+                int newCost = costSoFar[current] + 1;
+                if (costSoFar.TryGetValue(next, out int existingCost) && newCost >= existingCost) continue;
+
+                costSoFar[next] = newCost;
+                cameFrom[next] = current;
+                frontier.Enqueue(next, newCost + Heuristic(next, goal));
             }
         }
 
-        return new List<(int, int)>(); // No path
+        return [];
     }
 
-    private static int Heuristic(int x1, int y1, int x2, int y2)
+    private static bool CanEnter(
+        Map map,
+        (int X, int Y) position,
+        BaseNPC movingNpc)
     {
-        return Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
+        if (!map.IsWalkable(position.X, position.Y)) return false;
+        return !map.IsOccupiedByLivingNPC(position.X, position.Y, movingNpc);
     }
 
-    private static List<(int, int)> GetNeighbors(Dungeon dungeon, int x, int y)
+    private static int Heuristic((int X, int Y) from, (int X, int Y) to)
     {
-        var neighbors = new List<(int, int)>();
-        int[] dx = { 0, 1, 0, -1 };
-        int[] dy = { 1, 0, -1, 0 };
-        for (int i = 0; i < 4; i++)
-        {
-            int nx = x + dx[i];
-            int ny = y + dy[i];
-            if (dungeon.IsWalkable(nx, ny) && !dungeon.Enemies.Any(e => e.X == nx && e.Y == ny))
-            {
-                neighbors.Add((nx, ny));
-            }
-        }
-        return neighbors;
+        return Math.Abs(from.X - to.X) + Math.Abs(from.Y - to.Y);
     }
 
-    private static List<(int, int)> ReconstructPath(Dictionary<(int, int), (int, int)> cameFrom, (int, int) current)
+    private static List<(int X, int Y)> ReconstructPath(
+        Dictionary<(int X, int Y), (int X, int Y)> cameFrom,
+        (int X, int Y) start,
+        (int X, int Y) goal)
     {
-        var path = new List<(int, int)>();
-        while (cameFrom.ContainsKey(current))
+        var path = new List<(int X, int Y)>();
+        var current = goal;
+
+        while (current != start)
         {
             path.Add(current);
             current = cameFrom[current];
         }
+
         path.Reverse();
         return path;
     }
-
-    private class Node
-    {
-        public int X, Y, G, H, F;
-        public Node(int x, int y, int g, int h)
-        {
-            X = x; Y = y; G = g; H = h; F = g + h;
-        }
-    }
-    */
 }

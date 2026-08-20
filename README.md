@@ -16,6 +16,7 @@ builds & runs on Mac and Windows
 - Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
 - Retrieve the yellow special tile and return it to the entrance to win
 - HUD displays health, damage, and objective status
+- NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
  
 
 ## Pressing TODOs
@@ -25,7 +26,7 @@ builds & runs on Mac and Windows
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - Names & class variation for NPCs - Markov-chain generation of names? 
-- Implement the A* and Line-Of-Sight mechanics as per the RogueALike project  
+- Add last-known-position investigation or other richer NPC awareness
 - Loot
 - Graphics!  
 

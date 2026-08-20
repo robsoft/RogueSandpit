@@ -5,6 +5,8 @@ namespace RogueSandpit.Models;
 
 public abstract class BaseNPC
 {
+    private const int SightRange = 12;
+
     public Guid Id { get; private set; } = Guid.NewGuid();
     public BaseContainingElement CurrentRoom { get; private set; }
     public string Description { get; set; } = String.Empty;
@@ -61,7 +63,7 @@ public abstract class BaseNPC
         // Check if adjacent for attack
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
-        if (dx <= 1 && dy <= 1 && (dx + dy) > 0)
+        if (dx + dy == 1)
         {
             // Attack
             Console.WriteLine($"{Name} attacked player with {Damage} damage!");
@@ -69,28 +71,20 @@ public abstract class BaseNPC
             return;
         }
 
-        /*
-
-                if (Room.Contains(player.X, player.Y) || HasSeenPlayer)
-                {
-                    HasSeenPlayer = true;
-                    // Chase if in line of sight
-                    if (dungeon.HasLineOfSight(X, Y, player.X, player.Y))
-                    {
-                        var path = Pathfinding.AStar(dungeon, X, Y, player.X, player.Y);
-                        if (path.Count > 0)
-                        {
-                            var next = path[0];
-                            X = next.Item1;
-                            Y = next.Item2;
-                        }
-                    }
-                {*/
+        if (dx + dy <= SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
+        {
+            HasSeenPlayer = true;
+            var path = Pathfinding.FindPath(Map, X, Y, player.X, player.Y, this);
+            if (path.Count > 0)
+            {
+                MoveTo(path[0].X, path[0].Y);
+                return;
+            }
+        }
 
         // Player not seen, random move within room
         var newX = X;
         var newY = Y;
-        var lastDirection = (int)Direction;
         // chance of just changing direction mid-flight
         if (RandGen.RandInt(0, 100) < 15)
         {
@@ -116,6 +110,11 @@ public abstract class BaseNPC
             }
         }
 
+        MoveTo(newX, newY);
+    }
+
+    private void MoveTo(int newX, int newY)
+    {
         X = newX;
         Y = newY;
 

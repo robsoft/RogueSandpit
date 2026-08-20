@@ -335,7 +335,7 @@ public class Map
     }
 
 
-    private bool HasLineOfSight(int x1, int y1, int x2, int y2)
+    public bool HasLineOfSight(int x1, int y1, int x2, int y2)
     {
         int dx = Math.Abs(x2 - x1);
         int dy = Math.Abs(y2 - y1);
