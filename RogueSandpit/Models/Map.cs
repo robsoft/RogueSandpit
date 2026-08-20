@@ -375,6 +375,29 @@ public class Map
 
     public bool HasLineOfSight(int x1, int y1, int x2, int y2)
     {
+        return TraceLineOfSight(x1, y1, x2, y2, false);
+    }
+
+    public void UpdateVisibility(int playerX, int playerY, int sightRange = 12)
+    {
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                MapCells[x, y].IsVisible = false;
+                int dx = x - playerX;
+                int dy = y - playerY;
+                if (dx * dx + dy * dy > sightRange * sightRange) continue;
+                if (!TraceLineOfSight(playerX, playerY, x, y, true)) continue;
+
+                MapCells[x, y].IsVisible = true;
+                MapCells[x, y].IsDiscovered = true;
+            }
+        }
+    }
+
+    private bool TraceLineOfSight(int x1, int y1, int x2, int y2, bool includeOpaqueTarget)
+    {
         int dx = Math.Abs(x2 - x1);
         int dy = Math.Abs(y2 - y1);
         int sx = x1 < x2 ? 1 : -1;
@@ -383,8 +406,11 @@ public class Map
 
         while (true)
         {
+            if (x1 == x2 && y1 == y2)
+            {
+                return includeOpaqueTarget || IsWalkable(x1, y1);
+            }
             if (!IsWalkable(x1, y1)) return false;
-            if (x1 == x2 && y1 == y2) break;
             int e2 = 2 * err;
             if (e2 > -dy)
             {
@@ -397,7 +423,6 @@ public class Map
                 y1 += sy;
             }
         }
-        return true;
     }
 
     public bool IsWalkable(int x, int y)

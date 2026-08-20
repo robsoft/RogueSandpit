@@ -11,6 +11,7 @@ builds & runs on Mac and Windows
 - Map is generated with rooms and corridors  
 - NPCs do damage to the player if they're adjacent  
 - Player can see entire map & NPCs in debug mode  
+- Normal play uses persistent fog-of-war; F1 remains an omniscient developer view
 - Fully turn-based, so NPCs 'pause' until the player makes a move  
 - Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
 - Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
@@ -18,6 +19,7 @@ builds & runs on Mac and Windows
 - HUD displays health, damage, and objective status
 - NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
 - NPCs remember and investigate the last place they saw the player
+- Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names and distinct combat profiles
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - A compact event log shows recent combat and objective events
@@ -31,7 +33,6 @@ builds & runs on Mac and Windows
 ## Pressing TODOs
 - continue consolidating initial placement and live actor occupancy
 - refactor Player class so it handles it's own moves, knows about Map etc  
-- Names & class variation for NPCs - Markov-chain generation of names? 
 - Extend local NPC searching with prediction, hearing, or shared awareness
 - Graphics!  
 

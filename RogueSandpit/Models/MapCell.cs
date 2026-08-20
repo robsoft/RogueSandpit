@@ -13,6 +13,8 @@ public class MapCell
     public int Y { get; private set; }
     public MapCellType CellType { get; private set; }
     public BaseContainingElement ParentElement { get; private set; }
+    public bool IsVisible { get; set; }
+    public bool IsDiscovered { get; set; }
 
     public MapCell(int x, int y, MapCellType cellType, BaseContainingElement parentElement = null)
     {
