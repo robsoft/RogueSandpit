@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+
 namespace RogueSandpit.Models;
 
 
 public abstract class BaseNPC
 {
     private const int SightRange = 12;
+    private readonly Queue<(int X, int Y)> _searchTargets = new();
+    private bool _isLocalSearching;
 
     public Guid Id { get; private set; } = Guid.NewGuid();
     public BaseContainingElement CurrentRoom { get; private set; }
@@ -30,6 +34,8 @@ public abstract class BaseNPC
     public bool HasSeenPlayer { get; private set; } = false;
     public NPCAwareness Awareness { get; private set; } = NPCAwareness.Unaware;
     public (int X, int Y)? LastKnownPlayerPosition { get; private set; }
+    public (int X, int Y)? InvestigationTarget =>
+        _searchTargets.Count > 0 ? _searchTargets.Peek() : LastKnownPlayerPosition;
     public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
 
 
@@ -59,6 +65,8 @@ public abstract class BaseNPC
             State = NPCState.Dead;
             Awareness = NPCAwareness.Unaware;
             LastKnownPlayerPosition = null;
+            _searchTargets.Clear();
+            _isLocalSearching = false;
             Console.WriteLine($"{Name} has been killed!");
         }
     }
@@ -73,6 +81,8 @@ public abstract class BaseNPC
             HasSeenPlayer = true;
             Awareness = NPCAwareness.Pursuing;
             LastKnownPlayerPosition = (player.X, player.Y);
+            _searchTargets.Clear();
+            _isLocalSearching = false;
 
             if (dx + dy == 1)
             {
@@ -89,20 +99,52 @@ public abstract class BaseNPC
         if (LastKnownPlayerPosition is { } lastKnownPosition)
         {
             Awareness = NPCAwareness.Investigating;
-            if (X == lastKnownPosition.X && Y == lastKnownPosition.Y)
+            if (!_isLocalSearching && (X != lastKnownPosition.X || Y != lastKnownPosition.Y))
             {
-                LastKnownPlayerPosition = null;
-                Awareness = NPCAwareness.Unaware;
-                Wander(player);
+                MoveToward(lastKnownPosition.X, lastKnownPosition.Y);
                 return;
             }
 
-            MoveToward(lastKnownPosition.X, lastKnownPosition.Y);
+            if (!_isLocalSearching)
+            {
+                BeginLocalSearch(lastKnownPosition);
+            }
+
+            if (_searchTargets.Count > 0 && X == _searchTargets.Peek().X && Y == _searchTargets.Peek().Y)
+            {
+                _searchTargets.Dequeue();
+            }
+
+            if (_searchTargets.Count == 0)
+            {
+                LastKnownPlayerPosition = null;
+                Awareness = NPCAwareness.Unaware;
+                _isLocalSearching = false;
+                return;
+            }
+
+            (int targetX, int targetY) = _searchTargets.Peek();
+            MoveToward(targetX, targetY);
             return;
         }
 
         Awareness = NPCAwareness.Unaware;
         Wander(player);
+    }
+
+    private void BeginLocalSearch((int X, int Y) origin)
+    {
+        _isLocalSearching = true;
+
+        foreach ((int dx, int dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
+        {
+            int targetX = origin.X + dx;
+            int targetY = origin.Y + dy;
+            if (Map.IsWalkable(targetX, targetY))
+            {
+                _searchTargets.Enqueue((targetX, targetY));
+            }
+        }
     }
 
     private void MoveToward(int targetX, int targetY)

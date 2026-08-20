@@ -32,7 +32,7 @@ builds & runs on Mac and Windows
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - Names & class variation for NPCs - Markov-chain generation of names? 
-- Add richer search behaviour after an NPC reaches the last-known player position
+- Extend local NPC searching with prediction, hearing, or shared awareness
 - Graphics!  
 
 

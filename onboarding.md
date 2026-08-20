@@ -55,7 +55,7 @@ Known rough edges (from the README's "Pressing TODOs"):
 - Initial placement and live actor occupancy could be consolidated further.
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
-- Investigation currently ends immediately at the last-known cell; NPCs do not yet search nearby branches or share awareness.
+- NPC local searches are deliberately short and do not yet predict exits, react to sound, or share awareness.
 
 ## Where to look for "what's next"
 

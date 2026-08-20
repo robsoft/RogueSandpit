@@ -63,7 +63,7 @@ public class MapRenderer
             (int X, int Y)? target = npc.Awareness switch
             {
                 NPCAwareness.Pursuing => (player.X, player.Y),
-                NPCAwareness.Investigating => npc.LastKnownPlayerPosition,
+                NPCAwareness.Investigating => npc.InvestigationTarget,
                 _ => null
             };
 
