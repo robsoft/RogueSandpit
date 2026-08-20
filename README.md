@@ -21,6 +21,8 @@ builds & runs on Mac and Windows
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - A compact event log shows recent combat and objective events
+- Reachable potions, weapons, and keys can be collected in an eight-slot inventory
+- H uses a healing potion; E equips a carried weapon; defeated NPCs may drop loot
  
 
 ## Pressing TODOs
@@ -30,12 +32,13 @@ builds & runs on Mac and Windows
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
 - Names & class variation for NPCs - Markov-chain generation of names? 
 - Add richer search behaviour after an NPC reaches the last-known player position
-- Loot
 - Graphics!  
 
 
 ## Controls
 - Arrow keys (WASD will come) to move the player character
+- H to use a healing potion
+- E to equip the next carried weapon
 - F1 to toggle debug/map viewer  
 - In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
@@ -45,11 +48,11 @@ builds & runs on Mac and Windows
 ## Intended Features
 - Exits to be shown inside the room (it's not a bug, it's an undesired feature right now)  
 - Player character with movement and combat mechanics  
-- Items that can be collected and used  
+- Items that can be collected and used, with additional item types to come
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
 - Some doors require keys to open  
 - Other doors may use-up a 'move' to open, so you can't just walk straight through them  
-- An inventory system with items that can be equipped and used, a limit on weight/count  
+- Extend the current count-limited inventory with menus, dropping, and possibly weight
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    

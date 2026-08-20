@@ -22,21 +22,18 @@ public class GameState
     {
         if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
 
-        switch (command)
+        bool turnTaken = command switch
         {
-            case PlayerCommand.MoveUp:
-                AttemptMove(0, -1);
-                break;
-            case PlayerCommand.MoveDown:
-                AttemptMove(0, 1);
-                break;
-            case PlayerCommand.MoveLeft:
-                AttemptMove(-1, 0);
-                break;
-            case PlayerCommand.MoveRight:
-                AttemptMove(1, 0);
-                break;
-        }
+            PlayerCommand.MoveUp => AttemptMove(0, -1),
+            PlayerCommand.MoveDown => AttemptMove(0, 1),
+            PlayerCommand.MoveLeft => AttemptMove(-1, 0),
+            PlayerCommand.MoveRight => AttemptMove(1, 0),
+            PlayerCommand.UsePotion => UsePotion(),
+            PlayerCommand.EquipWeapon => EquipWeapon(),
+            _ => false
+        };
+
+        if (!turnTaken) return;
 
         if (Outcome == GameOutcome.Won)
         {
@@ -67,7 +64,7 @@ public class GameState
         }
     }
 
-    internal void AttemptMove(int deltaX, int deltaY)
+    internal bool AttemptMove(int deltaX, int deltaY)
     {
         int newX = Player.X + deltaX;
         int newY = Player.Y + deltaY;
@@ -80,8 +77,13 @@ public class GameState
             if (target.State == NPCState.Dead)
             {
                 EventLog.Add($"{target.Name} DIED");
+                if (Map.DropItem(target.HeldItem, target.X, target.Y))
+                {
+                    EventLog.Add($"{target.Name} DROPPED {target.HeldItem.Name}");
+                    target.HeldItem = null;
+                }
             }
-            return;
+            return true;
         }
 
         if (Map.IsWalkable(newX, newY))
@@ -109,12 +111,66 @@ public class GameState
                 EventLog.Add("SPECIAL COLLECTED");
             }
 
+            TryPickupGroundItem(newX, newY);
+
             if (Player.HasSpecial && newX == Map.StartPosX && newY == Map.StartPosY)
             {
                 Outcome = GameOutcome.Won;
                 EventLog.Add("YOU ESCAPED WITH SPECIAL");
             }
         }
+        return true;
+    }
+
+    private void TryPickupGroundItem(int x, int y)
+    {
+        GroundItem groundItem = Map.GetGroundItemAt(x, y);
+        if (groundItem == null) return;
+
+        if (!Player.Inventory.TryAdd(groundItem.Item))
+        {
+            EventLog.Add($"INVENTORY FULL {groundItem.Item.Name}");
+            return;
+        }
+
+        Map.RemoveGroundItem(groundItem);
+        EventLog.Add($"PICKED UP {groundItem.Item.Name}");
+    }
+
+    private bool UsePotion()
+    {
+        Item potion = Player.Inventory.FindFirst(ItemType.HealingPotion);
+        if (potion == null)
+        {
+            EventLog.Add("NO HEALING POTION");
+            return false;
+        }
+
+        int healed = Player.Heal(potion.Power);
+        if (healed == 0)
+        {
+            EventLog.Add("HEALTH FULL");
+            return false;
+        }
+
+        Player.Inventory.Remove(potion);
+        EventLog.Add($"HEALED {healed}");
+        return true;
+    }
+
+    private bool EquipWeapon()
+    {
+        Item weapon = Player.Inventory.Items.FirstOrDefault(item =>
+            item.Type == ItemType.Weapon && item != Player.EquippedWeapon);
+        if (weapon == null)
+        {
+            EventLog.Add("NO WEAPON TO EQUIP");
+            return false;
+        }
+
+        Player.Equip(weapon);
+        EventLog.Add($"EQUIPPED {weapon.Name}");
+        return true;
     }
 
 }

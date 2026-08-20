@@ -139,6 +139,8 @@ namespace RogueSandpit
             if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
             if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
+            if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
+            if (WasPressed(Keys.E)) return PlayerCommand.EquipWeapon;
             return PlayerCommand.None;
         }
 
@@ -185,9 +187,10 @@ namespace RogueSandpit
         {
             _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, _nativeWidth, 20), Color.Black);
             string specialStatus = _player.HasSpecial ? "YES" : "NO";
+            string weaponName = _player.EquippedWeapon?.Name ?? "NONE";
             _pixelFont.DrawText(_spriteBatch,
-                $"HP {_player.Health}  DMG {_player.Damage}  SPECIAL {specialStatus}",
-                new Vector2(6, 583), 2, Color.White);
+                $"HP {_player.Health} OF {_player.MaxHealth} DMG {_player.Damage} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} WPN {weaponName}",
+                new Vector2(6, 585), 1, Color.White);
         }
 
         private void DrawEventLog()
@@ -222,7 +225,7 @@ namespace RogueSandpit
         {
             const int panelX = 485;
             const int panelY = 5;
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 112), Color.Black * 0.9f);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 128), Color.Black * 0.9f);
 
             MapCell cell = _map.MapCells[position.X, position.Y];
             _pixelFont.DrawText(_spriteBatch,
@@ -234,27 +237,32 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch, $"PARENT {parentType} {parentName}",
                 new Vector2(panelX + 6, panelY + 27), 1, Color.LightGray);
 
+            GroundItem groundItem = _map.GetGroundItemAt(position.X, position.Y);
+            string itemName = groundItem?.Item.Name ?? "NONE";
+            _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName}",
+                new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
+
             BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
             if (npc == null)
             {
-                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 59), 1, Color.LightGray);
                 return;
             }
 
             _pixelFont.DrawText(_spriteBatch, $"NPC {npc.Name} HP {npc.HP} DMG {npc.Damage}",
-                new Vector2(panelX + 6, panelY + 43), 1, Color.White);
-            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
                 new Vector2(panelX + 6, panelY + 59), 1, Color.White);
+            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
+                new Vector2(panelX + 6, panelY + 75), 1, Color.White);
 
             string lastKnown = npc.LastKnownPlayerPosition is { } target
                 ? $"{target.X} {target.Y}"
                 : "NONE";
             _pixelFont.DrawText(_spriteBatch, $"LAST {lastKnown}",
-                new Vector2(panelX + 6, panelY + 75), 1, Color.White);
+                new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
             _pixelFont.DrawText(_spriteBatch, $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")}",
-                new Vector2(panelX + 6, panelY + 91), 1,
+                new Vector2(panelX + 6, panelY + 107), 1,
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
         }
 

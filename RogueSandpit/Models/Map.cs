@@ -35,6 +35,7 @@ public class Map
     public List<Corridor> Exits { get; set; }
     public List<Room> RoomList { get; set; }
     public List<BaseNPC> NPCs { get; set; } = new List<BaseNPC>();
+    public List<GroundItem> GroundItems { get; set; } = new List<GroundItem>();
 
     // todo:
     // 1) create a kind of simple 'carved out' array so that we can easily do line-of-sight without thinking about rooms.
@@ -60,6 +61,7 @@ public class Map
         MapObstacles = new List<Obstacle>();
         Exits = new List<Corridor>();
         NPCs = new List<BaseNPC>();
+        GroundItems = new List<GroundItem>();
 
         // carve into spaces (this is the BSP routine)
         DivideIntoRooms();
@@ -83,13 +85,13 @@ public class Map
         // figure out a starting point for the map
         AddExits();
         AddNPCs();
-        AddLoot();
 
         // now flatten this into a single big 2-d array
         CreateMapCells();
 
         // Add the macguffin to a reachable, unoccupied floor cell
         AddSpecials();
+        AddLoot();
 
         //AddDoorways();
 
@@ -155,6 +157,10 @@ public class Map
                 int characterType = RandGen.RandInt(0, Enum.GetValues(typeof(CharacterTypes)).Length);
                 var npc = NPCFactory.CreateNPC(this, (CharacterTypes)characterType, x, y, room);
                 npc.State = NPCState.Active;
+                if (RandGen.RandInt(0, 100) < 30)
+                {
+                    npc.HeldItem = ItemFactory.CreateRandom();
+                }
 
                 NPCs.Add(npc);
             }
@@ -215,7 +221,34 @@ public class Map
     }
 
     private void AddLoot()
-    { }
+    {
+        var candidates = new List<Point>();
+        foreach (Room room in RoomList)
+        {
+            for (int x = room.X1; x < room.X2; x++)
+            {
+                for (int y = room.Y1; y < room.Y2; y++)
+                {
+                    if (MapCells[x, y].CellType == MapCellType.Floor
+                        && !IsOccupiedByLivingNPC(x, y)
+                        && (x != StartPosX || y != StartPosY))
+                    {
+                        candidates.Add(new Point(x, y));
+                    }
+                }
+            }
+        }
+
+        const int lootCount = 6;
+        for (int i = 0; i < lootCount && candidates.Count > 0; i++)
+        {
+            int candidateIndex = RandGen.RandInt(0, candidates.Count);
+            Point position = candidates[candidateIndex];
+            candidates.RemoveAt(candidateIndex);
+            ItemType type = (ItemType)(i % Enum.GetValues<ItemType>().Length);
+            GroundItems.Add(new GroundItem(ItemFactory.Create(type), position.X, position.Y));
+        }
+    }
 
     private void AddSpecials()
     {
@@ -382,6 +415,23 @@ public class Map
     public bool IsOccupiedByLivingNPC(int x, int y, BaseNPC except = null)
     {
         return GetLivingNPCAt(x, y, except) != null;
+    }
+
+    public GroundItem GetGroundItemAt(int x, int y)
+    {
+        return GroundItems.FirstOrDefault(groundItem => groundItem.X == x && groundItem.Y == y);
+    }
+
+    public bool RemoveGroundItem(GroundItem groundItem)
+    {
+        return groundItem != null && GroundItems.Remove(groundItem);
+    }
+
+    public bool DropItem(Item item, int x, int y)
+    {
+        if (item == null || !IsWalkable(x, y) || GetGroundItemAt(x, y) != null) return false;
+        GroundItems.Add(new GroundItem(item, x, y));
+        return true;
     }
 
     private void AddExits()

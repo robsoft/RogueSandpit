@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, bump into NPCs to attack, retrieve the yellow special tile and return it to the entrance to win. NPCs adjacent to the player deal damage. F1 toggles a debug map view that reveals the whole map; hovering a cell inspects it and hovering an NPC shows its path and line of sight. SPACE restarts with a new map.
+Current gameplay: move with arrow keys, bump into NPCs to attack, collect potions/weapons/keys, and retrieve the yellow special tile before returning to the entrance. H uses a potion and E equips a weapon. NPCs attack, pursue, investigate, and may drop carried loot. F1 toggles a debug map with hover inspection, paths, and line of sight. SPACE restarts.
 
 ## Build & run
 
@@ -27,6 +27,8 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | Key | Action |
 |---|---|
 | Arrow keys | Move player (WASD not yet implemented, despite README saying "will come") |
+| H | Use the first carried healing potion |
+| E | Equip the next carried weapon |
 | F1 | Toggle debug/map viewer (shows full map + NPCs) |
 | SPACE | Generate a new map / restart |
 | ESCAPE | Quit |
@@ -38,6 +40,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 - **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement. It also owns the bounded `GameEventLog` used by the on-screen event feed.
 - **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering. `Awareness` and `LastKnownPlayerPosition` describe current tactical state while `HasSeenPlayer` records historical awareness.
+- **`Models/Items.cs`** — item, ground-loot, inventory, and item-factory models. The player has an eight-slot inventory; potions heal, weapons add damage, and keys are reserved for the doors milestone.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").

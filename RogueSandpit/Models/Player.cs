@@ -12,10 +12,14 @@ public class Player
 
     public int X { get; set; } = 0;
     public int Y { get; set; } = 0;
+    public int MaxHealth { get; private set; } = 0;
     public int Health { get; private set; } = 0;
-    public int Damage { get; private set; } = 0;
+    public int BaseDamage { get; private set; } = 0;
+    public int Damage => BaseDamage + (EquippedWeapon?.Power ?? 0);
     public bool Dead { get; private set; } = false;
     public bool HasSpecial { get; private set; } = false;
+    public Inventory Inventory { get; private set; } = new();
+    public Item EquippedWeapon { get; private set; }
     public BaseContainingElement CurrentRoom { get; set; } = null;
 
     public Player()
@@ -43,10 +47,13 @@ public class Player
 
     public void Reset()
     {
-        Health = 100 + (RandGen.RandInt(0, 50));
-        Damage = 10 + (RandGen.RandInt(0, 20));
+        MaxHealth = 100 + RandGen.RandInt(0, 50);
+        Health = MaxHealth;
+        BaseDamage = 10 + RandGen.RandInt(0, 20);
         Dead = false;
         HasSpecial = false;
+        Inventory = new Inventory();
+        EquippedWeapon = null;
     }
 
     public void CollectSpecial()
@@ -62,6 +69,21 @@ public class Player
         {
             Dead = true;
         }
+    }
+
+    public int Heal(int amount)
+    {
+        if (amount <= 0 || Dead) return 0;
+        int previousHealth = Health;
+        Health = Math.Min(MaxHealth, Health + amount);
+        return Health - previousHealth;
+    }
+
+    public bool Equip(Item weapon)
+    {
+        if (weapon?.Type != ItemType.Weapon || !Inventory.Items.Contains(weapon)) return false;
+        EquippedWeapon = weapon;
+        return true;
     }
 
 

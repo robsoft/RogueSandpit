@@ -120,6 +120,8 @@ public class MapRenderer
             }
         }
 
+        DrawGroundItems(spriteBatch, false);
+
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
@@ -133,6 +135,7 @@ public class MapRenderer
                 new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
                 npcColor);
         }
+
     }
 
     private void RenderRooms(SpriteBatch spriteBatch)
@@ -190,8 +193,10 @@ public class MapRenderer
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(corridor.X1 * _map.CellScale, corridor.Y1 * _map.CellScale,
                     (1 + corridor.X2 - corridor.X1) * _map.CellScale,
-                    (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
+                (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
         }
+
+        DrawGroundItems(spriteBatch, true);
 
         BaseContainingElement currentPlayerRoom =
             _map.MapCells[_map.CurrentPlayerX, _map.CurrentPlayerY].ParentElement;
@@ -220,5 +225,25 @@ public class MapRenderer
             new Rectangle(corridor.X1 * _map.CellScale, corridor.Y1 * _map.CellScale,
                 (1 + corridor.X2 - corridor.X1) * _map.CellScale,
                 (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
+    }
+
+    private void DrawGroundItems(SpriteBatch spriteBatch, bool visitedOnly)
+    {
+        foreach (GroundItem groundItem in _map.GroundItems)
+        {
+            BaseContainingElement parent = _map.MapCells[groundItem.X, groundItem.Y].ParentElement;
+            if (visitedOnly && parent != null && !parent.HasVisited) continue;
+
+            Color color = groundItem.Item.Type switch
+            {
+                ItemType.HealingPotion => Color.LimeGreen,
+                ItemType.Weapon => Color.Silver,
+                ItemType.Key => Color.Gold,
+                _ => Color.White
+            };
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(groundItem.X * _map.CellScale + 2, groundItem.Y * _map.CellScale + 2,
+                    _map.CellScale - 4, _map.CellScale - 4), color);
+        }
     }
 }
