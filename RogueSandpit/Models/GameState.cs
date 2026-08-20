@@ -16,9 +16,7 @@ public class GameState
     {
         this.Map = map;
         this.Player = player;
-        Map.CurrentPlayerX = player.X;
-        Map.CurrentPlayerY = player.Y;
-        Map.UpdateVisibility(player.X, player.Y);
+        Player.Place(Map, player.X, player.Y);
     }
 
     public void Update(PlayerCommand command)
@@ -111,18 +109,8 @@ public class GameState
 
         if (Map.IsWalkable(newX, newY))
         {
-            Player.X = newX;
-            Player.Y = newY;
-            Map.CurrentPlayerX = newX;
-            Map.CurrentPlayerY = newY;
-            Map.UpdateVisibility(newX, newY);
-
-            // have we now visited a new cell?
+            Player.Place(Map, newX, newY);
             var cell = Map.MapCells[newX, newY];
-            if (cell.ParentElement != null)
-            {
-                cell.ParentElement.HasVisited = true;
-            }
             if (cell.CellType == MapCellType.Special)
             {
                 Player.CollectSpecial();
@@ -158,21 +146,19 @@ public class GameState
 
     private bool UsePotion()
     {
-        Item potion = Player.Inventory.SelectedItem;
-        if (potion?.Type != ItemType.HealingPotion)
+        PlayerItemActionResult result = Player.UseSelectedPotion(out int healed);
+        if (result is PlayerItemActionResult.NoSelection or PlayerItemActionResult.WrongItemType)
         {
             EventLog.Add("SELECT A HEALING POTION");
             return false;
         }
 
-        int healed = Player.Heal(potion.Power);
-        if (healed == 0)
+        if (result == PlayerItemActionResult.NoEffect)
         {
             EventLog.Add("HEALTH FULL");
             return false;
         }
 
-        Player.Inventory.Remove(potion);
         EventLog.Add($"HEALED {healed}");
         return true;
     }
@@ -185,27 +171,26 @@ public class GameState
 
     private bool DropItem()
     {
-        Item item = Player.Inventory.SelectedItem;
-        if (item == null)
+        PlayerItemActionResult result = Player.DropSelectedItem(Map, out Item item);
+        if (result == PlayerItemActionResult.NoSelection)
         {
             EventLog.Add("INVENTORY EMPTY");
             return false;
         }
 
-        if (!Map.DropItem(item, Player.X, Player.Y))
+        if (result == PlayerItemActionResult.Blocked)
         {
             EventLog.Add("CANNOT DROP HERE");
             return false;
         }
 
-        Player.RemoveFromInventory(item);
         EventLog.Add($"DROPPED {item.Name}");
         return true;
     }
 
     private bool SelectItem(bool next)
     {
-        bool selected = next ? Player.Inventory.SelectNext() : Player.Inventory.SelectPrevious();
+        bool selected = Player.SelectInventoryItem(next);
         if (!selected)
         {
             EventLog.Add("INVENTORY EMPTY");
@@ -218,14 +203,8 @@ public class GameState
 
     private bool EquipItem()
     {
-        Item item = Player.Inventory.SelectedItem;
-        if (item?.Type == ItemType.Weapon && Player.Equip(item))
-        {
-            EventLog.Add($"EQUIPPED {item.Name}");
-            return true;
-        }
-
-        if (item?.Type == ItemType.Armor && Player.EquipArmor(item))
+        PlayerItemActionResult result = Player.EquipSelectedItem(out Item item);
+        if (result == PlayerItemActionResult.Success)
         {
             EventLog.Add($"EQUIPPED {item.Name}");
             return true;

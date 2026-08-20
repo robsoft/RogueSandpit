@@ -231,9 +231,7 @@ public abstract class BaseNPC
             default:
                 break;
         }
-        return Map.IsWalkable(newX, newY)
-            && !Map.IsOccupiedByLivingNPC(newX, newY, this)
-            && (newX != player.X || newY != player.Y);
+        return Map.CanNpcEnter(newX, newY, this, player);
     }
 
 }

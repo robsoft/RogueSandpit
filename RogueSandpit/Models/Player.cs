@@ -64,6 +64,17 @@ public class Player
         HasSpecial = true;
     }
 
+    public void Place(Map map, int x, int y)
+    {
+        X = x;
+        Y = y;
+        CurrentRoom = map.MapCells[x, y].ParentElement;
+        if (CurrentRoom != null) CurrentRoom.HasVisited = true;
+        map.CurrentPlayerX = x;
+        map.CurrentPlayerY = y;
+        map.UpdateVisibility(x, y);
+    }
+
     public int TakeDamage(int damage)
     {
         int actualDamage = Math.Max(1, damage - Defence);
@@ -104,6 +115,43 @@ public class Player
         if (EquippedWeapon == item) EquippedWeapon = null;
         if (EquippedArmor == item) EquippedArmor = null;
         return true;
+    }
+
+    public bool SelectInventoryItem(bool next)
+    {
+        return next ? Inventory.SelectNext() : Inventory.SelectPrevious();
+    }
+
+    public PlayerItemActionResult UseSelectedPotion(out int healed)
+    {
+        healed = 0;
+        Item potion = Inventory.SelectedItem;
+        if (potion == null) return PlayerItemActionResult.NoSelection;
+        if (potion.Type != ItemType.HealingPotion) return PlayerItemActionResult.WrongItemType;
+
+        healed = Heal(potion.Power);
+        if (healed == 0) return PlayerItemActionResult.NoEffect;
+        RemoveFromInventory(potion);
+        return PlayerItemActionResult.Success;
+    }
+
+    public PlayerItemActionResult EquipSelectedItem(out Item equippedItem)
+    {
+        equippedItem = Inventory.SelectedItem;
+        if (equippedItem == null) return PlayerItemActionResult.NoSelection;
+        if (equippedItem.Type == ItemType.Weapon && Equip(equippedItem)) return PlayerItemActionResult.Success;
+        if (equippedItem.Type == ItemType.Armor && EquipArmor(equippedItem)) return PlayerItemActionResult.Success;
+        return PlayerItemActionResult.WrongItemType;
+    }
+
+    public PlayerItemActionResult DropSelectedItem(Map map, out Item droppedItem)
+    {
+        droppedItem = Inventory.SelectedItem;
+        if (droppedItem == null) return PlayerItemActionResult.NoSelection;
+        if (!map.DropItem(droppedItem, X, Y)) return PlayerItemActionResult.Blocked;
+
+        RemoveFromInventory(droppedItem);
+        return PlayerItemActionResult.Success;
     }
 
 

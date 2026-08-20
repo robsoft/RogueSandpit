@@ -86,10 +86,10 @@ public class Map
 
         // figure out a starting point for the map
         AddExits();
-        AddNPCs();
 
         // now flatten this into a single big 2-d array
         CreateMapCells();
+        AddNPCs();
         AddDoorways();
 
         // Add the macguffin to a reachable, unoccupied floor cell
@@ -120,43 +120,32 @@ public class Map
 
     private void AddNPCs()
     {
-        List<Point> occupiedSpaces = new List<Point>();
-
         foreach (Room room in RoomList)
         {
-            // blank out any 'obstacles' as places we can't put NPCs
-            foreach (Obstacle obstacle in room.Obstacles)
+            // and add a number of NPCs based on that area (1 per 35 squares, on average)
+            int npcCount = (int)(room.Area / 35F);
+            var candidates = new List<Point>();
+            for (int x = room.X1; x < room.X2; x++)
             {
-                for (int x = obstacle.X1; x < obstacle.X2; x++)
+                for (int y = room.Y1; y < room.Y2; y++)
                 {
-                    for (int y = obstacle.Y1; y < obstacle.Y2; y++)
+                    if (MapCells[x, y].ParentElement == room
+                        && CanNpcEnter(x, y)
+                        && (x != StartPosX || y != StartPosY))
                     {
-                        occupiedSpaces.Add(new Point(x, y));
+                        candidates.Add(new Point(x, y));
                     }
                 }
             }
 
-            // and add a number of NPCs based on that area (1 per 35 squares, on average)
-            int npcCount = (int)(room.Area / 35F);
-
-            for (int i = 0; i < npcCount; i++)
+            for (int i = 0; i < npcCount && candidates.Count > 0; i++)
             {
-                var x = room.X1 + RandGen.RandInt(0, room.X2 - room.X1);
-                var y = room.Y1 + RandGen.RandInt(0, room.Y2 - room.Y1);
-                var failCount = 0;
-                while (occupiedSpaces.Contains(new Point(x, y)))
-                {
-                    x = room.X1 + RandGen.RandInt(0, room.X2 - room.X1);
-                    y = room.Y1 + RandGen.RandInt(0, room.Y2 - room.Y1);
-                    failCount++;
-                    if (failCount > 30) break;
-                }
-                if (failCount > 30) continue;
-
-                occupiedSpaces.Add(new Point(x, y));
+                int candidateIndex = RandGen.RandInt(0, candidates.Count);
+                Point position = candidates[candidateIndex];
+                candidates.RemoveAt(candidateIndex);
 
                 int characterType = RandGen.RandInt(0, Enum.GetValues(typeof(CharacterTypes)).Length);
-                var npc = NPCFactory.CreateNPC(this, (CharacterTypes)characterType, x, y, room);
+                var npc = NPCFactory.CreateNPC(this, (CharacterTypes)characterType, position.X, position.Y, room);
                 npc.State = NPCState.Active;
                 if (RandGen.RandInt(0, 100) < 30)
                 {
@@ -450,6 +439,20 @@ public class Map
     public bool IsOccupiedByLivingNPC(int x, int y, BaseNPC except = null)
     {
         return GetLivingNPCAt(x, y, except) != null;
+    }
+
+    public bool CanNpcEnter(
+        int x,
+        int y,
+        BaseNPC movingNpc = null,
+        Player player = null,
+        bool allowClosedDoor = false)
+    {
+        bool terrainAllowsEntry = IsWalkable(x, y)
+            || (allowClosedDoor && GetDoorAt(x, y)?.State == DoorState.Closed);
+        return terrainAllowsEntry
+            && !IsOccupiedByLivingNPC(x, y, movingNpc)
+            && (player == null || x != player.X || y != player.Y);
     }
 
     public GroundItem GetGroundItemAt(int x, int y)
