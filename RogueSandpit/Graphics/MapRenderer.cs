@@ -111,7 +111,7 @@ public class MapRenderer
                 {
                     MapCellType.Wall => Color.DarkGray,
                     MapCellType.Floor => Color.LightGray,
-                    MapCellType.Door => Color.Gray,
+                    MapCellType.Door => DoorColor(_map.GetDoorAt(x, y)),
                     MapCellType.Special => Color.Yellow,
                     _ => MapBackgroundColor
                 };
@@ -196,6 +196,14 @@ public class MapRenderer
                 (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
         }
 
+        foreach (Doorway door in _map.Doors)
+        {
+            if (!IsDoorVisible(door)) continue;
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(door.X1 * _map.CellScale, door.Y1 * _map.CellScale,
+                    _map.CellScale, _map.CellScale), DoorColor(door));
+        }
+
         DrawGroundItems(spriteBatch, true);
 
         BaseContainingElement currentPlayerRoom =
@@ -245,5 +253,28 @@ public class MapRenderer
                 new Rectangle(groundItem.X * _map.CellScale + 2, groundItem.Y * _map.CellScale + 2,
                     _map.CellScale - 4, _map.CellScale - 4), color);
         }
+    }
+
+    private static Color DoorColor(Doorway door)
+    {
+        return door?.State switch
+        {
+            DoorState.Locked => Color.Gold,
+            DoorState.Open => Color.SlateGray,
+            _ => Color.SaddleBrown
+        };
+    }
+
+    private bool IsDoorVisible(Doorway door)
+    {
+        if (_map.MapCells[door.X1, door.Y1].ParentElement?.HasVisited == true) return true;
+
+        foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
+        {
+            BaseContainingElement adjacent = _map.MapCells[door.X1 + dx, door.Y1 + dy].ParentElement;
+            if (adjacent?.HasVisited == true) return true;
+        }
+
+        return false;
     }
 }

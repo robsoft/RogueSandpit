@@ -117,7 +117,10 @@ public class GameStateTests
             foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
             {
                 var next = (X: x + dx, Y: y + dy);
-                if (map.IsWalkable(next.X, next.Y) && visited.Add(next))
+                bool traversableTerrain = next.X >= 0 && next.X < map.Width
+                    && next.Y >= 0 && next.Y < map.Height
+                    && map.MapCells[next.X, next.Y].CellType != MapCellType.Wall;
+                if (traversableTerrain && visited.Add(next))
                 {
                     frontier.Enqueue(next);
                 }

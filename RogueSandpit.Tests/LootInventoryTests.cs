@@ -125,7 +125,7 @@ public class LootInventoryTests
         var map = new Map(123);
         var visited = ReachableCells(map);
 
-        Assert.Equal(6, map.GroundItems.Count);
+        Assert.Equal(7, map.GroundItems.Count);
         Assert.All(map.GroundItems, groundItem =>
         {
             Assert.Contains((groundItem.X, groundItem.Y), visited);
@@ -170,7 +170,10 @@ public class LootInventoryTests
             foreach ((int dx, int dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
             {
                 var next = (X: current.X + dx, Y: current.Y + dy);
-                if (map.IsWalkable(next.X, next.Y) && visited.Add(next)) frontier.Enqueue(next);
+                bool traversableTerrain = next.X >= 0 && next.X < map.Width
+                    && next.Y >= 0 && next.Y < map.Height
+                    && map.MapCells[next.X, next.Y].CellType != MapCellType.Wall;
+                if (traversableTerrain && visited.Add(next)) frontier.Enqueue(next);
             }
         }
 

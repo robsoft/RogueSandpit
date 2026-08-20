@@ -69,6 +69,21 @@ public class GameState
         int newX = Player.X + deltaX;
         int newY = Player.Y + deltaY;
 
+        Doorway door = Map.GetDoorAt(newX, newY);
+        if (door != null && !door.CanTraverse)
+        {
+            bool wasLocked = door.State == DoorState.Locked;
+            if (wasLocked && Player.Inventory.FindFirst(ItemType.Key) == null)
+            {
+                EventLog.Add("DOOR LOCKED");
+                return true;
+            }
+
+            door.State = DoorState.Open;
+            EventLog.Add(wasLocked ? "UNLOCKED DOOR" : "OPENED DOOR");
+            return true;
+        }
+
         BaseNPC target = Map.GetLivingNPCAt(newX, newY);
         if (target != null)
         {
@@ -99,12 +114,7 @@ public class GameState
             {
                 cell.ParentElement.HasVisited = true;
             }
-            if (cell.CellType==MapCellType.Door)
-            {
-                // TODO: open the door, for now just remove it
-                Map.MapCells[newX, newY].SetCellType(MapCellType.Floor);
-            }
-            else if (cell.CellType == MapCellType.Special)
+            if (cell.CellType == MapCellType.Special)
             {
                 Player.CollectSpecial();
                 cell.SetCellType(MapCellType.Floor);

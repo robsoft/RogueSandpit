@@ -19,4 +19,5 @@ public enum GameOutcome { Playing, Won, Lost };
 public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, UsePotion, EquipWeapon };
 public enum NPCAwareness { Unaware, Pursuing, Investigating };
 public enum ItemType { HealingPotion, Weapon, Key };
+public enum DoorState { Closed, Locked, Open };
 

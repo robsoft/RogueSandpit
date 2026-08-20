@@ -242,6 +242,13 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName}",
                 new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
 
+            Doorway door = _map.GetDoorAt(position.X, position.Y);
+            if (door != null)
+            {
+                _pixelFont.DrawText(_spriteBatch, $"DOOR {door.State}",
+                    new Vector2(panelX + 155, panelY + 43), 1, Color.Gold);
+            }
+
             BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
             if (npc == null)
             {

@@ -23,6 +23,7 @@ builds & runs on Mac and Windows
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, and keys can be collected in an eight-slot inventory
 - H uses a healing potion; E equips a carried weapon; defeated NPCs may drop loot
+- Closed doors take a turn to open; locked doors require a carried, reusable key
  
 
 ## Pressing TODOs
@@ -51,8 +52,7 @@ builds & runs on Mac and Windows
 - Items that can be collected and used, with additional item types to come
 - NPCs that can be fought and defeated  
 - Simple UI with health and inventory displays  
-- Some doors require keys to open  
-- Other doors may use-up a 'move' to open, so you can't just walk straight through them  
+- Expand doors with distinct keys, consumable keys, or NPC door-opening behaviours
 - Extend the current count-limited inventory with menus, dropping, and possibly weight
 - Something needs to be found & retrieved on the level, make your way back to the starting point  
    
