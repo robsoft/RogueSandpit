@@ -247,6 +247,7 @@ public class MapRenderer
                 ItemType.HealingPotion => Color.LimeGreen,
                 ItemType.Weapon => Color.Silver,
                 ItemType.Key => Color.Gold,
+                ItemType.Armor => Color.SteelBlue,
                 _ => Color.White
             };
             _drawer.DrawFilledRectangle(spriteBatch,

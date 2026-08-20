@@ -29,8 +29,10 @@ public class GameState
             PlayerCommand.MoveLeft => AttemptMove(-1, 0),
             PlayerCommand.MoveRight => AttemptMove(1, 0),
             PlayerCommand.Wait => Wait(),
+            PlayerCommand.SelectPreviousItem => SelectItem(false),
+            PlayerCommand.SelectNextItem => SelectItem(true),
             PlayerCommand.UsePotion => UsePotion(),
-            PlayerCommand.EquipWeapon => EquipWeapon(),
+            PlayerCommand.EquipItem => EquipItem(),
             PlayerCommand.DropItem => DropItem(),
             _ => false
         };
@@ -151,10 +153,10 @@ public class GameState
 
     private bool UsePotion()
     {
-        Item potion = Player.Inventory.FindFirst(ItemType.HealingPotion);
-        if (potion == null)
+        Item potion = Player.Inventory.SelectedItem;
+        if (potion?.Type != ItemType.HealingPotion)
         {
-            EventLog.Add("NO HEALING POTION");
+            EventLog.Add("SELECT A HEALING POTION");
             return false;
         }
 
@@ -178,7 +180,7 @@ public class GameState
 
     private bool DropItem()
     {
-        Item item = Player.Inventory.Items.LastOrDefault();
+        Item item = Player.Inventory.SelectedItem;
         if (item == null)
         {
             EventLog.Add("INVENTORY EMPTY");
@@ -196,19 +198,36 @@ public class GameState
         return true;
     }
 
-    private bool EquipWeapon()
+    private bool SelectItem(bool next)
     {
-        Item weapon = Player.Inventory.Items.FirstOrDefault(item =>
-            item.Type == ItemType.Weapon && item != Player.EquippedWeapon);
-        if (weapon == null)
+        bool selected = next ? Player.Inventory.SelectNext() : Player.Inventory.SelectPrevious();
+        if (!selected)
         {
-            EventLog.Add("NO WEAPON TO EQUIP");
+            EventLog.Add("INVENTORY EMPTY");
             return false;
         }
 
-        Player.Equip(weapon);
-        EventLog.Add($"EQUIPPED {weapon.Name}");
-        return true;
+        EventLog.Add($"SELECTED {Player.Inventory.SelectedItem.Name}");
+        return false;
+    }
+
+    private bool EquipItem()
+    {
+        Item item = Player.Inventory.SelectedItem;
+        if (item?.Type == ItemType.Weapon && Player.Equip(item))
+        {
+            EventLog.Add($"EQUIPPED {item.Name}");
+            return true;
+        }
+
+        if (item?.Type == ItemType.Armor && Player.EquipArmor(item))
+        {
+            EventLog.Add($"EQUIPPED {item.Name}");
+            return true;
+        }
+
+        EventLog.Add("SELECT EQUIPMENT");
+        return false;
     }
 
 }

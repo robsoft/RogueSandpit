@@ -140,8 +140,10 @@ namespace RogueSandpit
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
             if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
             if (WasPressed(Keys.OemPeriod) || WasPressed(Keys.NumPad5)) return PlayerCommand.Wait;
+            if (WasPressed(Keys.OemOpenBrackets)) return PlayerCommand.SelectPreviousItem;
+            if (WasPressed(Keys.OemCloseBrackets)) return PlayerCommand.SelectNextItem;
             if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
-            if (WasPressed(Keys.E)) return PlayerCommand.EquipWeapon;
+            if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
             if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
         }
@@ -190,8 +192,10 @@ namespace RogueSandpit
             _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, _nativeWidth, 20), Color.Black);
             string specialStatus = _player.HasSpecial ? "YES" : "NO";
             string weaponName = _player.EquippedWeapon?.Name ?? "NONE";
+            string armorName = _player.EquippedArmor?.Name ?? "NONE";
+            string selectedName = _player.Inventory.SelectedItem?.Name ?? "NONE";
             _pixelFont.DrawText(_spriteBatch,
-                $"HP {_player.Health} OF {_player.MaxHealth} DMG {_player.Damage} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} WPN {weaponName}",
+                $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName}",
                 new Vector2(6, 585), 1, Color.White);
         }
 

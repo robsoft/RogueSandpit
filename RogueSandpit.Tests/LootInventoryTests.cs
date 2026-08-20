@@ -80,7 +80,7 @@ public class LootInventoryTests
 
         Assert.False(player.Dead);
         Assert.Equal(GameOutcome.Playing, gameState.Outcome);
-        Assert.Contains("NO HEALING POTION", gameState.EventLog.Entries);
+        Assert.Contains("SELECT A HEALING POTION", gameState.EventLog.Entries);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class LootInventoryTests
         player.Inventory.TryAdd(weapon);
         int baseDamage = player.BaseDamage;
 
-        gameState.Update(PlayerCommand.EquipWeapon);
+        gameState.Update(PlayerCommand.EquipItem);
 
         Assert.Same(weapon, player.EquippedWeapon);
         Assert.Equal(baseDamage + weapon.Power, player.Damage);
@@ -127,6 +127,7 @@ public class LootInventoryTests
         Item key = ItemFactory.Create(ItemType.Key);
         player.Inventory.TryAdd(potion);
         player.Inventory.TryAdd(key);
+        player.Inventory.SelectNext();
 
         gameState.Update(PlayerCommand.DropItem);
 
@@ -185,12 +186,117 @@ public class LootInventoryTests
     }
 
     [Fact]
+    public void InventorySelectionWrapsAndSurvivesRemoval()
+    {
+        var inventory = new Inventory();
+        Item potion = ItemFactory.Create(ItemType.HealingPotion);
+        Item weapon = ItemFactory.Create(ItemType.Weapon);
+        inventory.TryAdd(potion);
+        inventory.TryAdd(weapon);
+
+        Assert.Same(potion, inventory.SelectedItem);
+        inventory.SelectPrevious();
+        Assert.Same(weapon, inventory.SelectedItem);
+        inventory.SelectNext();
+        Assert.Same(potion, inventory.SelectedItem);
+
+        inventory.Remove(potion);
+
+        Assert.Same(weapon, inventory.SelectedItem);
+        Assert.Equal(0, inventory.SelectedIndex);
+    }
+
+    [Fact]
+    public void SelectionDoesNotAdvanceNpcTurn()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        player.Inventory.TryAdd(ItemFactory.Create(ItemType.Key));
+        var npc = new Orc(map, x, y + 1, null)
+        {
+            State = NPCState.Active,
+            Damage = player.Health
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.SelectNextItem);
+
+        Assert.False(player.Dead);
+        Assert.Contains("SELECTED BRASS KEY", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void SelectedArmorCanBeEquipped()
+    {
+        (_, Player player, GameState gameState, _, _) = CreateGameOnOpenFloor();
+        Item armor = ItemFactory.Create(ItemType.Armor);
+        player.Inventory.TryAdd(armor);
+
+        gameState.Update(PlayerCommand.EquipItem);
+
+        Assert.Same(armor, player.EquippedArmor);
+        Assert.Equal(armor.Power, player.Defence);
+        Assert.Contains("EQUIPPED LEATHER ARMOR", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void ArmorReducesIncomingDamageAndCombatEventReportsActualDamage()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item armor = ItemFactory.Create(ItemType.Armor);
+        player.Inventory.TryAdd(armor);
+        player.EquipArmor(armor);
+        int initialHealth = player.Health;
+        var npc = new Orc(map, x, y + 1, null)
+        {
+            State = NPCState.Active,
+            Damage = armor.Power + 3
+        };
+        map.NPCs.Add(npc);
+
+        gameState.Update(PlayerCommand.Wait);
+
+        Assert.Equal(initialHealth - 3, player.Health);
+        Assert.Contains($"{npc.Name} HIT PLAYER 3", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void ArmorCannotReduceSuccessfulHitBelowOneDamage()
+    {
+        var player = new Player();
+        Item armor = ItemFactory.Create(ItemType.Armor);
+        player.Inventory.TryAdd(armor);
+        player.EquipArmor(armor);
+        int initialHealth = player.Health;
+
+        int damage = player.TakeDamage(1);
+
+        Assert.Equal(1, damage);
+        Assert.Equal(initialHealth - 1, player.Health);
+    }
+
+    [Fact]
+    public void DroppingEquippedArmorUnequipsIt()
+    {
+        (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
+        Item armor = ItemFactory.Create(ItemType.Armor);
+        player.Inventory.TryAdd(armor);
+        player.EquipArmor(armor);
+
+        gameState.Update(PlayerCommand.DropItem);
+
+        Assert.Null(player.EquippedArmor);
+        Assert.Equal(0, player.Defence);
+        Assert.Same(armor, map.GetGroundItemAt(x, y)?.Item);
+    }
+
+    [Fact]
     public void GeneratedLootUsesReachableUnoccupiedCells()
     {
         var map = new Map(123);
         var visited = ReachableCells(map);
 
         Assert.Equal(7, map.GroundItems.Count);
+        Assert.Contains(map.GroundItems, item => item.Item.Type == ItemType.Armor);
         Assert.All(map.GroundItems, groundItem =>
         {
             Assert.Contains((groundItem.X, groundItem.Y), visited);

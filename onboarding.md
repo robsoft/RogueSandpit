@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, bump into NPCs to attack, collect potions/weapons/keys, and retrieve the yellow special tile before returning to the entrance. Closed doors take a turn to open; locked doors need a carried reusable key. Chasing NPCs can open closed doors but cannot unlock them. H uses a potion and E equips a weapon. NPCs attack, pursue, investigate, and may drop carried loot. F1 toggles a debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
+Current gameplay: move with arrow keys, bump into NPCs to attack, collect potions/weapons/keys/armor, and retrieve the yellow special tile before returning to the entrance. Closed doors take a turn to open; locked doors need a carried reusable key. Chasing NPCs can open closed doors but cannot unlock them. Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and D drops the selected item. NPCs attack, pursue, investigate, and may drop carried loot. F1 toggles a debug map with hover inspection, paths, line of sight, and door state. SPACE restarts.
 
 ## Build & run
 
@@ -27,9 +27,10 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | Key | Action |
 |---|---|
 | Arrow keys | Move player (WASD not yet implemented, despite README saying "will come") |
-| H | Use the first carried healing potion |
-| E | Equip the next carried weapon |
-| D | Drop the most recently acquired item |
+| Left/right bracket | Select an inventory item |
+| H | Use the selected healing potion |
+| E | Equip the selected weapon or armor |
+| D | Drop the selected item |
 | Period / numpad 5 | Wait one turn |
 | F1 | Toggle debug/map viewer (shows full map + NPCs) |
 | SPACE | Generate a new map / restart |
@@ -42,7 +43,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 - **`Models/GameState.cs`** — framework-independent turn logic. Accepts one `PlayerCommand`, attempts the player action, then advances NPCs. A directional command consumes a turn even when terrain blocks movement. It also owns the bounded `GameEventLog` used by the on-screen event feed.
 - **`Models/Map.cs`** — procedural map generation and terrain/occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It can be constructed and exercised without graphics.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** — character state (HP, Damage, position) and NPC movement/AI. NPCs attack from cardinal adjacency, pursue a player visible within 12 cells, investigate the last visible position after losing sight, and then return to wandering. `Awareness` and `LastKnownPlayerPosition` describe current tactical state while `HasSeenPlayer` records historical awareness.
-- **`Models/Items.cs`** — item, ground-loot, inventory, and item-factory models. The player has an eight-slot inventory; potions heal, weapons add damage, and reusable keys unlock doors.
+- **`Models/Items.cs`** — item, ground-loot, inventory selection, and item-factory models. The player has an eight-slot inventory; potions heal, weapons add damage, armor adds defence, and reusable keys unlock doors.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
 - **`Models/Room.cs`, `Corridor.cs`, `Doorway.cs`, `MapCell.cs`, `BaseMapElement.cs`, `Obstacle.cs`, `Special.cs`** — map-generation building blocks.
 - **`Models/RandGen.cs`** — seeded RNG wrapper (the map seed is shown in the window title, e.g. "Rogue Sandpit - Seed: 123").
