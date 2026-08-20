@@ -92,7 +92,7 @@ public abstract class BaseNPC
                 return;
             }
 
-            MoveToward(player.X, player.Y);
+            MoveToward(player.X, player.Y, eventSink);
             return;
         }
 
@@ -101,7 +101,7 @@ public abstract class BaseNPC
             Awareness = NPCAwareness.Investigating;
             if (!_isLocalSearching && (X != lastKnownPosition.X || Y != lastKnownPosition.Y))
             {
-                MoveToward(lastKnownPosition.X, lastKnownPosition.Y);
+                MoveToward(lastKnownPosition.X, lastKnownPosition.Y, eventSink);
                 return;
             }
 
@@ -124,7 +124,7 @@ public abstract class BaseNPC
             }
 
             (int targetX, int targetY) = _searchTargets.Peek();
-            MoveToward(targetX, targetY);
+            MoveToward(targetX, targetY, eventSink);
             return;
         }
 
@@ -147,11 +147,19 @@ public abstract class BaseNPC
         }
     }
 
-    private void MoveToward(int targetX, int targetY)
+    private void MoveToward(int targetX, int targetY, Action<string> eventSink = null)
     {
         var path = Pathfinding.FindPath(Map, X, Y, targetX, targetY, this);
         if (path.Count > 0)
         {
+            Doorway door = Map.GetDoorAt(path[0].X, path[0].Y);
+            if (door?.State == DoorState.Closed)
+            {
+                door.State = DoorState.Open;
+                eventSink?.Invoke($"{Name} OPENED DOOR");
+                return;
+            }
+
             MoveTo(path[0].X, path[0].Y);
         }
     }
