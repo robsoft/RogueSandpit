@@ -13,19 +13,19 @@ builds & runs on Mac and Windows
 - Player can see entire map & NPCs in debug mode  
 - Fully turn-based, so NPCs 'pause' until the player makes a move  
 - Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
+- Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
+- Retrieve the yellow special tile and return it to the entrance to win
+- HUD displays health, damage, and objective status
  
 
 ## Pressing TODOs
 - when in debug mode, hover over a cell to find out what it is (eg Goblin-20, Room-4 etc)
 - investigate better placement of the 'special' tile
-- setting speed to !=1.0 values caused NPCs to stand on each other and warp around too much, look at this  
-- clean-up the MapCell and 'occupiedSpaces' kind of stuff into one, simpler approach  
+- continue consolidating initial placement and live actor occupancy
 - refactor Player class so it handles it's own moves, knows about Map etc  
 - suspect the IsWalkable implementation allows creatures to teleport through walls when rooms are hard-adjacent  
-- UI for HP, Damage etc  
 - Names & class variation for NPCs - Markov-chain generation of names? 
 - Implement the A* and Line-Of-Sight mechanics as per the RogueALike project  
-- Player to attack NPCs
 - Loot
 - Graphics!  
 

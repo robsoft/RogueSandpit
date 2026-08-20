@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RogueSandpit.Models;
+using RogueSandpit.Graphics;
 
 namespace RogueSandpit
 {
@@ -12,6 +12,8 @@ namespace RogueSandpit
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private RenderTarget2D _renderTarget;
+        private PrimitiveDrawer _uiDrawer;
+        private PixelFont _pixelFont;
         private Rectangle _renderDestination;
         private bool _isResizing = false;
 
@@ -42,7 +44,7 @@ namespace RogueSandpit
         protected override void Initialize()
         {
             _map = new Map(GraphicsDevice, _nativeWidth, _nativeHeight, 123);
-            KickOffNewGame();
+            KickOffNewGame(false);
             base.Initialize();
         }
 
@@ -50,13 +52,18 @@ namespace RogueSandpit
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             _renderTarget = new RenderTarget2D(GraphicsDevice, _nativeWidth, _nativeHeight);
+            _uiDrawer = new PrimitiveDrawer(GraphicsDevice);
+            _pixelFont = new PixelFont(GraphicsDevice);
             // initial calculation of the render destination rectangle
             CalculateRenderDestination();
         }
 
-        private void KickOffNewGame()
+        private void KickOffNewGame(bool regenerateMap = true)
         {
-            _map.Initialise();
+            if (regenerateMap)
+            {
+                _map.Initialise();
+            }
             _player = new Player();
             _gameState = new GameState(_map, _player);
 
@@ -77,7 +84,7 @@ namespace RogueSandpit
             if (_currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (_player.Dead)
+            if (_gameState.Outcome != GameOutcome.Playing)
             {
                 UpdateDead(gameTime);           
             }
@@ -132,9 +139,12 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
 
-            if (!_player.Dead)
+            _map.Display(_spriteBatch);
+            DrawHud();
+
+            if (_gameState.Outcome != GameOutcome.Playing)
             {
-                _map.Display(_spriteBatch);
+                DrawEndScreen();
             }
             _spriteBatch.End();
 
@@ -146,6 +156,31 @@ namespace RogueSandpit
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void DrawHud()
+        {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, _nativeWidth, 20), Color.Black);
+            string specialStatus = _player.HasSpecial ? "YES" : "NO";
+            _pixelFont.DrawText(_spriteBatch,
+                $"HP {_player.Health}  DMG {_player.Damage}  SPECIAL {specialStatus}",
+                new Vector2(6, 583), 2, Color.White);
+        }
+
+        private void DrawEndScreen()
+        {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(150, 205, 500, 170), Color.Black * 0.9f);
+
+            string heading = _gameState.Outcome == GameOutcome.Won ? "YOU WIN" : "GAME OVER";
+            Color headingColor = _gameState.Outcome == GameOutcome.Won ? Color.Yellow : Color.Red;
+            int headingScale = 5;
+            int headingX = (_nativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
+            _pixelFont.DrawText(_spriteBatch, heading, new Vector2(headingX, 240), headingScale, headingColor);
+
+            const string restartText = "SPACE TO RESTART";
+            int restartScale = 3;
+            int restartX = (_nativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
+            _pixelFont.DrawText(_spriteBatch, restartText, new Vector2(restartX, 320), restartScale, Color.White);
         }
 
 

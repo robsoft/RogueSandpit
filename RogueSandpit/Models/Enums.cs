@@ -15,4 +15,5 @@ public enum Visibility { Hidden, Visible, Cloaked };
 public enum CharacterMood { Attacker, Defender, Neutral, Helpful };
 public enum RenderMode { Rooms, Cells };
 public enum MapCellType { Wall, Floor, Door, Special };
+public enum GameOutcome { Playing, Won, Lost };
 

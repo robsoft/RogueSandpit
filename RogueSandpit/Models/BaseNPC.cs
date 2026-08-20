@@ -17,7 +17,6 @@ public abstract class BaseNPC
     public Direction Direction { get; set; } = Direction.Up;
     public int X { get; set; }
     public int Y { get; set; }
-    public float Speed { get; set; } = 1.0F;
     public int HP { get; set; }
     public int Damage { get; set; }
 
@@ -101,11 +100,11 @@ public abstract class BaseNPC
             Direction = (Direction)(RandGen.RandInt(0, 4));
         }
 
-        if (!CanMove(out newX, out newY))
+        if (!CanMove(player, out newX, out newY))
         {
             //Console.WriteLine($"{Name} can't move {Direction} from ({X}, {Y})");
             var attempts = 0;
-            while (attempts < 3 && !CanMove(out newX, out newY))
+            while (attempts < 3 && !CanMove(player, out newX, out newY))
             {
                 Direction = (Direction)(RandGen.RandInt(0, 4));
                 attempts++;
@@ -130,28 +129,30 @@ public abstract class BaseNPC
         }
     }
 
-    private bool CanMove(out int newX, out int newY)
+    private bool CanMove(Player player, out int newX, out int newY)
     {
         newX = X;
         newY = Y;
         switch (Direction)
         {
             case Direction.Up:
-                newY = (int)Math.Round(newY - Speed);
+                newY--;
                 break;
             case Direction.Down:
-                newY = (int)Math.Round(newY + Speed);
+                newY++;
                 break;
             case Direction.Left:
-                newX = (int)Math.Round(newX - Speed);
+                newX--;
                 break;
             case Direction.Right:
-                newX = (int)Math.Round(newX + Speed);
+                newX++;
                 break;
             default:
                 break;
         }
-        return Map.IsWalkable(newX, newY);
+        return Map.IsWalkable(newX, newY)
+            && !Map.IsOccupiedByLivingNPC(newX, newY, this)
+            && (newX != player.X || newY != player.Y);
     }
 
 }

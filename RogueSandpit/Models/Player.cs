@@ -18,6 +18,7 @@ public class Player
     public int Health { get; private set; } = 0;
     public int Damage { get; private set; } = 0;
     public bool Dead { get; private set; } = false;
+    public bool HasSpecial { get; private set; } = false;
     public BaseContainingElement CurrentRoom { get; set; } = null;
 
     public Player()
@@ -48,6 +49,12 @@ public class Player
         Health = 100 + (RandGen.RandInt(0, 50));
         Damage = 10 + (RandGen.RandInt(0, 20));
         Dead = false;
+        HasSpecial = false;
+    }
+
+    public void CollectSpecial()
+    {
+        HasSpecial = true;
     }
 
     public void TakeDamage(int damage)

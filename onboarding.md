@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: move with arrow keys, NPCs adjacent to the player deal damage, F1 toggles a debug map view that reveals the whole map and NPCs, SPACE restarts with a new map.
+Current gameplay: move with arrow keys, bump into NPCs to attack, retrieve the yellow special tile and return it to the entrance to win. NPCs adjacent to the player deal damage. F1 toggles a debug map view that reveals the whole map and NPCs; SPACE restarts with a new map.
 
 ## Build & run
 
@@ -20,7 +20,7 @@ dotnet run        # launches the game window
 
 There's also a VS Code launch config (`RogueSandpit/.vscode/launch.json`, "C#: RogueSandpit Debug") and a solution file at the repo root (`RogueSandpit.slnx`) if you'd rather open it in an IDE. The README states it builds & runs on both Mac and Windows.
 
-No test project exists yet — there's nothing to run beyond building/launching.
+Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from the repository root.
 
 ## Controls
 
@@ -46,18 +46,14 @@ No test project exists yet — there's nothing to run beyond building/launching.
 
 ## Current state (per README + code)
 
-Working: map generation, player movement, NPCs that damage the player on contact, debug map view, turn-based flow.
-
-**Uncommitted work in progress** (`RogueSandpit/GameWrapper.cs` has local changes not yet committed): splitting `Update`/`Draw` into live vs. dead-player states — when the player's `Health` hits 0 (`Player.Dead`), the map stops rendering and the only input handled is SPACE to restart. This looks like an in-progress "game over" screen; worth finishing (e.g. actually showing a game-over message rather than just blanking the screen) or committing once it feels done.
+Working: map generation, player movement and bump combat, non-overlapping actors, NPC attacks and death, a retrieve-and-return objective, HUD, visible win/loss states, debug map view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
 - No hover-to-inspect in debug mode yet.
-- `Special` tile placement needs better logic.
-- NPC `Speed != 1.0` causes stacking/warping bugs.
-- `MapCell`/`occupiedSpaces` tracking should be simplified/unified.
+- Initial placement and live actor occupancy could be consolidated further.
 - `Player` should own its own movement logic (currently split across `GameState`/`Player`).
 - Possible wall-clipping at hard-adjacent room boundaries via `IsWalkable`.
-- No combat from the player side yet (NPCs can hit the player; the player can't hit back), no loot, no UI (HP/damage aren't displayed anywhere on screen).
+- There is no general inventory or loot yet.
 - A*/line-of-sight NPC AI is scaffolded (see `PathFinding.cs` and commented-out code in `BaseNPC.Move`) but disabled.
 
 ## Where to look for "what's next"

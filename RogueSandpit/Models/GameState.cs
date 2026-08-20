@@ -13,6 +13,7 @@ public class GameState
     public Map Map { get; private set; }
     public Player Player { get; private set; }
     public bool PlayerTakenTurn { get; private set; } = false;
+    public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
 
     public GameState(Map map, Player player)
     {
@@ -22,6 +23,8 @@ public class GameState
 
     public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState previousKeyboardState)
     {
+        if (Outcome != GameOutcome.Playing) return;
+
         if (!PlayerTakenTurn)
         {
             if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
@@ -47,13 +50,21 @@ public class GameState
             return;
         }
 
+        if (Outcome == GameOutcome.Won)
+        {
+            PlayerTakenTurn = false;
+            return;
+        }
+
         MoveNPCs(gameTime);
         Player.Update(gameTime);
 
         if (Player.Dead)
         {
+            Outcome = GameOutcome.Lost;
             Console.WriteLine("Player is dead! Game over.");
-            return; // by bailing before resetting PlayerTakenTurn, we stop the game
+            PlayerTakenTurn = false;
+            return;
         }
         PlayerTakenTurn = false;
     }
@@ -65,14 +76,23 @@ public class GameState
             if (npc.State == NPCState.Active)
             {
                 npc.Move(gameTime, Player);
+                if (Player.Dead) return;
             }
         }
     }
 
-    private void AttemptMove(int deltaX, int deltaY)
+    internal void AttemptMove(int deltaX, int deltaY)
     {
         int newX = Player.X + deltaX;
         int newY = Player.Y + deltaY;
+
+        BaseNPC target = Map.GetLivingNPCAt(newX, newY);
+        if (target != null)
+        {
+            target.TakeDamage(Player.Damage);
+            PlayerTakenTurn = true;
+            return;
+        }
 
         if (Map.IsWalkable(newX, newY))
         {
@@ -91,6 +111,16 @@ public class GameState
             {
                 // TODO: open the door, for now just remove it
                 Map.MapCells[newX, newY].SetCellType(MapCellType.Floor);
+            }
+            else if (cell.CellType == MapCellType.Special)
+            {
+                Player.CollectSpecial();
+                cell.SetCellType(MapCellType.Floor);
+            }
+
+            if (Player.HasSpecial && newX == Map.StartPosX && newY == Map.StartPosY)
+            {
+                Outcome = GameOutcome.Won;
             }
         }
         PlayerTakenTurn = true;

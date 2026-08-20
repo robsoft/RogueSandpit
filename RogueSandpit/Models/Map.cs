@@ -53,7 +53,10 @@ public class Map
     public Map(GraphicsDevice graphicsDevice, int nativeWidth, int nativeHeight, int seed = 0)
     {
         _graphicsDevice = graphicsDevice;
-        _primDrawer = new PrimitiveDrawer(_graphicsDevice);
+        if (_graphicsDevice != null)
+        {
+            _primDrawer = new PrimitiveDrawer(_graphicsDevice);
+        }
         _nativeWidth = nativeWidth;
         _nativeHeight = nativeHeight;
 
@@ -98,11 +101,11 @@ public class Map
         AddNPCs();
         AddLoot();
 
-        // Add the macguffin
-        AddSpecials();
-
         // now flatten this into a single big 2-d array
         CreateMapCells();
+
+        // Add the macguffin to a reachable, unoccupied floor cell
+        AddSpecials();
 
         //AddDoorways();
 
@@ -232,9 +235,33 @@ public class Map
 
     private void AddSpecials()
     {
-        // find the last room in the list, and add a special item to it
-        Room lastRoom = RoomList[RoomList.Count - 1];
-        lastRoom.Specials.Add(new Special(lastRoom.X1 + 1, lastRoom.Y1 + 1, lastRoom));
+        Room specialRoom = null;
+        Point specialPosition = Point.Zero;
+        int greatestDistance = -1;
+
+        foreach (Room room in RoomList)
+        {
+            for (int x = room.X1; x < room.X2; x++)
+            {
+                for (int y = room.Y1; y < room.Y2; y++)
+                {
+                    if (MapCells[x, y].CellType != MapCellType.Floor || IsOccupiedByLivingNPC(x, y)) continue;
+
+                    int distance = Math.Abs(x - StartPosX) + Math.Abs(y - StartPosY);
+                    if (distance > greatestDistance)
+                    {
+                        greatestDistance = distance;
+                        specialRoom = room;
+                        specialPosition = new Point(x, y);
+                    }
+                }
+            }
+        }
+
+        if (specialRoom == null) return;
+
+        specialRoom.Specials.Add(new Special(specialPosition.X, specialPosition.Y, specialRoom));
+        MapCells[specialPosition.X, specialPosition.Y].SetCellType(MapCellType.Special);
     }
 
     // this flattens the room/corridor/obstacle structure into a single 2-d array of 'cells' that we can easily query for line-of-sight and pathfinding, without having to think about rooms and corridors etc. We can still use the room/corridor/obstacle structure for rendering, and for any room-specific logic we want to add later on
@@ -354,7 +381,23 @@ public class Map
     public bool IsWalkable(int x, int y)
     {
         if (x < 0 || x >= Width || y < 0 || y >= Height) return false;
-        return MapCells[x, y].CellType == MapCellType.Floor || MapCells[x, y].CellType == MapCellType.Door;
+        return MapCells[x, y].CellType == MapCellType.Floor
+            || MapCells[x, y].CellType == MapCellType.Door
+            || MapCells[x, y].CellType == MapCellType.Special;
+    }
+
+    public BaseNPC GetLivingNPCAt(int x, int y, BaseNPC except = null)
+    {
+        return NPCs.FirstOrDefault(npc =>
+            npc != except &&
+            npc.State != NPCState.Dead &&
+            npc.X == x &&
+            npc.Y == y);
+    }
+
+    public bool IsOccupiedByLivingNPC(int x, int y, BaseNPC except = null)
+    {
+        return GetLivingNPCAt(x, y, except) != null;
     }
 
     private void AddExits()
@@ -477,6 +520,8 @@ public class Map
 
         foreach (BaseNPC npc in NPCs)
         {
+            if (npc.State == NPCState.Dead) continue;
+
             _primDrawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(npc.X * CellScale, npc.Y * CellScale, CellScale, CellScale),
                 Color.Black);
@@ -564,6 +609,8 @@ public class Map
         BaseContainingElement currentPlayerRoom = MapCells[CurrentPlayerX, CurrentPlayerY].ParentElement;
         foreach (BaseNPC npc in NPCs)
         {
+            if (npc.State == NPCState.Dead) continue;
+
             //if (npc.CurrentRoom.HasVisited)
             // only show NPCs in the current room
             if (currentPlayerRoom != null && npc.CurrentRoom == currentPlayerRoom)
