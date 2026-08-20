@@ -62,12 +62,12 @@ public class Room : BaseContainingElement
             int height = Y2 - Y1;
             int newWidth = Math.Max(MinimumSize, (int)(width * RandGen.RandFloat(0.5F, 0.90F)));
             int newHeight = Math.Max(MinimumSize, (int)(height * RandGen.RandFloat(0.5F, 0.90F)));
-            var xDiff = (int)((width - newWidth) * 0.5F);
-            var yDiff = (int)((height - newHeight) * 0.5F);
-            X1 += xDiff;
-            X2 -= xDiff;
-            Y1 += yDiff;
-            Y2 -= yDiff;
+            int widthReduction = width - newWidth;
+            int heightReduction = height - newHeight;
+            X1 += widthReduction / 2;
+            X2 -= widthReduction - widthReduction / 2;
+            Y1 += heightReduction / 2;
+            Y2 -= heightReduction - heightReduction / 2;
 
         }
     }
@@ -121,7 +121,6 @@ public class Room : BaseContainingElement
     {
         int width = X2 - X1;
         int height = Y2 - Y1;
-        if (width < MinimumSize && height < MinimumSize) { return false; }
 
         // if we are not a leaf, then we are already divided, so we need to divide one of our children
         if (!IsLeaf())
@@ -136,18 +135,22 @@ public class Room : BaseContainingElement
             }
         }
         // so we are a leaf, so we need to divide ourselves
-        if (width > height)
+        bool canSplitVertically = width >= MinimumSize * 2 + 1;
+        bool canSplitHorizontally = height >= MinimumSize * 2 + 1;
+        if (!canSplitVertically && !canSplitHorizontally) return false;
+
+        if (canSplitVertically && (!canSplitHorizontally || width > height))
         {
             int split = RandGen.RandInt(X1 + MinimumSize, X2 - MinimumSize);
             LeftLeaves = new Room(X1, Y1, split, Y2, MinimumSize);
-            RightLeaves = new Room(split, Y1, X2, Y2, MinimumSize);
+            RightLeaves = new Room(split + 1, Y1, X2, Y2, MinimumSize);
             return true;
         }
         else
         {
             int split = RandGen.RandInt(Y1 + MinimumSize, Y2 - MinimumSize);
             LeftLeaves = new Room(X1, Y1, X2, split, MinimumSize);
-            RightLeaves = new Room(X1, split, X2, Y2, MinimumSize);
+            RightLeaves = new Room(X1, split + 1, X2, Y2, MinimumSize);
             return true;
         }
     }
