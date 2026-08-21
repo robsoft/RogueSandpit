@@ -117,4 +117,6 @@ Before expanding the simulation again, the next useful decisions are:
 - Which simulation signals deserve player-facing emphasis and which should remain hidden
 - Font, resolution, input, accessibility, and asset-pipeline conventions
 
+The agreed implementation sequence, nine-tile atlas contract, and UI architecture are recorded in [the presentation and UI roadmap](docs/presentation-roadmap.md).
+
 NPC actions still resolve sequentially within a fair rotating initiative rather than through simultaneous intent and conflict resolution. That remains worthwhile architectural work, but it can wait until the presentation direction clarifies what the game most needs next.
