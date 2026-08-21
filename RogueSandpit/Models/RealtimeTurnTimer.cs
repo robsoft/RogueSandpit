@@ -9,10 +9,11 @@ public sealed class RealtimeTurnTimer
     public bool Enabled { get; private set; }
     public double RemainingSeconds => Math.Max(0, IntervalSeconds - ElapsedSeconds);
 
-    public RealtimeTurnTimer(double intervalSeconds)
+    public RealtimeTurnTimer(double intervalSeconds, bool enabled = false)
     {
         if (intervalSeconds <= 0) throw new ArgumentOutOfRangeException(nameof(intervalSeconds));
         IntervalSeconds = intervalSeconds;
+        Enabled = enabled;
     }
 
     public void Toggle()

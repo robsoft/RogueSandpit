@@ -34,14 +34,26 @@ namespace RogueSandpit
         public const int NativeHeight = 600;
 
         public GameWrapper(int windowScale = GameOptions.DefaultWindowScale,
-            double turnSeconds = GameOptions.DefaultTurnSeconds)
+            double turnSeconds = GameOptions.DefaultTurnSeconds,
+            bool fullscreen = false, bool startRealtime = false)
         {
-            _realtimeTurnTimer = new RealtimeTurnTimer(turnSeconds);
+            _realtimeTurnTimer = new RealtimeTurnTimer(turnSeconds, startRealtime);
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            _graphics.PreferredBackBufferWidth = NativeWidth * windowScale;
-            _graphics.PreferredBackBufferHeight = NativeHeight * windowScale;
+            if (fullscreen)
+            {
+                DisplayMode desktop = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+                _graphics.HardwareModeSwitch = false;
+                _graphics.IsFullScreen = true;
+                _graphics.PreferredBackBufferWidth = desktop.Width;
+                _graphics.PreferredBackBufferHeight = desktop.Height;
+            }
+            else
+            {
+                _graphics.PreferredBackBufferWidth = NativeWidth * windowScale;
+                _graphics.PreferredBackBufferHeight = NativeHeight * windowScale;
+            }
             _graphics.ApplyChanges();
 
             Window.AllowUserResizing = true;
@@ -401,7 +413,7 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
-            if (_realtimeTurnTimer.Enabled)
+            if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
                 string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
                     ? "REALTIME PAUSED"

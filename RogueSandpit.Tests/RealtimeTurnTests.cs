@@ -6,6 +6,15 @@ namespace RogueSandpit.Tests;
 public class RealtimeTurnTests
 {
     [Fact]
+    public void TimerCanStartEnabled()
+    {
+        var timer = new RealtimeTurnTimer(1, enabled: true);
+
+        Assert.True(timer.Enabled);
+        Assert.True(timer.Advance(1, paused: false));
+    }
+
+    [Fact]
     public void EnabledTimerExpiresAtConfiguredIntervalAndResets()
     {
         var timer = new RealtimeTurnTimer(1);

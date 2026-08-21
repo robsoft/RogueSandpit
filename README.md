@@ -5,7 +5,7 @@ A simple rogue-like game built with Monogame and .net 9. The game features a pla
 ## Monogame, .Net9
 builds & runs on Mac and Windows
 
-`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `dotnet run -- --scale 1` for the original window size, or `--scale 3` / `--scale 4` for larger integer scaling. The optional real-time turn interval can be set with `--turn-seconds 1.5`.
+`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `--scale 1` through `--scale 4` for integer window scaling, or `--fullscreen` for borderless desktop fullscreen. Use `--realtime` to start timed turns immediately and `--turn-seconds 1.5` to configure their interval. Options can be combined after `dotnet run --`.
 
 
 ## Current Status
@@ -48,7 +48,7 @@ builds & runs on Mac and Windows
 - Goblins fight at range when possible, retreating from adjacency before falling back to melee
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
-- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus
+- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus; its countdown is visible only in F1 debug mode
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
 - Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot

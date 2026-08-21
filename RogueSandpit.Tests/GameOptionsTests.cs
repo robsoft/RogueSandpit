@@ -12,6 +12,8 @@ public class GameOptionsTests
 
         Assert.Equal(2, options.WindowScale);
         Assert.Equal(1.0, options.TurnSeconds);
+        Assert.False(options.Fullscreen);
+        Assert.False(options.StartRealtime);
     }
 
     [Theory]
@@ -54,5 +56,17 @@ public class GameOptionsTests
     public void InvalidTurnSecondsAreRejected(string argument)
     {
         Assert.Throws<ArgumentException>(() => GameOptions.Parse([argument]));
+    }
+
+    [Fact]
+    public void FullscreenAndRealtimeFlagsCanBeCombinedWithValueOptions()
+    {
+        GameOptions options = GameOptions.Parse([
+            "--fullscreen", "--scale", "3", "--realtime", "--turn-seconds=0.75"]);
+
+        Assert.True(options.Fullscreen);
+        Assert.True(options.StartRealtime);
+        Assert.Equal(3, options.WindowScale);
+        Assert.Equal(0.75, options.TurnSeconds);
     }
 }

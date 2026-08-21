@@ -8,22 +8,38 @@ public sealed class GameOptions
     public const double DefaultTurnSeconds = 1.0;
     public int WindowScale { get; }
     public double TurnSeconds { get; }
+    public bool Fullscreen { get; }
+    public bool StartRealtime { get; }
 
-    private GameOptions(int windowScale, double turnSeconds)
+    private GameOptions(int windowScale, double turnSeconds, bool fullscreen, bool startRealtime)
     {
         WindowScale = windowScale;
         TurnSeconds = turnSeconds;
+        Fullscreen = fullscreen;
+        StartRealtime = startRealtime;
     }
 
     public static GameOptions Parse(string[] args)
     {
         int windowScale = DefaultWindowScale;
         double turnSeconds = DefaultTurnSeconds;
+        bool fullscreen = false;
+        bool startRealtime = false;
 
         for (int i = 0; i < args.Length; i++)
         {
             string argument = args[i];
             string value;
+            if (argument == "--fullscreen")
+            {
+                fullscreen = true;
+                continue;
+            }
+            if (argument == "--realtime")
+            {
+                startRealtime = true;
+                continue;
+            }
             if (argument == "--scale")
             {
                 if (++i >= args.Length) throw new ArgumentException("--scale requires a value from 1 to 4.");
@@ -59,6 +75,6 @@ public sealed class GameOptions
             }
         }
 
-        return new GameOptions(windowScale, turnSeconds);
+        return new GameOptions(windowScale, turnSeconds, fullscreen, startRealtime);
     }
 }
