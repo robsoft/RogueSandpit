@@ -43,6 +43,7 @@ builds & runs on Mac and Windows
 - Generated weapons, armor, and bows have three named power tiers
 - Bandages stop bleeding and restore a small amount of health when needed
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
+- Goblins fight at range when possible, retreating from adjacency before falling back to melee
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus

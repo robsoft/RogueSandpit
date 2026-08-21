@@ -29,6 +29,7 @@ public abstract class BaseNPC
     public Item HeldItem { get; set; }
     public NPCAwarenessProfile AwarenessProfile { get; protected set; }
     public NPCMoraleProfile MoraleProfile { get; protected set; }
+    public NPCRangedProfile RangedProfile { get; protected set; }
     public NPCMoraleState MoraleState { get; protected set; } = NPCMoraleState.Steady;
     public (int X, int Y)? RetreatTarget { get; private set; }
     public bool HasCalledForHelp { get; private set; }
@@ -178,6 +179,21 @@ public abstract class BaseNPC
             }
 
             if (TryFlee(eventSink)) return;
+
+            if (RangedProfile != null)
+            {
+                int distance = dx + dy;
+                if (distance < RangedProfile.MinimumRange && TryTacticalRetreat(player, eventSink))
+                    return;
+                if (distance >= RangedProfile.MinimumRange && distance <= RangedProfile.MaximumRange)
+                {
+                    int actualDamage = player.TakeDamage(RangedProfile.Damage);
+                    eventSink?.Invoke($"{Name} SHOT PLAYER {actualDamage}");
+                    int listeners = Map.NotifyNoise(player.X, player.Y, 8, this);
+                    if (listeners > 0) eventSink?.Invoke($"RANGED COMBAT DREW {listeners} NPCS");
+                    return;
+                }
+            }
 
             if (dx + dy == 1)
             {
@@ -492,6 +508,29 @@ public abstract class BaseNPC
         }
         return !IsKnownHazard(newX, newY)
             && Map.CanNpcEnter(newX, newY, this, player);
+    }
+
+    private bool TryTacticalRetreat(Player player, Action<string> eventSink)
+    {
+        int currentDistance = Math.Abs(X - player.X) + Math.Abs(Y - player.Y);
+        (int X, int Y)? best = null;
+        int bestDistance = currentDistance;
+        foreach ((int dx, int dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
+        {
+            int candidateX = X + dx;
+            int candidateY = Y + dy;
+            int distance = Math.Abs(candidateX - player.X) + Math.Abs(candidateY - player.Y);
+            if (distance <= bestDistance || IsKnownHazard(candidateX, candidateY)
+                || !Map.CanNpcEnter(candidateX, candidateY, this, player)) continue;
+            best = (candidateX, candidateY);
+            bestDistance = distance;
+        }
+
+        if (best == null) return false;
+        MoveTo(best.Value.X, best.Value.Y);
+        TriggerTrap(eventSink);
+        eventSink?.Invoke($"{Name} KEPT DISTANCE");
+        return true;
     }
 
     public bool IsKnownHazard(int x, int y) => _knownHazards.Contains((x, y));

@@ -62,7 +62,7 @@ public class PathfindingTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
 
@@ -95,7 +95,7 @@ public class PathfindingTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
         npc.Move(player);
@@ -115,7 +115,7 @@ public class PathfindingTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
 
@@ -147,7 +147,7 @@ public class PathfindingTests
         AddFloor(map,
             (10, 10), (11, 10), (12, 10), (13, 10),
             (13, 9), (14, 10), (13, 11), (12, 11), (12, 9));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
 
@@ -173,7 +173,7 @@ public class PathfindingTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
         npc.Move(player);
