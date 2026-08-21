@@ -10,12 +10,14 @@ public class Item
     public string Name { get; }
     public ItemType Type { get; }
     public int Power { get; }
+    public TrapKind? TrapKind { get; }
 
-    public Item(string name, ItemType type, int power = 0)
+    public Item(string name, ItemType type, int power = 0, TrapKind? trapKind = null)
     {
         Name = name;
         Type = type;
         Power = power;
+        TrapKind = trapKind;
     }
 }
 
@@ -101,12 +103,24 @@ public static class ItemFactory
             ItemType.Key => new Item("BRASS KEY", type),
             ItemType.Armor => new Item("LEATHER ARMOR", type, 5),
             ItemType.Trap => new Item("HUNTING TRAP", type, 18),
+            ItemType.RangedWeapon => new Item("SHORT BOW", type, 7),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }
 
+    public static Item CreateTrap(TrapKind kind) => kind switch
+    {
+        TrapKind.Hunting => new Item("HUNTING TRAP", ItemType.Trap, 18, kind),
+        TrapKind.Snare => new Item("SNARE", ItemType.Trap, 0, kind),
+        TrapKind.Alarm => new Item("ALARM TRAP", ItemType.Trap, 0, kind),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind))
+    };
+
     public static Item CreateRandom()
     {
-        return Create((ItemType)RandGen.RandInt(0, Enum.GetValues<ItemType>().Length));
+        ItemType type = (ItemType)RandGen.RandInt(0, Enum.GetValues<ItemType>().Length);
+        return type == ItemType.Trap
+            ? CreateTrap((TrapKind)RandGen.RandInt(0, Enum.GetValues<TrapKind>().Length))
+            : Create(type);
     }
 }

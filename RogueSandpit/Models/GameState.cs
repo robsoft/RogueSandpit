@@ -56,6 +56,10 @@ public class GameState
             PlayerCommand.PlaceTrapDown => PlaceTrap(0, 1),
             PlayerCommand.PlaceTrapLeft => PlaceTrap(-1, 0),
             PlayerCommand.PlaceTrapRight => PlaceTrap(1, 0),
+            PlayerCommand.FireRangedUp => FireRanged(0, -1),
+            PlayerCommand.FireRangedDown => FireRanged(0, 1),
+            PlayerCommand.FireRangedLeft => FireRanged(-1, 0),
+            PlayerCommand.FireRangedRight => FireRanged(1, 0),
             _ => false
         };
 
@@ -344,20 +348,50 @@ public class GameState
         Item item = Player.Inventory.SelectedItem;
         if (item?.Type != ItemType.Trap)
         {
-            EventLog.Add("SELECT A HUNTING TRAP");
+            EventLog.Add("SELECT A TRAP");
             return false;
         }
 
         int trapX = Player.X + deltaX;
         int trapY = Player.Y + deltaY;
-        if (!Map.PlaceTrap(trapX, trapY, item.Power, Player))
+        if (!Map.PlaceTrap(trapX, trapY, item.Power, Player, item.TrapKind ?? TrapKind.Hunting))
         {
             EventLog.Add("CANNOT PLACE TRAP THERE");
             return false;
         }
 
         Player.RemoveFromInventory(item);
-        EventLog.Add("PLACED HUNTING TRAP");
+        EventLog.Add($"PLACED {item.Name}");
+        return true;
+    }
+
+    private bool FireRanged(int deltaX, int deltaY)
+    {
+        Item weapon = Player.EquippedRangedWeapon;
+        if (weapon == null)
+        {
+            EventLog.Add("NO RANGED WEAPON EQUIPPED");
+            return false;
+        }
+
+        ThrowTrajectory trajectory = Map.TraceThrow(Player.X, Player.Y, deltaX, deltaY);
+        if (trajectory == null)
+        {
+            EventLog.Add("CANNOT FIRE THAT WAY");
+            return false;
+        }
+
+        EventLog.Add($"FIRED {weapon.Name}");
+        if (trajectory.Target != null)
+        {
+            trajectory.Target.TakeDamage(weapon.Power);
+            EventLog.Add($"{weapon.Name} HIT {trajectory.Target.Name} {weapon.Power}");
+            if (trajectory.Target.State == NPCState.Dead)
+                trajectory.Target.ResolveDeathConsequences(EventLog.Add);
+        }
+        else EventLog.Add("SHOT MISSED");
+
+        EmitNoiseAt("BOW SHOT", trajectory.ImpactX, trajectory.ImpactY, 8);
         return true;
     }
 

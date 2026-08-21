@@ -22,6 +22,7 @@ public class Player
     public Inventory Inventory { get; private set; } = new();
     public Item EquippedWeapon { get; private set; }
     public Item EquippedArmor { get; private set; }
+    public Item EquippedRangedWeapon { get; private set; }
     public BaseContainingElement CurrentRoom { get; set; } = null;
     public StatusEffectCollection StatusEffects { get; } = new();
 
@@ -58,6 +59,7 @@ public class Player
         Inventory = new Inventory();
         EquippedWeapon = null;
         EquippedArmor = null;
+        EquippedRangedWeapon = null;
         StatusEffects.Clear();
     }
 
@@ -116,6 +118,13 @@ public class Player
         return true;
     }
 
+    public bool EquipRanged(Item weapon)
+    {
+        if (weapon?.Type != ItemType.RangedWeapon || !Inventory.Items.Contains(weapon)) return false;
+        EquippedRangedWeapon = weapon;
+        return true;
+    }
+
     public bool EquipArmor(Item armor)
     {
         if (armor?.Type != ItemType.Armor || !Inventory.Items.Contains(armor)) return false;
@@ -128,6 +137,7 @@ public class Player
         if (!Inventory.Remove(item)) return false;
         if (EquippedWeapon == item) EquippedWeapon = null;
         if (EquippedArmor == item) EquippedArmor = null;
+        if (EquippedRangedWeapon == item) EquippedRangedWeapon = null;
         return true;
     }
 
@@ -144,6 +154,10 @@ public class Player
         if (item.Type == ItemType.Weapon && EquippedWeapon == null)
         {
             autoEquipped = Equip(item);
+        }
+        else if (item.Type == ItemType.RangedWeapon && EquippedRangedWeapon == null)
+        {
+            autoEquipped = EquipRanged(item);
         }
 
         return true;
@@ -168,6 +182,7 @@ public class Player
         if (equippedItem == null) return PlayerItemActionResult.NoSelection;
         if (equippedItem.Type == ItemType.Weapon && Equip(equippedItem)) return PlayerItemActionResult.Success;
         if (equippedItem.Type == ItemType.Armor && EquipArmor(equippedItem)) return PlayerItemActionResult.Success;
+        if (equippedItem.Type == ItemType.RangedWeapon && EquipRanged(equippedItem)) return PlayerItemActionResult.Success;
         return PlayerItemActionResult.WrongItemType;
     }
 

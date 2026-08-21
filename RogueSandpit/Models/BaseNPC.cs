@@ -444,14 +444,16 @@ public abstract class BaseNPC
 
         Map.RemoveTrap(trap);
         TakeDamage(trap.Damage);
-        eventSink?.Invoke($"{Name} TRIGGERED TRAP {trap.Damage}");
-        if (State == NPCState.Active)
+        eventSink?.Invoke($"{Name} TRIGGERED TRAP {trap.Damage} ({trap.Kind})");
+        if (State == NPCState.Active && trap.Kind != TrapKind.Alarm)
         {
-            ApplyStatus(StatusEffectType.Stunned, 1, source: "HUNTING TRAP");
-            eventSink?.Invoke($"{Name} STUNNED BY TRAP");
+            int duration = trap.Kind == TrapKind.Snare ? 2 : 1;
+            ApplyStatus(StatusEffectType.Stunned, duration, source: $"{trap.Kind} TRAP");
+            eventSink?.Invoke($"{Name} STUNNED BY {trap.Kind} TRAP");
         }
         if (State == NPCState.Dead) ResolveDeathConsequences(eventSink);
-        int listeners = Map.NotifyNoise(X, Y, 9, this);
+        int radius = trap.Kind == TrapKind.Alarm ? 16 : 9;
+        int listeners = Map.NotifyNoise(X, Y, radius, this);
         if (listeners > 0) eventSink?.Invoke($"TRAP DREW {listeners} NPCS");
     }
 
