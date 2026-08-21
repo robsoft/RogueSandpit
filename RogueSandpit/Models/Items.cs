@@ -104,6 +104,7 @@ public static class ItemFactory
             ItemType.Armor => new Item("LEATHER ARMOR", type, 5),
             ItemType.Trap => new Item("HUNTING TRAP", type, 18),
             ItemType.RangedWeapon => new Item("SHORT BOW", type, 7),
+            ItemType.Bandage => new Item("BANDAGE", type, 12),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }
@@ -116,11 +117,31 @@ public static class ItemFactory
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };
 
+    public static Item CreateEquipment(ItemType type, int tier)
+    {
+        if (tier is < 1 or > 3) throw new ArgumentOutOfRangeException(nameof(tier));
+        return (type, tier) switch
+        {
+            (ItemType.Weapon, 1) => new Item("IRON SWORD", type, 8),
+            (ItemType.Weapon, 2) => new Item("STEEL AXE", type, 12),
+            (ItemType.Weapon, 3) => new Item("WAR HAMMER", type, 16),
+            (ItemType.Armor, 1) => new Item("LEATHER ARMOR", type, 5),
+            (ItemType.Armor, 2) => new Item("CHAIN MAIL", type, 8),
+            (ItemType.Armor, 3) => new Item("PLATE ARMOR", type, 12),
+            (ItemType.RangedWeapon, 1) => new Item("SHORT BOW", type, 7),
+            (ItemType.RangedWeapon, 2) => new Item("HUNTER BOW", type, 10),
+            (ItemType.RangedWeapon, 3) => new Item("WAR BOW", type, 13),
+            _ => throw new ArgumentException("Equipment tiers require a weapon, armor, or ranged weapon.")
+        };
+    }
+
     public static Item CreateRandom()
     {
         ItemType type = (ItemType)RandGen.RandInt(0, Enum.GetValues<ItemType>().Length);
-        return type == ItemType.Trap
-            ? CreateTrap((TrapKind)RandGen.RandInt(0, Enum.GetValues<TrapKind>().Length))
-            : Create(type);
+        if (type == ItemType.Trap)
+            return CreateTrap((TrapKind)RandGen.RandInt(0, Enum.GetValues<TrapKind>().Length));
+        if (type is ItemType.Weapon or ItemType.Armor or ItemType.RangedWeapon)
+            return CreateEquipment(type, RandGen.RandInt(1, 4));
+        return Create(type);
     }
 }

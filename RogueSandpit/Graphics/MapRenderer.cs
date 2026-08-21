@@ -258,6 +258,7 @@ public class MapRenderer
                 ItemType.Armor => Color.SteelBlue,
                 ItemType.Trap => Color.Orange,
                 ItemType.RangedWeapon => Color.SandyBrown,
+                ItemType.Bandage => Color.AntiqueWhite,
                 _ => Color.White
             };
             _drawer.DrawFilledRectangle(spriteBatch,

@@ -186,6 +186,7 @@ namespace RogueSandpit
                 if (WasPressed(Keys.Down) || WasPressed(Keys.Right) || WasPressed(Keys.OemCloseBrackets))
                     return PlayerCommand.SelectNextItem;
                 if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
+                if (WasPressed(Keys.B)) return PlayerCommand.UseBandage;
                 if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
                 if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
                 return PlayerCommand.None;
@@ -263,6 +264,7 @@ namespace RogueSandpit
             if (WasPressed(Keys.OemOpenBrackets)) return PlayerCommand.SelectPreviousItem;
             if (WasPressed(Keys.OemCloseBrackets)) return PlayerCommand.SelectNextItem;
             if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
+            if (WasPressed(Keys.B)) return PlayerCommand.UseBandage;
             if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
             if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
@@ -498,7 +500,7 @@ namespace RogueSandpit
                     new Vector2(panelX + 245, rowY + 4), 1, Color.LightGray);
             }
 
-            _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT  H USE  E EQUIP  D DROP  I CLOSE",
+            _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT  H POTION  B BANDAGE  E EQUIP  D DROP  I CLOSE",
                 new Vector2(panelX + 14, panelY + panelHeight - 22), 1, Color.LightGray);
         }
 

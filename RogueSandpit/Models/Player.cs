@@ -176,6 +176,21 @@ public class Player
         return PlayerItemActionResult.Success;
     }
 
+    public PlayerItemActionResult UseSelectedBandage(out int healed, out bool stoppedBleeding)
+    {
+        healed = 0;
+        stoppedBleeding = false;
+        Item bandage = Inventory.SelectedItem;
+        if (bandage == null) return PlayerItemActionResult.NoSelection;
+        if (bandage.Type != ItemType.Bandage) return PlayerItemActionResult.WrongItemType;
+
+        stoppedBleeding = StatusEffects.Remove(StatusEffectType.Bleeding);
+        healed = Heal(bandage.Power);
+        if (!stoppedBleeding && healed == 0) return PlayerItemActionResult.NoEffect;
+        RemoveFromInventory(bandage);
+        return PlayerItemActionResult.Success;
+    }
+
     public PlayerItemActionResult EquipSelectedItem(out Item equippedItem)
     {
         equippedItem = Inventory.SelectedItem;

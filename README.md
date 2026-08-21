@@ -40,6 +40,8 @@ builds & runs on Mac and Windows
 - NPC initiative rotates each turn so list order does not grant permanent priority over contested cells
 - NPCs investigate visible casualties; skilled archetypes can spot, remember, and avoid nearby traps
 - Short bows provide reusable directional ranged attacks with impact noise
+- Generated weapons, armor, and bows have three named power tiers
+- Bandages stop bleeding and restore a small amount of health when needed
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -62,6 +64,7 @@ builds & runs on Mac and Windows
 ## Controls
 - Arrow keys (WASD will come) to move the player character
 - H to use a healing potion
+- B to use a selected bandage
 - E to equip the selected melee weapon, ranged weapon, or armor
 - D to drop the selected item
 - C to open or close an adjacent unlocked door; arrows choose if more than one is available

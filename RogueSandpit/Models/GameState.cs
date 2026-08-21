@@ -39,6 +39,7 @@ public class GameState
             PlayerCommand.SelectPreviousItem => SelectItem(false),
             PlayerCommand.SelectNextItem => SelectItem(true),
             PlayerCommand.UsePotion => UsePotion(),
+            PlayerCommand.UseBandage => UseBandage(),
             PlayerCommand.EquipItem => EquipItem(),
             PlayerCommand.DropItem => DropItem(),
             PlayerCommand.ToggleDoorUp => ToggleDoor(0, -1),
@@ -201,6 +202,25 @@ public class GameState
     private bool Wait(bool addEvent)
     {
         if (addEvent) EventLog.Add("PLAYER WAITS");
+        return true;
+    }
+
+    private bool UseBandage()
+    {
+        PlayerItemActionResult result = Player.UseSelectedBandage(out int healed, out bool stoppedBleeding);
+        if (result is PlayerItemActionResult.NoSelection or PlayerItemActionResult.WrongItemType)
+        {
+            EventLog.Add("SELECT A BANDAGE");
+            return false;
+        }
+        if (result == PlayerItemActionResult.NoEffect)
+        {
+            EventLog.Add("BANDAGE NOT NEEDED");
+            return false;
+        }
+
+        if (stoppedBleeding) EventLog.Add("BLEEDING STOPPED");
+        if (healed > 0) EventLog.Add($"BANDAGED {healed}");
         return true;
     }
 
