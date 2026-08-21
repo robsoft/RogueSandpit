@@ -121,6 +121,7 @@ public class MapRenderer
             }
         }
 
+        DrawPlayerTrail(spriteBatch);
         DrawGroundItems(spriteBatch, false);
 
         foreach (BaseNPC npc in _map.NPCs)
@@ -132,6 +133,20 @@ public class MapRenderer
                 npcColor);
         }
 
+    }
+
+    private void DrawPlayerTrail(SpriteBatch spriteBatch)
+    {
+        foreach (PlayerTrailClue clue in _map.PlayerTrail)
+        {
+            float strength = Math.Max(0.2f, clue.RemainingTurns / 12f);
+            Vector2 start = CellCenter(clue.X, clue.Y);
+            Vector2 end = CellCenter(clue.NextX, clue.NextY);
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(clue.X * _map.CellScale + 3, clue.Y * _map.CellScale + 3,
+                    _map.CellScale - 6, _map.CellScale - 6), Color.HotPink * strength);
+            _drawer.DrawLine(spriteBatch, start, end, Color.HotPink * strength, 1f);
+        }
     }
 
     private void RenderRooms(SpriteBatch spriteBatch)

@@ -12,6 +12,9 @@ namespace RogueSandpit.Models;
 
 public class Map
 {
+    private const int TrailLifetime = 12;
+    private const int TrailCapacity = 24;
+    private long _nextTrailSequence;
     public bool IsInitialising { get; private set; } = false;
 
     // these are 'config', really
@@ -37,6 +40,7 @@ public class Map
     public List<BaseNPC> NPCs { get; set; } = new List<BaseNPC>();
     public List<GroundItem> GroundItems { get; set; } = new List<GroundItem>();
     public List<Doorway> Doors { get; set; } = new List<Doorway>();
+    public List<PlayerTrailClue> PlayerTrail { get; } = new();
 
     // todo:
     // 1) create a kind of simple 'carved out' array so that we can easily do line-of-sight without thinking about rooms.
@@ -64,6 +68,8 @@ public class Map
         NPCs = new List<BaseNPC>();
         GroundItems = new List<GroundItem>();
         Doors = new List<Doorway>();
+        PlayerTrail.Clear();
+        _nextTrailSequence = 0;
 
         // carve into spaces (this is the BSP routine)
         DivideIntoRooms();
@@ -453,6 +459,51 @@ public class Map
         return terrainAllowsEntry
             && !IsOccupiedByLivingNPC(x, y, movingNpc)
             && (player == null || x != player.X || y != player.Y);
+    }
+
+    public (int X, int Y)? PredictContinuation(int x, int y, int deltaX, int deltaY, int maximumSteps = 4)
+    {
+        if (Math.Abs(deltaX) + Math.Abs(deltaY) != 1) return null;
+
+        (int X, int Y)? prediction = null;
+        for (int step = 1; step <= maximumSteps; step++)
+        {
+            int targetX = x + deltaX * step;
+            int targetY = y + deltaY * step;
+            if (!CanProjectThrough(targetX, targetY)) break;
+            prediction = (targetX, targetY);
+        }
+        return prediction;
+    }
+
+    public void RecordPlayerMovement(int fromX, int fromY, int toX, int toY)
+    {
+        PlayerTrail.RemoveAll(clue => clue.X == fromX && clue.Y == fromY);
+        PlayerTrail.Add(new PlayerTrailClue(++_nextTrailSequence,
+            fromX, fromY, toX, toY, TrailLifetime));
+        if (PlayerTrail.Count > TrailCapacity) PlayerTrail.RemoveAt(0);
+    }
+
+    public void AgePlayerTrail()
+    {
+        foreach (PlayerTrailClue clue in PlayerTrail) clue.RemainingTurns--;
+        PlayerTrail.RemoveAll(clue => clue.RemainingTurns <= 0);
+    }
+
+    public PlayerTrailClue FindNewestTrailNear(int x, int y, long afterSequence)
+    {
+        return PlayerTrail
+            .Where(clue => clue.Sequence > afterSequence
+                && Math.Abs(clue.X - x) + Math.Abs(clue.Y - y) <= 1)
+            .OrderByDescending(clue => clue.Sequence)
+            .FirstOrDefault();
+    }
+
+    private bool CanProjectThrough(int x, int y)
+    {
+        if (x < 0 || x >= Width || y < 0 || y >= Height) return false;
+        if (IsWalkable(x, y)) return true;
+        return GetDoorAt(x, y)?.State == DoorState.Closed;
     }
 
     public int NotifyNoise(int x, int y, int radius, BaseNPC sourceNpc = null)
