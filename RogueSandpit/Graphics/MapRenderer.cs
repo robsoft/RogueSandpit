@@ -139,13 +139,14 @@ public class MapRenderer
     {
         foreach (PlayerTrailClue clue in _map.PlayerTrail)
         {
-            float strength = Math.Max(0.2f, clue.RemainingTurns / 12f);
+            float ageOpacity = Math.Clamp(clue.RemainingTurns / 18f, 0.2f, 1f);
+            Color clueColor = clue.IsAuthentic ? Color.HotPink : Color.MediumPurple;
             Vector2 start = CellCenter(clue.X, clue.Y);
             Vector2 end = CellCenter(clue.NextX, clue.NextY);
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(clue.X * _map.CellScale + 3, clue.Y * _map.CellScale + 3,
-                    _map.CellScale - 6, _map.CellScale - 6), Color.HotPink * strength);
-            _drawer.DrawLine(spriteBatch, start, end, Color.HotPink * strength, 1f);
+                    _map.CellScale - 6, _map.CellScale - 6), clueColor * ageOpacity);
+            _drawer.DrawLine(spriteBatch, start, end, clueColor * ageOpacity, clue.Strength);
         }
     }
 

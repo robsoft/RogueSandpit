@@ -478,9 +478,36 @@ public class Map
 
     public void RecordPlayerMovement(int fromX, int fromY, int toX, int toY)
     {
-        PlayerTrail.RemoveAll(clue => clue.X == fromX && clue.Y == fromY);
+        bool doorwayPassage = MapCells[fromX, fromY].CellType == MapCellType.Door
+            || MapCells[toX, toY].CellType == MapCellType.Door;
+        bool corridorPassage = MapCells[fromX, fromY].ParentElement is Corridor;
+        int strength = doorwayPassage ? 3 : corridorPassage ? 2 : 1;
+        int lifetime = doorwayPassage ? 18 : corridorPassage ? 16 : TrailLifetime;
+        AddTrailClue(fromX, fromY, toX, toY, lifetime, strength, true);
+    }
+
+    public bool RecordFalseTrail(int x, int y, int deltaX, int deltaY)
+    {
+        int nextX = x + deltaX;
+        int nextY = y + deltaY;
+        if (Math.Abs(deltaX) + Math.Abs(deltaY) != 1 || !IsWalkable(nextX, nextY)) return false;
+        AddTrailClue(x, y, nextX, nextY, 6, 1, false);
+        return true;
+    }
+
+    public List<Doorway> GetAdjacentOpenDoors(int x, int y)
+    {
+        return Doors.Where(door => door.State == DoorState.Open
+            && Math.Abs(door.X1 - x) + Math.Abs(door.Y1 - y) == 1
+            && !IsOccupiedByLivingNPC(door.X1, door.Y1)).ToList();
+    }
+
+    private void AddTrailClue(int x, int y, int nextX, int nextY,
+        int lifetime, int strength, bool isAuthentic)
+    {
+        PlayerTrail.RemoveAll(clue => clue.X == x && clue.Y == y);
         PlayerTrail.Add(new PlayerTrailClue(++_nextTrailSequence,
-            fromX, fromY, toX, toY, TrailLifetime));
+            x, y, nextX, nextY, lifetime, strength, isAuthentic));
         if (PlayerTrail.Count > TrailCapacity) PlayerTrail.RemoveAt(0);
     }
 

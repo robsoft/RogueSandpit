@@ -35,6 +35,14 @@ public class GameState
             PlayerCommand.UsePotion => UsePotion(),
             PlayerCommand.EquipItem => EquipItem(),
             PlayerCommand.DropItem => DropItem(),
+            PlayerCommand.CloseDoorUp => CloseDoor(0, -1),
+            PlayerCommand.CloseDoorDown => CloseDoor(0, 1),
+            PlayerCommand.CloseDoorLeft => CloseDoor(-1, 0),
+            PlayerCommand.CloseDoorRight => CloseDoor(1, 0),
+            PlayerCommand.LayFalseTrailUp => LayFalseTrail(0, -1),
+            PlayerCommand.LayFalseTrailDown => LayFalseTrail(0, 1),
+            PlayerCommand.LayFalseTrailLeft => LayFalseTrail(-1, 0),
+            PlayerCommand.LayFalseTrailRight => LayFalseTrail(1, 0),
             _ => false
         };
 
@@ -226,6 +234,39 @@ public class GameState
     {
         int listeners = Map.NotifyNoise(Player.X, Player.Y, radius);
         if (listeners > 0) EventLog.Add($"{label} DREW {listeners} NPCS");
+    }
+
+    private bool CloseDoor(int deltaX, int deltaY)
+    {
+        Doorway door = Map.GetDoorAt(Player.X + deltaX, Player.Y + deltaY);
+        if (door?.State != DoorState.Open)
+        {
+            EventLog.Add("NO OPEN DOOR THAT WAY");
+            return false;
+        }
+        if (Map.IsOccupiedByLivingNPC(door.X1, door.Y1))
+        {
+            EventLog.Add("DOORWAY BLOCKED");
+            return false;
+        }
+
+        door.State = DoorState.Closed;
+        EventLog.Add("CLOSED DOOR");
+        EmitNoise("DOOR NOISE", 6);
+        Map.UpdateVisibility(Player.X, Player.Y);
+        return true;
+    }
+
+    private bool LayFalseTrail(int deltaX, int deltaY)
+    {
+        if (!Map.RecordFalseTrail(Player.X, Player.Y, deltaX, deltaY))
+        {
+            EventLog.Add("CANNOT LAY TRAIL THAT WAY");
+            return false;
+        }
+
+        EventLog.Add("LAID FALSE TRAIL");
+        return true;
     }
 
 }

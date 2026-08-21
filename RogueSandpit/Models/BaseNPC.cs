@@ -233,6 +233,11 @@ public abstract class BaseNPC
         if (clue == null) return;
 
         _lastObservedTrailSequence = clue.Sequence;
+        if (!clue.IsAuthentic && AwarenessProfile.TrailDetectionRange >= 2)
+        {
+            eventSink?.Invoke($"{Name} REJECTED FALSE TRAIL");
+            return;
+        }
         if (clue.NextX == X && clue.NextY == Y) return;
 
         InvestigationOrigin = (clue.NextX, clue.NextY);

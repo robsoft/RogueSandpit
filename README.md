@@ -28,6 +28,8 @@ builds & runs on Mac and Windows
 - Successful movement leaves a short-lived trail that nearby investigating NPCs can discover
 - Alerted allies fan out across distinct nearby search cells instead of stacking on one target
 - Archetypes differ in tracking skill; Skeletons cannot interpret physical trails
+- Room, corridor, and doorway movement leave clues with different strength and lifetime
+- Players can close nearby open doors and lay directional false trails to mislead weaker trackers
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -42,7 +44,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Extend environmental evidence with terrain-specific clues or deliberate false trails
+- Add more player-facing uses for directional actions, such as throwing or traps
 - Graphics!  
 
 
@@ -51,13 +53,15 @@ builds & runs on Mac and Windows
 - H to use a healing potion
 - E to equip the selected weapon or armor
 - D to drop the selected item
+- C to close an adjacent open door; arrows choose if more than one is available
+- T followed by an arrow to lay a false trail in that direction
 - Left/right bracket to select an inventory item
 - I to open or close the inventory panel; arrows select items while it is open
 - Period or numpad 5 to wait one turn
 - F1 to toggle debug/map viewer  
 - In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
-- ESCAPE to quit the game
+- ESCAPE to cancel a directional action, or quit the game otherwise
 
 
 ## Intended Features
