@@ -23,7 +23,9 @@ public class GameState
     {
         if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
 
-        bool turnTaken = command switch
+        bool stunnedTurn = IsPotentialTurnCommand(command)
+            && Player.StatusEffects.Has(StatusEffectType.Stunned);
+        bool turnTaken = stunnedTurn || command switch
         {
             PlayerCommand.MoveUp => AttemptMove(0, -1),
             PlayerCommand.MoveDown => AttemptMove(0, 1),
@@ -55,6 +57,18 @@ public class GameState
         };
 
         if (!turnTaken) return;
+
+        StatusTurnResult playerStatus = Player.AdvanceStatusTurn();
+        if (playerStatus.BleedingDamage > 0)
+            EventLog.Add($"PLAYER BLED {playerStatus.BleedingDamage}");
+        if (stunnedTurn) EventLog.Add("PLAYER STUNNED");
+
+        if (Player.Dead)
+        {
+            Outcome = GameOutcome.Lost;
+            EventLog.Add("PLAYER DIED");
+            return;
+        }
 
         if (Outcome == GameOutcome.Won)
         {
@@ -114,15 +128,7 @@ public class GameState
             target.TakeDamage(Player.Damage);
             EventLog.Add($"PLAYER HIT {target.Name} {Player.Damage}");
             EmitNoise("COMBAT", 10);
-            if (target.State == NPCState.Dead)
-            {
-                EventLog.Add($"{target.Name} DIED");
-                if (Map.DropItem(target.HeldItem, target.X, target.Y))
-                {
-                    EventLog.Add($"{target.Name} DROPPED {target.HeldItem.Name}");
-                    target.HeldItem = null;
-                }
-            }
+            if (target.State == NPCState.Dead) target.ResolveDeathConsequences(EventLog.Add);
             return true;
         }
 
@@ -286,16 +292,49 @@ public class GameState
             return false;
         }
 
-        if (Map.FindThrowLanding(Player.X, Player.Y, deltaX, deltaY) is not { } landing)
+        ThrowTrajectory trajectory = Map.TraceThrow(Player.X, Player.Y, deltaX, deltaY);
+        if (trajectory == null)
         {
             EventLog.Add("CANNOT THROW THAT WAY");
             return false;
         }
 
-        if (!Map.DropItem(item, landing.X, landing.Y)) return false;
         Player.RemoveFromInventory(item);
         EventLog.Add($"THREW {item.Name}");
-        EmitNoiseAt("IMPACT", landing.X, landing.Y, 7);
+
+        if (trajectory.Target != null)
+        {
+            if (item.Type == ItemType.Weapon)
+            {
+                trajectory.Target.TakeDamage(item.Power);
+                EventLog.Add($"{item.Name} HIT {trajectory.Target.Name} {item.Power}");
+                if (trajectory.Target.State == NPCState.Active)
+                {
+                    trajectory.Target.ApplyStatus(StatusEffectType.Bleeding, 3, 2, item.Name);
+                    EventLog.Add($"{trajectory.Target.Name} BLEEDING");
+                }
+                else
+                {
+                    trajectory.Target.ResolveDeathConsequences(EventLog.Add);
+                }
+            }
+            else
+            {
+                EventLog.Add($"{item.Name} HIT {trajectory.Target.Name}");
+            }
+        }
+
+        if (item.Type == ItemType.HealingPotion)
+        {
+            EventLog.Add("HEALING POTION SHATTERED");
+        }
+        else if (!Map.DropItemNear(item, trajectory.LandingX, trajectory.LandingY, out _))
+        {
+            Player.Inventory.TryAdd(item);
+            EventLog.Add("ITEM RETURNED - NO LANDING SPACE");
+        }
+
+        EmitNoiseAt("IMPACT", trajectory.ImpactX, trajectory.ImpactY, 7);
         return true;
     }
 
@@ -325,6 +364,13 @@ public class GameState
     {
         int listeners = Map.NotifyNoise(x, y, radius);
         if (listeners > 0) EventLog.Add($"{label} DREW {listeners} NPCS");
+    }
+
+    private static bool IsPotentialTurnCommand(PlayerCommand command)
+    {
+        return command is not PlayerCommand.None
+            and not PlayerCommand.SelectPreviousItem
+            and not PlayerCommand.SelectNextItem;
     }
 
 }

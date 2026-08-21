@@ -29,6 +29,7 @@ public abstract class BaseNPC
     public NPCMoraleState MoraleState { get; protected set; } = NPCMoraleState.Steady;
     public (int X, int Y)? RetreatTarget { get; private set; }
     public bool HasCalledForHelp { get; private set; }
+    public StatusEffectCollection StatusEffects { get; } = new();
     public int EffectiveDamage => Damage + (MoraleState == NPCMoraleState.Enraged
         ? MoraleProfile.EnrageDamageBonus : 0);
 
@@ -119,6 +120,24 @@ public abstract class BaseNPC
 
     public void Move(Player player, Action<string> eventSink = null)
     {
+        if (State != NPCState.Active) return;
+        StatusTurnResult statusTurn = StatusEffects.AdvanceTurn();
+        if (statusTurn.BleedingDamage > 0)
+        {
+            TakeDamage(statusTurn.BleedingDamage);
+            eventSink?.Invoke($"{Name} BLED {statusTurn.BleedingDamage}");
+            if (State == NPCState.Dead)
+            {
+                ResolveDeathConsequences(eventSink);
+                return;
+            }
+        }
+        if (statusTurn.SkipAction)
+        {
+            eventSink?.Invoke($"{Name} STUNNED");
+            return;
+        }
+
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
 
@@ -298,6 +317,22 @@ public abstract class BaseNPC
         return true;
     }
 
+    public void ApplyStatus(StatusEffectType type, int duration, int power = 0, string source = "UNKNOWN")
+    {
+        StatusEffects.Apply(type, duration, power, source);
+    }
+
+    public void ResolveDeathConsequences(Action<string> eventSink = null)
+    {
+        if (State != NPCState.Dead) return;
+        eventSink?.Invoke($"{Name} DIED");
+        if (Map.DropItemNear(HeldItem, X, Y, out _))
+        {
+            eventSink?.Invoke($"{Name} DROPPED {HeldItem.Name}");
+            HeldItem = null;
+        }
+    }
+
     private void FollowNearbyTrail(Action<string> eventSink)
     {
         PlayerTrailClue clue = Map.FindNewestTrailNear(
@@ -402,11 +437,12 @@ public abstract class BaseNPC
         Map.RemoveTrap(trap);
         TakeDamage(trap.Damage);
         eventSink?.Invoke($"{Name} TRIGGERED TRAP {trap.Damage}");
-        if (State == NPCState.Dead && Map.DropItem(HeldItem, X, Y))
+        if (State == NPCState.Active)
         {
-            eventSink?.Invoke($"{Name} DROPPED {HeldItem.Name}");
-            HeldItem = null;
+            ApplyStatus(StatusEffectType.Stunned, 1, source: "HUNTING TRAP");
+            eventSink?.Invoke($"{Name} STUNNED BY TRAP");
         }
+        if (State == NPCState.Dead) ResolveDeathConsequences(eventSink);
         int listeners = Map.NotifyNoise(X, Y, 9, this);
         if (listeners > 0) eventSink?.Invoke($"TRAP DREW {listeners} NPCS");
     }

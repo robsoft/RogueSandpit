@@ -23,6 +23,7 @@ public class Player
     public Item EquippedWeapon { get; private set; }
     public Item EquippedArmor { get; private set; }
     public BaseContainingElement CurrentRoom { get; set; } = null;
+    public StatusEffectCollection StatusEffects { get; } = new();
 
     public Player()
     {
@@ -57,6 +58,7 @@ public class Player
         Inventory = new Inventory();
         EquippedWeapon = null;
         EquippedArmor = null;
+        StatusEffects.Clear();
     }
 
     public void CollectSpecial()
@@ -85,6 +87,18 @@ public class Player
             Dead = true;
         }
         return actualDamage;
+    }
+
+    public void ApplyStatus(StatusEffectType type, int duration, int power = 0, string source = "UNKNOWN")
+    {
+        StatusEffects.Apply(type, duration, power, source);
+    }
+
+    public StatusTurnResult AdvanceStatusTurn()
+    {
+        StatusTurnResult result = StatusEffects.AdvanceTurn();
+        if (result.BleedingDamage > 0) TakeDamage(result.BleedingDamage);
+        return result;
     }
 
     public int Heal(int amount)

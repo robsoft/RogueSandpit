@@ -34,6 +34,9 @@ builds & runs on Mac and Windows
 - Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
 - Selected inventory items can be thrown directionally as recoverable, noise-making distractions
 - Hunting traps can be placed on adjacent cells and damage the first NPC to enter them
+- Actors support timed bleeding and stunned effects with turn-based duration and damage
+- Thrown weapons strike and bleed the first NPC in their path, while thrown potions shatter
+- Hunting traps stun surviving victims for their next action
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -48,7 +51,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Add ranged combat or richer trap and throwable item varieties
+- Remove NPC list-order effects with a fairer turn-resolution architecture
 - Graphics!  
 
 

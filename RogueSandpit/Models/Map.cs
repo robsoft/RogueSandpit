@@ -633,17 +633,49 @@ public class Map
 
     public (int X, int Y)? FindThrowLanding(int x, int y, int deltaX, int deltaY, int range = 6)
     {
+        ThrowTrajectory trajectory = TraceThrow(x, y, deltaX, deltaY, range);
+        return trajectory == null ? null : (trajectory.LandingX, trajectory.LandingY);
+    }
+
+    public ThrowTrajectory TraceThrow(int x, int y, int deltaX, int deltaY, int range = 6)
+    {
         if (Math.Abs(deltaX) + Math.Abs(deltaY) != 1) return null;
         (int X, int Y)? landing = null;
         for (int step = 1; step <= range; step++)
         {
             int targetX = x + deltaX * step;
             int targetY = y + deltaY * step;
-            if (!IsWalkable(targetX, targetY) || IsOccupiedByLivingNPC(targetX, targetY)) break;
+            if (!IsWalkable(targetX, targetY)) break;
+            BaseNPC target = GetLivingNPCAt(targetX, targetY);
+            if (target != null)
+            {
+                (int X, int Y) itemLanding = landing ?? (targetX, targetY);
+                return new ThrowTrajectory(targetX, targetY,
+                    itemLanding.X, itemLanding.Y, target);
+            }
             if (GetGroundItemAt(targetX, targetY) == null && GetTrapAt(targetX, targetY) == null)
                 landing = (targetX, targetY);
         }
-        return landing;
+        return landing is { } finalLanding
+            ? new ThrowTrajectory(finalLanding.X, finalLanding.Y,
+                finalLanding.X, finalLanding.Y, null)
+            : null;
+    }
+
+    public bool DropItemNear(Item item, int x, int y, out (int X, int Y) position)
+    {
+        foreach ((int candidateX, int candidateY) in new[]
+        {
+            (x, y), (x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)
+        })
+        {
+            if (GetTrapAt(candidateX, candidateY) != null) continue;
+            if (!DropItem(item, candidateX, candidateY)) continue;
+            position = (candidateX, candidateY);
+            return true;
+        }
+        position = default;
+        return false;
     }
 
     public bool CanPlaceTrap(int x, int y, Player player = null)
