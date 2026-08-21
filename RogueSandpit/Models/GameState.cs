@@ -43,6 +43,14 @@ public class GameState
             PlayerCommand.LayFalseTrailDown => LayFalseTrail(0, 1),
             PlayerCommand.LayFalseTrailLeft => LayFalseTrail(-1, 0),
             PlayerCommand.LayFalseTrailRight => LayFalseTrail(1, 0),
+            PlayerCommand.ThrowItemUp => ThrowItem(0, -1),
+            PlayerCommand.ThrowItemDown => ThrowItem(0, 1),
+            PlayerCommand.ThrowItemLeft => ThrowItem(-1, 0),
+            PlayerCommand.ThrowItemRight => ThrowItem(1, 0),
+            PlayerCommand.PlaceTrapUp => PlaceTrap(0, -1),
+            PlayerCommand.PlaceTrapDown => PlaceTrap(0, 1),
+            PlayerCommand.PlaceTrapLeft => PlaceTrap(-1, 0),
+            PlayerCommand.PlaceTrapRight => PlaceTrap(1, 0),
             _ => false
         };
 
@@ -267,6 +275,56 @@ public class GameState
 
         EventLog.Add("LAID FALSE TRAIL");
         return true;
+    }
+
+    private bool ThrowItem(int deltaX, int deltaY)
+    {
+        Item item = Player.Inventory.SelectedItem;
+        if (item == null)
+        {
+            EventLog.Add("SELECT AN ITEM TO THROW");
+            return false;
+        }
+
+        if (Map.FindThrowLanding(Player.X, Player.Y, deltaX, deltaY) is not { } landing)
+        {
+            EventLog.Add("CANNOT THROW THAT WAY");
+            return false;
+        }
+
+        if (!Map.DropItem(item, landing.X, landing.Y)) return false;
+        Player.RemoveFromInventory(item);
+        EventLog.Add($"THREW {item.Name}");
+        EmitNoiseAt("IMPACT", landing.X, landing.Y, 7);
+        return true;
+    }
+
+    private bool PlaceTrap(int deltaX, int deltaY)
+    {
+        Item item = Player.Inventory.SelectedItem;
+        if (item?.Type != ItemType.Trap)
+        {
+            EventLog.Add("SELECT A HUNTING TRAP");
+            return false;
+        }
+
+        int trapX = Player.X + deltaX;
+        int trapY = Player.Y + deltaY;
+        if (!Map.PlaceTrap(trapX, trapY, item.Power, Player))
+        {
+            EventLog.Add("CANNOT PLACE TRAP THERE");
+            return false;
+        }
+
+        Player.RemoveFromInventory(item);
+        EventLog.Add("PLACED HUNTING TRAP");
+        return true;
+    }
+
+    private void EmitNoiseAt(string label, int x, int y, int radius)
+    {
+        int listeners = Map.NotifyNoise(x, y, radius);
+        if (listeners > 0) EventLog.Add($"{label} DREW {listeners} NPCS");
     }
 
 }

@@ -32,6 +32,8 @@ builds & runs on Mac and Windows
 - Players can close nearby open doors and lay directional false trails to mislead weaker trackers
 - Wounded NPCs react by archetype: some flee, Skeletons remain fearless, and Trolls become enraged
 - Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
+- Selected inventory items can be thrown directionally as recoverable, noise-making distractions
+- Hunting traps can be placed on adjacent cells and damage the first NPC to enter them
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -46,7 +48,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Add throwing and traps using the directional-action foundation
+- Add ranged combat or richer trap and throwable item varieties
 - Graphics!  
 
 
@@ -57,6 +59,8 @@ builds & runs on Mac and Windows
 - D to drop the selected item
 - C to close an adjacent open door; arrows choose if more than one is available
 - T followed by an arrow to lay a false trail in that direction
+- F followed by an arrow to throw the selected inventory item
+- P followed by an arrow to place a selected hunting trap
 - Left/right bracket to select an inventory item
 - I to open or close the inventory panel; arrows select items while it is open
 - Period or numpad 5 to wait one turn

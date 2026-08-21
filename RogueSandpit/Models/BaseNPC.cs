@@ -184,7 +184,7 @@ public abstract class BaseNPC
             if (InvestigationConfidence <= 0)
             {
                 AbandonInvestigation();
-                Wander(player);
+                Wander(player, eventSink);
                 return;
             }
 
@@ -218,7 +218,7 @@ public abstract class BaseNPC
         }
 
         Awareness = NPCAwareness.Unaware;
-        Wander(player);
+        Wander(player, eventSink);
     }
 
     public bool ReceiveInvestigation((int X, int Y) origin, NPCInvestigationSource source)
@@ -357,10 +357,11 @@ public abstract class BaseNPC
             }
 
             MoveTo(path[0].X, path[0].Y);
+            TriggerTrap(eventSink);
         }
     }
 
-    private void Wander(Player player)
+    private void Wander(Player player, Action<string> eventSink = null)
     {
         var newX = X;
         var newY = Y;
@@ -390,6 +391,24 @@ public abstract class BaseNPC
         }
 
         MoveTo(newX, newY);
+        TriggerTrap(eventSink);
+    }
+
+    private void TriggerTrap(Action<string> eventSink)
+    {
+        PlacedTrap trap = Map.GetTrapAt(X, Y);
+        if (trap == null) return;
+
+        Map.RemoveTrap(trap);
+        TakeDamage(trap.Damage);
+        eventSink?.Invoke($"{Name} TRIGGERED TRAP {trap.Damage}");
+        if (State == NPCState.Dead && Map.DropItem(HeldItem, X, Y))
+        {
+            eventSink?.Invoke($"{Name} DROPPED {HeldItem.Name}");
+            HeldItem = null;
+        }
+        int listeners = Map.NotifyNoise(X, Y, 9, this);
+        if (listeners > 0) eventSink?.Invoke($"TRAP DREW {listeners} NPCS");
     }
 
     private void MoveTo(int newX, int newY)

@@ -40,6 +40,7 @@ public class Map
     public List<BaseNPC> NPCs { get; set; } = new List<BaseNPC>();
     public List<GroundItem> GroundItems { get; set; } = new List<GroundItem>();
     public List<Doorway> Doors { get; set; } = new List<Doorway>();
+    public List<PlacedTrap> PlacedTraps { get; } = new();
     public List<PlayerTrailClue> PlayerTrail { get; } = new();
 
     // todo:
@@ -68,6 +69,7 @@ public class Map
         NPCs = new List<BaseNPC>();
         GroundItems = new List<GroundItem>();
         Doors = new List<Doorway>();
+        PlacedTraps.Clear();
         PlayerTrail.Clear();
         _nextTrailSequence = 0;
 
@@ -627,6 +629,47 @@ public class Map
         if (item == null || !IsWalkable(x, y) || GetGroundItemAt(x, y) != null) return false;
         GroundItems.Add(new GroundItem(item, x, y));
         return true;
+    }
+
+    public (int X, int Y)? FindThrowLanding(int x, int y, int deltaX, int deltaY, int range = 6)
+    {
+        if (Math.Abs(deltaX) + Math.Abs(deltaY) != 1) return null;
+        (int X, int Y)? landing = null;
+        for (int step = 1; step <= range; step++)
+        {
+            int targetX = x + deltaX * step;
+            int targetY = y + deltaY * step;
+            if (!IsWalkable(targetX, targetY) || IsOccupiedByLivingNPC(targetX, targetY)) break;
+            if (GetGroundItemAt(targetX, targetY) == null && GetTrapAt(targetX, targetY) == null)
+                landing = (targetX, targetY);
+        }
+        return landing;
+    }
+
+    public bool CanPlaceTrap(int x, int y, Player player = null)
+    {
+        return IsWalkable(x, y)
+            && !IsOccupiedByLivingNPC(x, y)
+            && (player == null || player.X != x || player.Y != y)
+            && GetGroundItemAt(x, y) == null
+            && GetTrapAt(x, y) == null;
+    }
+
+    public bool PlaceTrap(int x, int y, int damage, Player player = null)
+    {
+        if (!CanPlaceTrap(x, y, player)) return false;
+        PlacedTraps.Add(new PlacedTrap(x, y, damage));
+        return true;
+    }
+
+    public PlacedTrap GetTrapAt(int x, int y)
+    {
+        return PlacedTraps.FirstOrDefault(trap => trap.X == x && trap.Y == y);
+    }
+
+    public bool RemoveTrap(PlacedTrap trap)
+    {
+        return trap != null && PlacedTraps.Remove(trap);
     }
 
     private void AddExits()

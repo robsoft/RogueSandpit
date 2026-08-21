@@ -123,6 +123,7 @@ public class MapRenderer
 
         DrawPlayerTrail(spriteBatch);
         DrawGroundItems(spriteBatch, false);
+        DrawPlacedTraps(spriteBatch, false);
 
         foreach (BaseNPC npc in _map.NPCs)
         {
@@ -217,6 +218,7 @@ public class MapRenderer
         }
 
         DrawGroundItems(spriteBatch, true);
+        DrawPlacedTraps(spriteBatch, true);
 
         foreach (BaseNPC npc in _map.NPCs)
         {
@@ -254,11 +256,23 @@ public class MapRenderer
                 ItemType.Weapon => Color.Silver,
                 ItemType.Key => Color.Gold,
                 ItemType.Armor => Color.SteelBlue,
+                ItemType.Trap => Color.Orange,
                 _ => Color.White
             };
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(groundItem.X * _map.CellScale + 2, groundItem.Y * _map.CellScale + 2,
                     _map.CellScale - 4, _map.CellScale - 4), color);
+        }
+    }
+
+    private void DrawPlacedTraps(SpriteBatch spriteBatch, bool visibleOnly)
+    {
+        foreach (PlacedTrap trap in _map.PlacedTraps)
+        {
+            if (visibleOnly && !_map.MapCells[trap.X, trap.Y].IsVisible) continue;
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(trap.X * _map.CellScale + 2, trap.Y * _map.CellScale + 4,
+                    _map.CellScale - 4, _map.CellScale - 6), Color.OrangeRed);
         }
     }
 

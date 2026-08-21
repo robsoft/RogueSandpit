@@ -26,7 +26,7 @@ namespace RogueSandpit
         private bool _inventoryOpen;
         private DirectionalAction _directionalAction;
 
-        private enum DirectionalAction { None, CloseDoor, LayFalseTrail }
+        private enum DirectionalAction { None, CloseDoor, LayFalseTrail, ThrowItem, PlaceTrap }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -196,6 +196,28 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
+            if (WasPressed(Keys.F))
+            {
+                if (_player.Inventory.SelectedItem == null)
+                {
+                    _gameState.EventLog.Add("SELECT AN ITEM TO THROW");
+                    return PlayerCommand.None;
+                }
+                _directionalAction = DirectionalAction.ThrowItem;
+                return PlayerCommand.None;
+            }
+
+            if (WasPressed(Keys.P))
+            {
+                if (_player.Inventory.SelectedItem?.Type != ItemType.Trap)
+                {
+                    _gameState.EventLog.Add("SELECT A HUNTING TRAP");
+                    return PlayerCommand.None;
+                }
+                _directionalAction = DirectionalAction.PlaceTrap;
+                return PlayerCommand.None;
+            }
+
             if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
             if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
@@ -220,9 +242,23 @@ namespace RogueSandpit
                 return CloseDoorCommand(deltaX, deltaY);
             }
 
-            if (_map.IsWalkable(_player.X + deltaX, _player.Y + deltaY))
+            if (_directionalAction == DirectionalAction.LayFalseTrail)
+            {
+                if (_map.IsWalkable(_player.X + deltaX, _player.Y + deltaY))
+                    _directionalAction = DirectionalAction.None;
+                return FalseTrailCommand(deltaX, deltaY);
+            }
+
+            if (_directionalAction == DirectionalAction.ThrowItem)
+            {
+                if (_map.FindThrowLanding(_player.X, _player.Y, deltaX, deltaY).HasValue)
+                    _directionalAction = DirectionalAction.None;
+                return ThrowItemCommand(deltaX, deltaY);
+            }
+
+            if (_map.CanPlaceTrap(_player.X + deltaX, _player.Y + deltaY, _player))
                 _directionalAction = DirectionalAction.None;
-            return FalseTrailCommand(deltaX, deltaY);
+            return PlaceTrapCommand(deltaX, deltaY);
         }
 
         private static PlayerCommand CloseDoorCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
@@ -240,6 +276,24 @@ namespace RogueSandpit
             (0, 1) => PlayerCommand.LayFalseTrailDown,
             (-1, 0) => PlayerCommand.LayFalseTrailLeft,
             (1, 0) => PlayerCommand.LayFalseTrailRight,
+            _ => PlayerCommand.None
+        };
+
+        private static PlayerCommand ThrowItemCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        {
+            (0, -1) => PlayerCommand.ThrowItemUp,
+            (0, 1) => PlayerCommand.ThrowItemDown,
+            (-1, 0) => PlayerCommand.ThrowItemLeft,
+            (1, 0) => PlayerCommand.ThrowItemRight,
+            _ => PlayerCommand.None
+        };
+
+        private static PlayerCommand PlaceTrapCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        {
+            (0, -1) => PlayerCommand.PlaceTrapUp,
+            (0, 1) => PlayerCommand.PlaceTrapDown,
+            (-1, 0) => PlayerCommand.PlaceTrapLeft,
+            (1, 0) => PlayerCommand.PlaceTrapRight,
             _ => PlayerCommand.None
         };
 
@@ -303,9 +357,13 @@ namespace RogueSandpit
 
         private void DrawDirectionalActionPrompt()
         {
-            string prompt = _directionalAction == DirectionalAction.CloseDoor
-                ? "CLOSE DOOR: ARROW CHOOSES  ESC CANCELS"
-                : "FALSE TRAIL: ARROW CHOOSES  ESC CANCELS";
+            string prompt = _directionalAction switch
+            {
+                DirectionalAction.CloseDoor => "CLOSE DOOR: ARROW CHOOSES  ESC CANCELS",
+                DirectionalAction.LayFalseTrail => "FALSE TRAIL: ARROW CHOOSES  ESC CANCELS",
+                DirectionalAction.ThrowItem => "THROW ITEM: ARROW CHOOSES  ESC CANCELS",
+                _ => "PLACE TRAP: ARROW CHOOSES  ESC CANCELS"
+            };
             const int panelWidth = 330;
             const int panelHeight = 28;
             int panelX = (NativeWidth - panelWidth) / 2;
@@ -406,7 +464,9 @@ namespace RogueSandpit
 
             GroundItem groundItem = _map.GetGroundItemAt(position.X, position.Y);
             string itemName = groundItem?.Item.Name ?? "NONE";
-            _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName}",
+            PlacedTrap placedTrap = _map.GetTrapAt(position.X, position.Y);
+            string trapDetails = placedTrap == null ? "NONE" : $"DMG {placedTrap.Damage}";
+            _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName} TRAP {trapDetails}",
                 new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
 
             Doorway door = _map.GetDoorAt(position.X, position.Y);
