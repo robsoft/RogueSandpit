@@ -19,7 +19,7 @@ Make a chase persist after line of sight breaks by having NPCs investigate the l
 - Perception occurs at turn boundaries. NPCs remember the last cell where the player was actually visible.
 - `HasSeenPlayer` remains historical; current awareness and last-known position are separate properties.
 
-## Out of scope
+## Subsequent extensions
 
-- Searching multiple nearby cells, predicting which exit the player chose, shared awareness, hearing, or timed memory decay.
-
+- Local multi-cell searching, predictive continuation, shared awareness, hearing, confidence decay, and discoverable movement trails are now layered on this initial investigation model.
+- Coordinated group search roles and terrain-specific clues remain future possibilities.

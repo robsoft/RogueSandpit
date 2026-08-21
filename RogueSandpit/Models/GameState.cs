@@ -46,6 +46,7 @@ public class GameState
         }
 
         MoveNPCs();
+        Map.AgePlayerTrail();
         Player.Update();
 
         if (Player.Dead)
@@ -111,7 +112,10 @@ public class GameState
 
         if (Map.IsWalkable(newX, newY))
         {
+            int previousX = Player.X;
+            int previousY = Player.Y;
             Player.Place(Map, newX, newY);
+            Map.RecordPlayerMovement(previousX, previousY, newX, newY);
             var cell = Map.MapCells[newX, newY];
             if (cell.CellType == MapCellType.Special)
             {

@@ -8,6 +8,7 @@ public abstract class BaseNPC
 {
     private readonly Queue<(int X, int Y)> _searchTargets = new();
     private bool _isLocalSearching;
+    private long _lastObservedTrailSequence;
 
     public Guid Id { get; private set; } = Guid.NewGuid();
     public BaseContainingElement CurrentRoom { get; private set; }
@@ -38,6 +39,8 @@ public abstract class BaseNPC
     public (int X, int Y)? InvestigationOrigin { get; private set; }
     public NPCInvestigationSource InvestigationSource { get; private set; } = NPCInvestigationSource.None;
     public int InvestigationConfidence { get; private set; }
+    public (int X, int Y)? LastObservedPlayerMovement { get; private set; }
+    public (int X, int Y)? PredictedInvestigationTarget { get; private set; }
     public (int X, int Y)? InvestigationTarget =>
         _searchTargets.Count > 0 ? _searchTargets.Peek() : InvestigationOrigin;
     public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
@@ -72,6 +75,8 @@ public abstract class BaseNPC
             InvestigationOrigin = null;
             InvestigationSource = NPCInvestigationSource.None;
             InvestigationConfidence = 0;
+            LastObservedPlayerMovement = null;
+            PredictedInvestigationTarget = null;
             _searchTargets.Clear();
             _isLocalSearching = false;
             Console.WriteLine($"{Name} has been killed!");
@@ -86,6 +91,17 @@ public abstract class BaseNPC
         if (dx + dy <= AwarenessProfile.SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
         {
             bool newlySpottedPlayer = Awareness != NPCAwareness.Pursuing;
+            if (LastKnownPlayerPosition is { } previousPlayerPosition)
+            {
+                int movementX = player.X - previousPlayerPosition.X;
+                int movementY = player.Y - previousPlayerPosition.Y;
+                if (Math.Abs(movementX) + Math.Abs(movementY) == 1)
+                {
+                    LastObservedPlayerMovement = (movementX, movementY);
+                    PredictedInvestigationTarget = Map.PredictContinuation(
+                        player.X, player.Y, movementX, movementY);
+                }
+            }
             HasSeenPlayer = true;
             Awareness = NPCAwareness.Pursuing;
             LastKnownPlayerPosition = (player.X, player.Y);
@@ -115,9 +131,18 @@ public abstract class BaseNPC
             return;
         }
 
+        if (Awareness == NPCAwareness.Pursuing && PredictedInvestigationTarget is { } prediction)
+        {
+            InvestigationOrigin = prediction;
+            _searchTargets.Clear();
+            _isLocalSearching = false;
+        }
+
         if (InvestigationOrigin is { } investigationOrigin)
         {
             Awareness = NPCAwareness.Investigating;
+            FollowNearbyTrail(eventSink);
+            investigationOrigin = InvestigationOrigin.Value;
             if (InvestigationConfidence <= 0)
             {
                 AbandonInvestigation();
@@ -168,6 +193,8 @@ public abstract class BaseNPC
         InvestigationSource = source;
         InvestigationConfidence = InitialConfidence(source);
         LastKnownPlayerPosition = source == NPCInvestigationSource.LastSeen ? origin : null;
+        PredictedInvestigationTarget = null;
+        LastObservedPlayerMovement = null;
         _searchTargets.Clear();
         _isLocalSearching = false;
         return true;
@@ -180,6 +207,7 @@ public abstract class BaseNPC
             NPCInvestigationSource.Noise => 8,
             NPCInvestigationSource.AllyAlert => 10,
             NPCInvestigationSource.LastSeen => 12,
+            NPCInvestigationSource.Trail => 11,
             _ => 0
         };
         return Math.Max(1, evidenceConfidence + AwarenessProfile.PersistenceAdjustment);
@@ -191,9 +219,28 @@ public abstract class BaseNPC
         InvestigationOrigin = null;
         InvestigationSource = NPCInvestigationSource.None;
         InvestigationConfidence = 0;
+        LastObservedPlayerMovement = null;
+        PredictedInvestigationTarget = null;
         Awareness = NPCAwareness.Unaware;
         _searchTargets.Clear();
         _isLocalSearching = false;
+    }
+
+    private void FollowNearbyTrail(Action<string> eventSink)
+    {
+        PlayerTrailClue clue = Map.FindNewestTrailNear(X, Y, _lastObservedTrailSequence);
+        if (clue == null) return;
+
+        _lastObservedTrailSequence = clue.Sequence;
+        if (clue.NextX == X && clue.NextY == Y) return;
+
+        InvestigationOrigin = (clue.NextX, clue.NextY);
+        InvestigationSource = NPCInvestigationSource.Trail;
+        InvestigationConfidence = InitialConfidence(NPCInvestigationSource.Trail);
+        PredictedInvestigationTarget = null;
+        _searchTargets.Clear();
+        _isLocalSearching = false;
+        eventSink?.Invoke($"{Name} FOUND TRAIL");
     }
 
     private void SpendInvestigationConfidence()
