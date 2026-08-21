@@ -85,6 +85,8 @@ The project has generally progressed in small feature pairs:
 
 Completed feature specifications and plans live under `docs/`. They are useful design history, but the README and this file are the authoritative summaries of the present project.
 
+Small observations intentionally deferred from active milestones are recorded in [`docs/deferred-snags.md`](docs/deferred-snags.md).
+
 ## Known debt and deliberately deferred work
 
 - NPC initiative rotates fairly but actions are not planned and resolved simultaneously.
