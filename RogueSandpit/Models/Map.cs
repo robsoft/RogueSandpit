@@ -553,6 +553,12 @@ public class Map
 
     public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY)
     {
+        return AlertNearbyAllies(sourceNpc, observedPlayerX, observedPlayerY,
+            sourceNpc.AwarenessProfile.AllyAlertRadius);
+    }
+
+    public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY, int radius)
+    {
         int alerted = 0;
         List<(int X, int Y)> assignments = CoordinatedSearchAssignments(observedPlayerX, observedPlayerY);
         foreach (BaseNPC npc in NPCs)
@@ -562,13 +568,38 @@ public class Map
             (int X, int Y) target = alerted < assignments.Count
                 ? assignments[alerted]
                 : (observedPlayerX, observedPlayerY);
-            if (distance <= sourceNpc.AwarenessProfile.AllyAlertRadius
+            if (distance <= radius
                 && npc.ReceiveInvestigation(target, NPCInvestigationSource.AllyAlert))
             {
                 alerted++;
             }
         }
         return alerted;
+    }
+
+    public (int X, int Y)? FindRetreatTarget(BaseNPC npc, int threatX, int threatY, int searchRadius = 6)
+    {
+        (int X, int Y)? bestTarget = null;
+        int bestScore = int.MinValue;
+        for (int x = Math.Max(0, npc.X - searchRadius); x <= Math.Min(Width - 1, npc.X + searchRadius); x++)
+        {
+            for (int y = Math.Max(0, npc.Y - searchRadius); y <= Math.Min(Height - 1, npc.Y + searchRadius); y++)
+            {
+                if (x == npc.X && y == npc.Y) continue;
+                if (!CanNpcEnter(x, y, npc, allowClosedDoor: true)) continue;
+                List<(int X, int Y)> path = Pathfinding.FindPath(this, npc.X, npc.Y, x, y, npc);
+                if (path.Count == 0) continue;
+
+                int threatDistance = Math.Abs(x - threatX) + Math.Abs(y - threatY);
+                int homeDistance = Math.Abs(x - npc.HomeX) + Math.Abs(y - npc.HomeY);
+                int score = threatDistance * 10 - path.Count - homeDistance;
+                if (GetDoorAt(x, y) != null) score += 8;
+                if (score <= bestScore) continue;
+                bestScore = score;
+                bestTarget = (x, y);
+            }
+        }
+        return bestTarget;
     }
 
     private List<(int X, int Y)> CoordinatedSearchAssignments(int x, int y)

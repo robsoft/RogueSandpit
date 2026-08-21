@@ -13,6 +13,7 @@ public enum Direction { Up, Down, Left, Right };
 public enum NPCState { Active, InActive, Targeting, Homing, Dead };
 public enum Visibility { Hidden, Visible, Cloaked };
 public enum CharacterMood { Attacker, Defender, Neutral, Helpful };
+public enum NPCMoraleState { Steady, Shaken, Fleeing, Enraged, Fearless };
 public enum RenderMode { Rooms, Cells };
 public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };

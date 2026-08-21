@@ -30,8 +30,10 @@ builds & runs on Mac and Windows
 - Archetypes differ in tracking skill; Skeletons cannot interpret physical trails
 - Room, corridor, and doorway movement leave clues with different strength and lifetime
 - Players can close nearby open doors and lay directional false trails to mislead weaker trackers
+- Wounded NPCs react by archetype: some flee, Skeletons remain fearless, and Trolls become enraged
+- Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
-- Pursuing NPCs render orange-red and investigating NPCs render yellow during development
+- Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
@@ -44,7 +46,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Add more player-facing uses for directional actions, such as throwing or traps
+- Add throwing and traps using the directional-action foundation
 - Graphics!  
 
 
