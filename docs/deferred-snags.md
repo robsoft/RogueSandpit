@@ -21,3 +21,9 @@ Before changing generation, verify:
 - Clusters are reduced without removing tactically useful doors indiscriminately.
 
 A likely approach is a post-generation doorway-pruning pass which scores local clusters, preserves mandatory/locked doors, tests topology before removal, and converts selected doorway cells to ordinary floor.
+
+## Selecting within a one-item inventory
+
+When the inventory contains fewer than two selectable items, Select Previous Item and Select Next Item have no meaningful result. Treat either command as a silent no-op: do not change selection, add an event-log entry, or consume a player turn. This must hold whether the inventory panel is open or the selection command is used during normal play.
+
+Add focused simulation tests for empty, one-item, and multi-item inventories when this is addressed. Multi-item selection should retain its existing wrap-around behaviour.
