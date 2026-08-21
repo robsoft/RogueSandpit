@@ -122,6 +122,60 @@ public class PredictivePursuitTrailTests
         Assert.Empty(map.PlayerTrail);
     }
 
+    [Fact]
+    public void AllyAlertAssignsDistinctWalkableSearchCells()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (12, 10), (12, 9), (13, 10), (12, 11), (11, 10));
+        var source = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var first = new Orc(map, 10, 11, null) { State = NPCState.Active };
+        var second = new Orc(map, 10, 12, null) { State = NPCState.Active };
+        var third = new Orc(map, 10, 13, null) { State = NPCState.Active };
+        map.NPCs.AddRange([source, first, second, third]);
+
+        Assert.Equal(3, map.AlertNearbyAllies(source, 12, 10));
+
+        Assert.Equal((12, 9), first.InvestigationOrigin);
+        Assert.Equal((13, 10), second.InvestigationOrigin);
+        Assert.Equal((12, 11), third.InvestigationOrigin);
+    }
+
+    [Fact]
+    public void TrackingArchetypeFindsTrailBeyondGoblinRange()
+    {
+        Map wretchMap = CreateBlankMap();
+        AddHorizontalFloor(wretchMap, 10, 15, 10);
+        var wretch = new Wretch(wretchMap, 10, 10, null) { State = NPCState.Active };
+        wretchMap.RecordPlayerMovement(12, 10, 13, 10);
+        wretch.ReceiveInvestigation((15, 10), NPCInvestigationSource.Noise);
+
+        Map goblinMap = CreateBlankMap();
+        AddHorizontalFloor(goblinMap, 10, 15, 10);
+        var goblin = new Goblin(goblinMap, 10, 10, null) { State = NPCState.Active };
+        goblinMap.RecordPlayerMovement(12, 10, 13, 10);
+        goblin.ReceiveInvestigation((15, 10), NPCInvestigationSource.Noise);
+
+        wretch.Move(new Player { X = 40, Y = 40 });
+        goblin.Move(new Player { X = 40, Y = 40 });
+
+        Assert.Equal(NPCInvestigationSource.Trail, wretch.InvestigationSource);
+        Assert.Equal(NPCInvestigationSource.Noise, goblin.InvestigationSource);
+    }
+
+    [Fact]
+    public void SkeletonCannotInterpretTrailUnderfoot()
+    {
+        Map map = CreateBlankMap();
+        AddHorizontalFloor(map, 10, 15, 10);
+        var skeleton = new Skeleton(map, 10, 10, null) { State = NPCState.Active };
+        map.RecordPlayerMovement(10, 10, 11, 10);
+        skeleton.ReceiveInvestigation((15, 10), NPCInvestigationSource.Noise);
+
+        skeleton.Move(new Player { X = 40, Y = 40 });
+
+        Assert.Equal(NPCInvestigationSource.Noise, skeleton.InvestigationSource);
+    }
+
     private static Map CreateBlankMap()
     {
         var map = new Map(123);

@@ -228,7 +228,8 @@ public abstract class BaseNPC
 
     private void FollowNearbyTrail(Action<string> eventSink)
     {
-        PlayerTrailClue clue = Map.FindNewestTrailNear(X, Y, _lastObservedTrailSequence);
+        PlayerTrailClue clue = Map.FindNewestTrailNear(
+            X, Y, _lastObservedTrailSequence, AwarenessProfile.TrailDetectionRange);
         if (clue == null) return;
 
         _lastObservedTrailSequence = clue.Sequence;
