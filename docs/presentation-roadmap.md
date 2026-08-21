@@ -269,4 +269,6 @@ Tiled may later be useful for prefab rooms, special encounters, tileset testing,
 
 ## Resume point
 
-The next external input is `prototype-slice.aseprite` and/or its 96×96 exported PNG. Once available, begin Milestone 1 on a feature branch with a short integration spec and plan, inspect the atlas before editing code, and validate it in the running game before expanding the asset list.
+The prototype atlas, 18×16 scrolling viewport, and structured normal-play HUD are now implemented. The next visual input is expanded artwork following the approved 32×32 conventions. The next UI engineering milestone is the application-screen boundary and Gum inventory proof after the desired visual theme is clearer.
+
+Audio is planned separately in [the audio roadmap](audio-plan.md), beginning with structured presentation events and an eight-cue gameplay slice once suitable licensed assets are available.
