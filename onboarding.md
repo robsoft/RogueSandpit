@@ -17,6 +17,7 @@ cd RogueSandpit
 dotnet build     # restores MonoGame + MGCB content-pipeline tools automatically, builds cleanly
 dotnet run        # launches at the accessibility-friendly 2x window scale
 dotnet run -- --scale 1 --turn-seconds 1.5  # compact window and custom real-time interval
+dotnet run -- --fullscreen --realtime       # borderless fullscreen with timed turns enabled
 ```
 
 There's also a VS Code launch config (`RogueSandpit/.vscode/launch.json`, "C#: RogueSandpit Debug") and a solution file at the repo root (`RogueSandpit.slnx`) if you'd rather open it in an IDE. The README states it builds & runs on both Mac and Windows.
@@ -48,7 +49,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 ## Architecture
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
-- **`GameOptions.cs`** / **`GameWrapper.cs`** — command-line window scaling plus the MonoGame update/draw loop, inventory and directional-action UI, input translation, and aspect-ratio-preserving resizing. The native canvas remains 800×600 at every window scale.
+- **`GameOptions.cs`** / **`GameWrapper.cs`** — command-line scaling/fullscreen and real-time launch modes plus the MonoGame update/draw loop, UI, input translation, and aspect-ratio-preserving presentation. The native canvas remains 800×600 in every mode.
 - **`Models/GameState.cs`** / **`Models/NpcTurnScheduler.cs`** — framework-independent turn coordination. The active NPC phase is snapshotted and its initiative rotates each turn, avoiding permanent map-list priority while retaining sequential action resolution.
 - **`Models/Map.cs`** / **`EnvironmentalEffect.cs`** — procedural map generation and centralized terrain/actor occupancy queries. The map distributes noise and alerts and owns evidence trails, actor-aware throws, ground loot, placed traps, and turn-aged smoke/fire effects.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** / **`NPCAwarenessProfile.cs`** / **`NPCMoraleProfile.cs`** / **`NPCRangedProfile.cs`** / **`StatusEffects.cs`** — character state, shared timed actor effects, and NPC identity/movement/AI. Five seeded archetypes have distinct combat, perception, tracking, morale, retreat, and help-call behavior; Goblins additionally maintain range and shoot.

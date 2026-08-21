@@ -5,7 +5,7 @@ A simple rogue-like game built with Monogame and .net 9. The game features a pla
 ## Monogame, .Net9
 builds & runs on Mac and Windows
 
-`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `dotnet run -- --scale 1` for the original window size, or `--scale 3` / `--scale 4` for larger integer scaling. The optional real-time turn interval can be set with `--turn-seconds 1.5`.
+`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `--scale 1` through `--scale 4` for integer window scaling, or `--fullscreen` for borderless desktop fullscreen. Use `--realtime` to start timed turns immediately and `--turn-seconds 1.5` to configure their interval. Options can be combined after `dotnet run --`.
 
 
 ## Current Status
