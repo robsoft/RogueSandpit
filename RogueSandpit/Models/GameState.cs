@@ -80,6 +80,20 @@ public class GameState
             return;
         }
 
+        EnvironmentalEffect playerFire = Map.GetEnvironmentalEffectAt(
+            Player.X, Player.Y, EnvironmentalEffectType.Fire);
+        if (playerFire != null)
+        {
+            int damage = Player.TakeDamage(playerFire.Power);
+            EventLog.Add($"PLAYER BURNED {damage}");
+            if (Player.Dead)
+            {
+                Outcome = GameOutcome.Lost;
+                EventLog.Add("PLAYER DIED");
+                return;
+            }
+        }
+
         if (Outcome == GameOutcome.Won)
         {
             return;
@@ -87,6 +101,8 @@ public class GameState
 
         MoveNPCs();
         Map.AgePlayerTrail();
+        Map.AgeEnvironmentalEffects();
+        Map.UpdateVisibility(Player.X, Player.Y);
         Player.Update();
 
         if (Player.Dead)
@@ -354,6 +370,19 @@ public class GameState
         if (item.Type == ItemType.HealingPotion)
         {
             EventLog.Add("HEALING POTION SHATTERED");
+        }
+        else if (item.Type == ItemType.SmokeBomb)
+        {
+            Map.AddEnvironmentalEffect(EnvironmentalEffectType.Smoke,
+                trajectory.ImpactX, trajectory.ImpactY, 4);
+            EventLog.Add("SMOKE SPREAD");
+            Map.UpdateVisibility(Player.X, Player.Y);
+        }
+        else if (item.Type == ItemType.FireBomb)
+        {
+            Map.AddEnvironmentalEffect(EnvironmentalEffectType.Fire,
+                trajectory.ImpactX, trajectory.ImpactY, 4, item.Power);
+            EventLog.Add("FIRE SPREAD");
         }
         else if (!Map.DropItemNear(item, trajectory.LandingX, trajectory.LandingY, out _))
         {

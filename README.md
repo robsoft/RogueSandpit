@@ -42,6 +42,8 @@ builds & runs on Mac and Windows
 - Short bows provide reusable directional ranged attacks with impact noise
 - Generated weapons, armor, and bows have three named power tiers
 - Bandages stop bleeding and restore a small amount of health when needed
+- Smoke bombs create temporary walkable cover that blocks sight and ranged attacks
+- Fire bombs create temporary damaging terrain that NPCs route around
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Goblins fight at range when possible, retreating from adjacency before falling back to melee
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development

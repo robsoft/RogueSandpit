@@ -122,6 +122,7 @@ public class MapRenderer
         }
 
         DrawPlayerTrail(spriteBatch);
+        DrawEnvironmentalEffects(spriteBatch, false);
         DrawGroundItems(spriteBatch, false);
         DrawPlacedTraps(spriteBatch, false);
 
@@ -218,6 +219,7 @@ public class MapRenderer
         }
 
         DrawGroundItems(spriteBatch, true);
+        DrawEnvironmentalEffects(spriteBatch, true);
         DrawPlacedTraps(spriteBatch, true);
 
         foreach (BaseNPC npc in _map.NPCs)
@@ -259,6 +261,8 @@ public class MapRenderer
                 ItemType.Trap => Color.Orange,
                 ItemType.RangedWeapon => Color.SandyBrown,
                 ItemType.Bandage => Color.AntiqueWhite,
+                ItemType.SmokeBomb => Color.LightGray,
+                ItemType.FireBomb => Color.OrangeRed,
                 _ => Color.White
             };
             _drawer.DrawFilledRectangle(spriteBatch,
@@ -275,6 +279,20 @@ public class MapRenderer
             _drawer.DrawFilledRectangle(spriteBatch,
                 new Rectangle(trap.X * _map.CellScale + 2, trap.Y * _map.CellScale + 4,
                     _map.CellScale - 4, _map.CellScale - 6), Color.OrangeRed);
+        }
+    }
+
+    private void DrawEnvironmentalEffects(SpriteBatch spriteBatch, bool visibleOnly)
+    {
+        foreach (EnvironmentalEffect effect in _map.EnvironmentalEffects)
+        {
+            if (visibleOnly && !_map.MapCells[effect.X, effect.Y].IsVisible) continue;
+            Color color = effect.Type == EnvironmentalEffectType.Smoke
+                ? Color.Gray * 0.8f
+                : Color.OrangeRed * 0.9f;
+            _drawer.DrawFilledRectangle(spriteBatch,
+                new Rectangle(effect.X * _map.CellScale + 1, effect.Y * _map.CellScale + 1,
+                    _map.CellScale - 2, _map.CellScale - 2), color);
         }
     }
 

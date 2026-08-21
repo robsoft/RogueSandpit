@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and collects loot. Its simulation remains turn-based, with an optional timed-input mode that automatically waits for an idle player.
 
-Current gameplay: explore through persistent fog-of-war, fight NPCs with melee weapons and bows, collect tiered equipment, and retrieve the yellow special tile before returning to the entrance. Goblins shoot from a preferred distance and disengage when crowded, making them tactically distinct from melee archetypes. Bandages stop bleeding and restore some health. The player can cautiously operate doors, lay false trails, throw items, and place hunting, snare, or alarm traps. NPC initiative rotates fairly; NPCs investigate visible casualties, while skilled archetypes spot and avoid nearby traps. Optional F12 timed turns automatically wait for an idle player. SPACE restarts.
+Current gameplay: explore through persistent fog-of-war, fight NPCs with melee weapons and bows, collect tiered equipment, and retrieve the yellow special tile before returning to the entrance. Goblins shoot from a preferred distance and disengage when crowded. Thrown smoke bombs create temporary sight-blocking cover; fire bombs create damaging terrain that NPCs avoid. Bandages stop bleeding and restore some health. The player can operate doors, lay false trails, throw items, and place varied traps. Optional F12 timed turns automatically wait for an idle player. SPACE restarts.
 
 ## Build & run
 
@@ -50,7 +50,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
 - **`GameOptions.cs`** / **`GameWrapper.cs`** — command-line window scaling plus the MonoGame update/draw loop, inventory and directional-action UI, input translation, and aspect-ratio-preserving resizing. The native canvas remains 800×600 at every window scale.
 - **`Models/GameState.cs`** / **`Models/NpcTurnScheduler.cs`** — framework-independent turn coordination. The active NPC phase is snapshotted and its initiative rotates each turn, avoiding permanent map-list priority while retaining sequential action resolution.
-- **`Models/Map.cs`** — procedural map generation and centralized terrain/actor occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It distributes noise and alerts and owns evidence trails, actor-aware throw trajectories, ground loot, and placed traps.
+- **`Models/Map.cs`** / **`EnvironmentalEffect.cs`** — procedural map generation and centralized terrain/actor occupancy queries. The map distributes noise and alerts and owns evidence trails, actor-aware throws, ground loot, placed traps, and turn-aged smoke/fire effects.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** / **`NPCAwarenessProfile.cs`** / **`NPCMoraleProfile.cs`** / **`NPCRangedProfile.cs`** / **`StatusEffects.cs`** — character state, shared timed actor effects, and NPC identity/movement/AI. Five seeded archetypes have distinct combat, perception, tracking, morale, retreat, and help-call behavior; Goblins additionally maintain range and shoot.
 - **`Models/Items.cs`** / **`PlacedTrap.cs`** — item, ground-loot, inventory selection, item-factory, and placed-trap models. The player has an eight-slot inventory; tiered equipment modifies combat, potions heal, bandages stop bleeding, keys unlock doors, and varied traps can be placed.
 - **`Models/PathFinding.cs`** — cardinal A* used by NPC pursuit; walls and living NPCs block paths.
@@ -61,7 +61,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 ## Current state (per README + code)
 
-Working: map generation, fog-of-war exploration, player and Goblin ranged combat, five named NPC archetypes with temperament, morale, and distance-aware AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/tiered equipment, bandage recovery, actor-aware directional throwing, varied traps, shared status effects, doors, objective, HUD, debug view, strict turn-based play, and optional timed turns.
+Working: map generation, fog-of-war exploration, player and Goblin ranged combat, five named NPC archetypes with temperament, morale, and distance-aware AI, rotating initiative, casualty investigation, hazard avoidance, coordinated searches, evidence/hearing, tiered equipment, recovery items, actor-aware throwing, varied traps, temporary smoke/fire terrain, shared status effects, doors, objective, HUD/debug views, strict turn-based play, and optional timed turns.
 
 Known rough edges (from the README's "Pressing TODOs"):
 - Initiative is now fair across turns, but NPC actions still resolve sequentially rather than through fully simultaneous declared intentions.

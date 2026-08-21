@@ -105,6 +105,8 @@ public static class ItemFactory
             ItemType.Trap => new Item("HUNTING TRAP", type, 18),
             ItemType.RangedWeapon => new Item("SHORT BOW", type, 7),
             ItemType.Bandage => new Item("BANDAGE", type, 12),
+            ItemType.SmokeBomb => new Item("SMOKE BOMB", type),
+            ItemType.FireBomb => new Item("FIRE BOMB", type, 6),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }

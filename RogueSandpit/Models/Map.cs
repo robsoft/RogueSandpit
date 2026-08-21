@@ -41,6 +41,7 @@ public class Map
     public List<GroundItem> GroundItems { get; set; } = new List<GroundItem>();
     public List<Doorway> Doors { get; set; } = new List<Doorway>();
     public List<PlacedTrap> PlacedTraps { get; } = new();
+    public List<EnvironmentalEffect> EnvironmentalEffects { get; } = new();
     public List<PlayerTrailClue> PlayerTrail { get; } = new();
 
     // todo:
@@ -70,6 +71,7 @@ public class Map
         GroundItems = new List<GroundItem>();
         Doors = new List<Doorway>();
         PlacedTraps.Clear();
+        EnvironmentalEffects.Clear();
         PlayerTrail.Clear();
         _nextTrailSequence = 0;
 
@@ -407,7 +409,7 @@ public class Map
             {
                 return includeOpaqueTarget || IsWalkable(x1, y1);
             }
-            if (!IsWalkable(x1, y1)) return false;
+            if (!IsWalkable(x1, y1) || BlocksSight(x1, y1)) return false;
             int e2 = 2 * err;
             if (e2 > -dy)
             {
@@ -459,6 +461,7 @@ public class Map
         bool terrainAllowsEntry = IsWalkable(x, y)
             || (allowClosedDoor && GetDoorAt(x, y)?.State == DoorState.Closed);
         return terrainAllowsEntry
+            && !IsFireAt(x, y)
             && !IsOccupiedByLivingNPC(x, y, movingNpc)
             && (player == null || x != player.X || y != player.Y);
     }
@@ -486,6 +489,32 @@ public class Map
         int strength = doorwayPassage ? 3 : corridorPassage ? 2 : 1;
         int lifetime = doorwayPassage ? 18 : corridorPassage ? 16 : TrailLifetime;
         AddTrailClue(fromX, fromY, toX, toY, lifetime, strength, true);
+    }
+
+    public bool BlocksSight(int x, int y) => EnvironmentalEffects.Any(effect =>
+        effect.Type == EnvironmentalEffectType.Smoke && effect.X == x && effect.Y == y);
+
+    public EnvironmentalEffect GetEnvironmentalEffectAt(int x, int y, EnvironmentalEffectType type) =>
+        EnvironmentalEffects.FirstOrDefault(effect => effect.Type == type && effect.X == x && effect.Y == y);
+
+    public bool IsFireAt(int x, int y) => GetEnvironmentalEffectAt(x, y, EnvironmentalEffectType.Fire) != null;
+
+    public void AddEnvironmentalEffect(EnvironmentalEffectType type, int x, int y,
+        int duration = 4, int power = 0)
+    {
+        EnvironmentalEffect existing = GetEnvironmentalEffectAt(x, y, type);
+        if (existing != null)
+        {
+            existing.RemainingTurns = Math.Max(existing.RemainingTurns, duration);
+            return;
+        }
+        EnvironmentalEffects.Add(new EnvironmentalEffect(type, x, y, duration, power));
+    }
+
+    public void AgeEnvironmentalEffects()
+    {
+        foreach (EnvironmentalEffect effect in EnvironmentalEffects) effect.RemainingTurns--;
+        EnvironmentalEffects.RemoveAll(effect => effect.RemainingTurns <= 0);
     }
 
     public bool RecordFalseTrail(int x, int y, int deltaX, int deltaY)

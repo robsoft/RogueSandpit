@@ -127,6 +127,17 @@ public abstract class BaseNPC
     public void Move(Player player, Action<string> eventSink = null)
     {
         if (State != NPCState.Active) return;
+        EnvironmentalEffect fire = Map.GetEnvironmentalEffectAt(X, Y, EnvironmentalEffectType.Fire);
+        if (fire != null)
+        {
+            TakeDamage(fire.Power);
+            eventSink?.Invoke($"{Name} BURNED {fire.Power}");
+            if (State == NPCState.Dead)
+            {
+                ResolveDeathConsequences(eventSink);
+                return;
+            }
+        }
         StatusTurnResult statusTurn = StatusEffects.AdvanceTurn();
         if (statusTurn.BleedingDamage > 0)
         {
