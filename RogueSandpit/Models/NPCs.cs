@@ -63,6 +63,7 @@ public class Goblin : BaseNPC
     {
         CharacterType = CharacterTypes.Goblin;
         AwarenessProfile = NPCAwarenessProfile.Goblin;
+        RangedProfile = NPCRangedProfile.Goblin;
         MoraleProfile = NPCMoraleProfile.Goblin;
         Description = "Goblin";
         Name = NPCNameGenerator.Generate(CharacterType);

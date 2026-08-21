@@ -81,7 +81,7 @@ public class DoorTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         var events = new List<string>();
         map.NPCs.Add(npc);
@@ -106,7 +106,7 @@ public class DoorTests
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (12, 10), (13, 10));
-        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var npc = new Orc(map, 10, 10, null) { State = NPCState.Active };
         var player = new Player { X = 13, Y = 10 };
         map.NPCs.Add(npc);
         npc.Move(player);
