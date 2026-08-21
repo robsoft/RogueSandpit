@@ -6,7 +6,6 @@ namespace RogueSandpit.Models;
 
 public abstract class BaseNPC
 {
-    private const int SightRange = 12;
     private readonly Queue<(int X, int Y)> _searchTargets = new();
     private bool _isLocalSearching;
 
@@ -23,6 +22,7 @@ public abstract class BaseNPC
     public int HP { get; set; }
     public int Damage { get; set; }
     public Item HeldItem { get; set; }
+    public NPCAwarenessProfile AwarenessProfile { get; protected set; }
 
     public int AssetID { get; set; }
     public int AnimFrame { get; set; }
@@ -37,6 +37,7 @@ public abstract class BaseNPC
     public (int X, int Y)? LastKnownPlayerPosition { get; private set; }
     public (int X, int Y)? InvestigationOrigin { get; private set; }
     public NPCInvestigationSource InvestigationSource { get; private set; } = NPCInvestigationSource.None;
+    public int InvestigationConfidence { get; private set; }
     public (int X, int Y)? InvestigationTarget =>
         _searchTargets.Count > 0 ? _searchTargets.Peek() : InvestigationOrigin;
     public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
@@ -70,6 +71,7 @@ public abstract class BaseNPC
             LastKnownPlayerPosition = null;
             InvestigationOrigin = null;
             InvestigationSource = NPCInvestigationSource.None;
+            InvestigationConfidence = 0;
             _searchTargets.Clear();
             _isLocalSearching = false;
             Console.WriteLine($"{Name} has been killed!");
@@ -81,7 +83,7 @@ public abstract class BaseNPC
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
 
-        if (dx + dy <= SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
+        if (dx + dy <= AwarenessProfile.SightRange && Map.HasLineOfSight(X, Y, player.X, player.Y))
         {
             bool newlySpottedPlayer = Awareness != NPCAwareness.Pursuing;
             HasSeenPlayer = true;
@@ -89,12 +91,13 @@ public abstract class BaseNPC
             LastKnownPlayerPosition = (player.X, player.Y);
             InvestigationOrigin = (player.X, player.Y);
             InvestigationSource = NPCInvestigationSource.LastSeen;
+            InvestigationConfidence = InitialConfidence(NPCInvestigationSource.LastSeen);
             _searchTargets.Clear();
             _isLocalSearching = false;
 
             if (newlySpottedPlayer)
             {
-                int alertedAllies = Map.AlertNearbyAllies(this, player.X, player.Y, 8);
+                int alertedAllies = Map.AlertNearbyAllies(this, player.X, player.Y);
                 if (alertedAllies > 0) eventSink?.Invoke($"{Name} ALERTED {alertedAllies} ALLIES");
             }
 
@@ -115,9 +118,17 @@ public abstract class BaseNPC
         if (InvestigationOrigin is { } investigationOrigin)
         {
             Awareness = NPCAwareness.Investigating;
+            if (InvestigationConfidence <= 0)
+            {
+                AbandonInvestigation();
+                Wander(player);
+                return;
+            }
+
             if (!_isLocalSearching && (X != investigationOrigin.X || Y != investigationOrigin.Y))
             {
                 MoveToward(investigationOrigin.X, investigationOrigin.Y, eventSink);
+                SpendInvestigationConfidence();
                 return;
             }
 
@@ -133,16 +144,13 @@ public abstract class BaseNPC
 
             if (_searchTargets.Count == 0)
             {
-                LastKnownPlayerPosition = null;
-                InvestigationOrigin = null;
-                InvestigationSource = NPCInvestigationSource.None;
-                Awareness = NPCAwareness.Unaware;
-                _isLocalSearching = false;
+                AbandonInvestigation();
                 return;
             }
 
             (int targetX, int targetY) = _searchTargets.Peek();
             MoveToward(targetX, targetY, eventSink);
+            SpendInvestigationConfidence();
             return;
         }
 
@@ -158,10 +166,40 @@ public abstract class BaseNPC
         Awareness = NPCAwareness.Investigating;
         InvestigationOrigin = origin;
         InvestigationSource = source;
+        InvestigationConfidence = InitialConfidence(source);
         LastKnownPlayerPosition = source == NPCInvestigationSource.LastSeen ? origin : null;
         _searchTargets.Clear();
         _isLocalSearching = false;
         return true;
+    }
+
+    private int InitialConfidence(NPCInvestigationSource source)
+    {
+        int evidenceConfidence = source switch
+        {
+            NPCInvestigationSource.Noise => 8,
+            NPCInvestigationSource.AllyAlert => 10,
+            NPCInvestigationSource.LastSeen => 12,
+            _ => 0
+        };
+        return Math.Max(1, evidenceConfidence + AwarenessProfile.PersistenceAdjustment);
+    }
+
+    private void AbandonInvestigation()
+    {
+        LastKnownPlayerPosition = null;
+        InvestigationOrigin = null;
+        InvestigationSource = NPCInvestigationSource.None;
+        InvestigationConfidence = 0;
+        Awareness = NPCAwareness.Unaware;
+        _searchTargets.Clear();
+        _isLocalSearching = false;
+    }
+
+    private void SpendInvestigationConfidence()
+    {
+        InvestigationConfidence--;
+        if (InvestigationConfidence <= 0) AbandonInvestigation();
     }
 
     private void BeginLocalSearch((int X, int Y) origin)

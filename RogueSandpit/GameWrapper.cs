@@ -333,17 +333,16 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
                 new Vector2(panelX + 6, panelY + 75), 1, Color.White);
 
-            string lastKnown = npc.LastKnownPlayerPosition is { } target
-                ? $"{target.X} {target.Y}"
-                : "NONE";
             string investigationTarget = npc.InvestigationTarget is { } searchTarget
                 ? $"{searchTarget.X} {searchTarget.Y}"
                 : "NONE";
-            _pixelFont.DrawText(_spriteBatch, $"SRC {npc.InvestigationSource} LAST {lastKnown} AT {investigationTarget}",
+            _pixelFont.DrawText(_spriteBatch, $"SRC {npc.InvestigationSource} CONF {npc.InvestigationConfidence} AT {investigationTarget}",
                 new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
-            _pixelFont.DrawText(_spriteBatch, $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")}",
+            NPCAwarenessProfile profile = npc.AwarenessProfile;
+            _pixelFont.DrawText(_spriteBatch,
+                $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")} S{profile.SightRange} H{profile.HearingAdjustment:+#;-#;0} A{profile.AllyAlertRadius} P{profile.PersistenceAdjustment:+#;-#;0}",
                 new Vector2(panelX + 6, panelY + 107), 1,
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
         }

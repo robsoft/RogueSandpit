@@ -462,7 +462,8 @@ public class Map
         {
             if (npc == sourceNpc) continue;
             int distance = Math.Abs(npc.X - x) + Math.Abs(npc.Y - y);
-            if (distance <= radius
+            int hearingRadius = Math.Max(0, radius + npc.AwarenessProfile.HearingAdjustment);
+            if (distance <= hearingRadius
                 && npc.ReceiveInvestigation((x, y), NPCInvestigationSource.Noise))
             {
                 notified++;
@@ -471,14 +472,14 @@ public class Map
         return notified;
     }
 
-    public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY, int radius)
+    public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY)
     {
         int alerted = 0;
         foreach (BaseNPC npc in NPCs)
         {
             if (npc == sourceNpc) continue;
             int distance = Math.Abs(npc.X - sourceNpc.X) + Math.Abs(npc.Y - sourceNpc.Y);
-            if (distance <= radius
+            if (distance <= sourceNpc.AwarenessProfile.AllyAlertRadius
                 && npc.ReceiveInvestigation(
                     (observedPlayerX, observedPlayerY), NPCInvestigationSource.AllyAlert))
             {
