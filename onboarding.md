@@ -31,12 +31,13 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | Left/right bracket | Select an inventory item |
 | I | Open/close the eight-slot inventory panel (arrows select while open) |
 | H | Use the selected healing potion |
-| E | Equip the selected weapon or armor |
+| E | Equip the selected melee weapon, ranged weapon, or armor |
 | D | Drop the selected item |
 | C | Open or close the only operable adjacent door, or choose among several with an arrow |
 | T + arrow | Lay a false trail pointing in that direction |
 | F + arrow | Throw the selected inventory item up to six cells |
-| P + arrow | Place the selected hunting trap on an adjacent cell |
+| P + arrow | Place the selected trap on an adjacent cell |
+| R + arrow | Fire the equipped ranged weapon up to six cells |
 | Period / numpad 5 | Wait one turn |
 | F1 | Toggle debug/map viewer (shows full map + NPCs) |
 | SPACE | Generate a new map / restart |
@@ -58,7 +59,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 ## Current state (per README + code)
 
-Working: map generation, fog-of-war exploration, player movement and bump combat, five named NPC archetypes with temperament and morale-driven AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, placed traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, and turn-based flow.
+Working: map generation, fog-of-war exploration, player movement, melee and bow combat, five named NPC archetypes with temperament and morale-driven AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, hunting/snare/alarm traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
 - Initiative is now fair across turns, but NPC actions still resolve sequentially rather than through fully simultaneous declared intentions.

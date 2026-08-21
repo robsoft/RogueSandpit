@@ -688,10 +688,10 @@ public class Map
             && GetTrapAt(x, y) == null;
     }
 
-    public bool PlaceTrap(int x, int y, int damage, Player player = null)
+    public bool PlaceTrap(int x, int y, int damage, Player player = null, TrapKind kind = TrapKind.Hunting)
     {
         if (!CanPlaceTrap(x, y, player)) return false;
-        PlacedTraps.Add(new PlacedTrap(x, y, damage));
+        PlacedTraps.Add(new PlacedTrap(x, y, damage, kind));
         return true;
     }
 

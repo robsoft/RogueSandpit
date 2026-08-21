@@ -27,7 +27,7 @@ namespace RogueSandpit
         private bool _inventoryOpen;
         private DirectionalAction _directionalAction;
 
-        private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap }
+        private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -212,10 +212,21 @@ namespace RogueSandpit
             {
                 if (_player.Inventory.SelectedItem?.Type != ItemType.Trap)
                 {
-                    _gameState.EventLog.Add("SELECT A HUNTING TRAP");
+                    _gameState.EventLog.Add("SELECT A TRAP");
                     return PlayerCommand.None;
                 }
                 _directionalAction = DirectionalAction.PlaceTrap;
+                return PlayerCommand.None;
+            }
+
+            if (WasPressed(Keys.R))
+            {
+                if (_player.EquippedRangedWeapon == null)
+                {
+                    _gameState.EventLog.Add("NO RANGED WEAPON EQUIPPED");
+                    return PlayerCommand.None;
+                }
+                _directionalAction = DirectionalAction.FireRanged;
                 return PlayerCommand.None;
             }
 
@@ -258,6 +269,13 @@ namespace RogueSandpit
                 return ThrowItemCommand(deltaX, deltaY);
             }
 
+            if (_directionalAction == DirectionalAction.FireRanged)
+            {
+                if (_map.TraceThrow(_player.X, _player.Y, deltaX, deltaY) != null)
+                    _directionalAction = DirectionalAction.None;
+                return FireRangedCommand(deltaX, deltaY);
+            }
+
             if (_map.CanPlaceTrap(_player.X + deltaX, _player.Y + deltaY, _player))
                 _directionalAction = DirectionalAction.None;
             return PlaceTrapCommand(deltaX, deltaY);
@@ -269,6 +287,15 @@ namespace RogueSandpit
             (0, 1) => PlayerCommand.ToggleDoorDown,
             (-1, 0) => PlayerCommand.ToggleDoorLeft,
             (1, 0) => PlayerCommand.ToggleDoorRight,
+            _ => PlayerCommand.None
+        };
+
+        private static PlayerCommand FireRangedCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        {
+            (0, -1) => PlayerCommand.FireRangedUp,
+            (0, 1) => PlayerCommand.FireRangedDown,
+            (-1, 0) => PlayerCommand.FireRangedLeft,
+            (1, 0) => PlayerCommand.FireRangedRight,
             _ => PlayerCommand.None
         };
 
@@ -359,9 +386,10 @@ namespace RogueSandpit
             string specialStatus = _player.HasSpecial ? "YES" : "NO";
             string weaponName = _player.EquippedWeapon?.Name ?? "NONE";
             string armorName = _player.EquippedArmor?.Name ?? "NONE";
+            string rangedName = _player.EquippedRangedWeapon?.Name ?? "NONE";
             string selectedName = _player.Inventory.SelectedItem?.Name ?? "NONE";
             _pixelFont.DrawText(_spriteBatch,
-                $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName}",
+                $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName} RNG {rangedName}",
                 new Vector2(6, 585), 1, Color.White);
         }
 
@@ -380,7 +408,8 @@ namespace RogueSandpit
                 DirectionalAction.ToggleDoor => "OPERATE DOOR: ARROW CHOOSES  ESC CANCELS",
                 DirectionalAction.LayFalseTrail => "FALSE TRAIL: ARROW CHOOSES  ESC CANCELS",
                 DirectionalAction.ThrowItem => "THROW ITEM: ARROW CHOOSES  ESC CANCELS",
-                _ => "PLACE TRAP: ARROW CHOOSES  ESC CANCELS"
+                DirectionalAction.PlaceTrap => "PLACE TRAP: ARROW CHOOSES  ESC CANCELS",
+                _ => "FIRE BOW: ARROW CHOOSES  ESC CANCELS"
             };
             const int panelWidth = 330;
             const int panelHeight = 28;
@@ -426,6 +455,7 @@ namespace RogueSandpit
                 if (item == null) continue;
                 string power = item.Power > 0 ? $" {item.Power}" : "";
                 string equipped = item == _player.EquippedWeapon || item == _player.EquippedArmor
+                    || item == _player.EquippedRangedWeapon
                     ? " EQUIPPED"
                     : "";
                 _pixelFont.DrawText(_spriteBatch, $"{item.Type}{power}{equipped}",
@@ -483,7 +513,7 @@ namespace RogueSandpit
             GroundItem groundItem = _map.GetGroundItemAt(position.X, position.Y);
             string itemName = groundItem?.Item.Name ?? "NONE";
             PlacedTrap placedTrap = _map.GetTrapAt(position.X, position.Y);
-            string trapDetails = placedTrap == null ? "NONE" : $"DMG {placedTrap.Damage}";
+            string trapDetails = placedTrap == null ? "NONE" : $"{placedTrap.Kind} DMG {placedTrap.Damage}";
             _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName} TRAP {trapDetails}",
                 new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
 

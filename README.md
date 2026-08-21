@@ -33,12 +33,13 @@ builds & runs on Mac and Windows
 - Wounded NPCs react by archetype: some flee, Skeletons remain fearless, and Trolls become enraged
 - Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
 - Selected inventory items can be thrown directionally as recoverable, noise-making distractions
-- Hunting traps can be placed on adjacent cells and damage the first NPC to enter them
+- Hunting, snare, and alarm traps provide damage, restraint, and loud-alert choices
 - Actors support timed bleeding and stunned effects with turn-based duration and damage
 - Thrown weapons strike and bleed the first NPC in their path, while thrown potions shatter
 - Hunting traps stun surviving victims for their next action
 - NPC initiative rotates each turn so list order does not grant permanent priority over contested cells
 - NPCs investigate visible casualties; skilled archetypes can spot, remember, and avoid nearby traps
+- Short bows provide reusable directional ranged attacks with impact noise
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -60,12 +61,13 @@ builds & runs on Mac and Windows
 ## Controls
 - Arrow keys (WASD will come) to move the player character
 - H to use a healing potion
-- E to equip the selected weapon or armor
+- E to equip the selected melee weapon, ranged weapon, or armor
 - D to drop the selected item
 - C to open or close an adjacent unlocked door; arrows choose if more than one is available
 - T followed by an arrow to lay a false trail in that direction
 - F followed by an arrow to throw the selected inventory item
 - P followed by an arrow to place a selected hunting trap
+- R followed by an arrow to fire the equipped ranged weapon
 - Left/right bracket to select an inventory item
 - I to open or close the inventory panel; arrows select items while it is open
 - Period or numpad 5 to wait one turn
