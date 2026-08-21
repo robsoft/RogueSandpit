@@ -29,7 +29,7 @@ builds & runs on Mac and Windows
 - Alerted allies fan out across distinct nearby search cells instead of stacking on one target
 - Archetypes differ in tracking skill; Skeletons cannot interpret physical trails
 - Room, corridor, and doorway movement leave clues with different strength and lifetime
-- Players can close nearby open doors and lay directional false trails to mislead weaker trackers
+- Players can cautiously open or close nearby doors in place and lay directional false trails to mislead weaker trackers
 - Wounded NPCs react by archetype: some flee, Skeletons remain fearless, and Trolls become enraged
 - Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
 - Selected inventory items can be thrown directionally as recoverable, noise-making distractions
@@ -60,7 +60,7 @@ builds & runs on Mac and Windows
 - H to use a healing potion
 - E to equip the selected weapon or armor
 - D to drop the selected item
-- C to close an adjacent open door; arrows choose if more than one is available
+- C to open or close an adjacent unlocked door; arrows choose if more than one is available
 - T followed by an arrow to lay a false trail in that direction
 - F followed by an arrow to throw the selected inventory item
 - P followed by an arrow to place a selected hunting trap

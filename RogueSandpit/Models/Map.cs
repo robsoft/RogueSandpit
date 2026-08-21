@@ -497,11 +497,12 @@ public class Map
         return true;
     }
 
-    public List<Doorway> GetAdjacentOpenDoors(int x, int y)
+    public List<Doorway> GetAdjacentOperableDoors(int x, int y)
     {
-        return Doors.Where(door => door.State == DoorState.Open
+        return Doors.Where(door => door.State != DoorState.Locked
             && Math.Abs(door.X1 - x) + Math.Abs(door.Y1 - y) == 1
-            && !IsOccupiedByLivingNPC(door.X1, door.Y1)).ToList();
+            && (door.State == DoorState.Closed
+                || !IsOccupiedByLivingNPC(door.X1, door.Y1))).ToList();
     }
 
     private void AddTrailClue(int x, int y, int nextX, int nextY,

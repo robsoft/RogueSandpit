@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect loot, and retrieve the yellow special tile before returning to the entrance. The player can close doors with `C`, lay false trails with `T` plus an arrow, throw the selected item with `F` plus an arrow, and place a selected hunting trap with `P` plus an arrow. Throws travel up to six cells and create impact noise: weapons strike and bleed the first NPC in their path, potions shatter, and other items remain recoverable. Traps damage the first NPC entering them and stun survivors for their next action. Actors share timed bleeding and stunned effects, shown on the player HUD and in F1 inspection. Named archetypes retain distinct combat, awareness, tracking, and morale profiles. SPACE restarts.
+Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect loot, and retrieve the yellow special tile before returning to the entrance. The player can cautiously open or close adjacent doors in place with `C`, lay false trails with `T` plus an arrow, throw the selected item with `F` plus an arrow, and place a selected hunting trap with `P` plus an arrow. Throws travel up to six cells and create impact noise: weapons strike and bleed the first NPC in their path, potions shatter, and other items remain recoverable. Traps damage the first NPC entering them and stun survivors for their next action. Actors share timed bleeding and stunned effects, shown on the player HUD and in F1 inspection. Named archetypes retain distinct combat, awareness, tracking, and morale profiles. SPACE restarts.
 
 ## Build & run
 
@@ -33,7 +33,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | H | Use the selected healing potion |
 | E | Equip the selected weapon or armor |
 | D | Drop the selected item |
-| C | Close the only adjacent open door, or choose among several with an arrow |
+| C | Open or close the only operable adjacent door, or choose among several with an arrow |
 | T + arrow | Lay a false trail pointing in that direction |
 | F + arrow | Throw the selected inventory item up to six cells |
 | P + arrow | Place the selected hunting trap on an adjacent cell |

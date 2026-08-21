@@ -6,7 +6,7 @@ namespace RogueSandpit.Tests;
 public class DirectionalActionTrailTests
 {
     [Fact]
-    public void CloseDoorCommandClosesAdjacentOpenDoorAndMakesNoise()
+    public void ToggleDoorCommandClosesAdjacentOpenDoorAndMakesNoise()
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10), (10, 11));
@@ -15,7 +15,7 @@ public class DirectionalActionTrailTests
         map.NPCs.Add(listener);
         var game = new GameState(map, new Player { X = 10, Y = 10 });
 
-        game.Update(PlayerCommand.CloseDoorRight);
+        game.Update(PlayerCommand.ToggleDoorRight);
 
         Assert.Equal(DoorState.Closed, door.State);
         Assert.Contains("CLOSED DOOR", game.EventLog.Entries);
@@ -23,7 +23,7 @@ public class DirectionalActionTrailTests
     }
 
     [Fact]
-    public void InvalidCloseDirectionDoesNotConsumeTurn()
+    public void InvalidToggleDirectionDoesNotConsumeTurn()
     {
         Map map = CreateBlankMap();
         AddFloor(map, (10, 10), (11, 10));
@@ -32,21 +32,22 @@ public class DirectionalActionTrailTests
         int remainingTurns = Assert.Single(map.PlayerTrail).RemainingTurns;
         var game = new GameState(map, new Player { X = 10, Y = 10 });
 
-        game.Update(PlayerCommand.CloseDoorUp);
+        game.Update(PlayerCommand.ToggleDoorUp);
 
         Assert.Equal(remainingTurns, Assert.Single(map.PlayerTrail).RemainingTurns);
-        Assert.Contains("NO OPEN DOOR THAT WAY", game.EventLog.Entries);
+        Assert.Contains("NO OPERABLE DOOR THAT WAY", game.EventLog.Entries);
     }
 
     [Fact]
-    public void AdjacentOpenDoorQuerySupportsContextualClose()
+    public void AdjacentOperableDoorQueryIncludesOpenAndClosedButExcludesLocked()
     {
         Map map = CreateBlankMap();
-        AddFloor(map, (10, 10), (11, 10), (9, 10));
+        AddFloor(map, (10, 10), (11, 10), (9, 10), (10, 9));
         Doorway right = AddDoor(map, 11, 10, DoorState.Open);
-        AddDoor(map, 9, 10, DoorState.Closed);
+        Doorway left = AddDoor(map, 9, 10, DoorState.Closed);
+        AddDoor(map, 10, 9, DoorState.Locked);
 
-        Assert.Equal(right, Assert.Single(map.GetAdjacentOpenDoors(10, 10)));
+        Assert.Equal([right, left], map.GetAdjacentOperableDoors(10, 10));
     }
 
     [Fact]
@@ -58,11 +59,44 @@ public class DirectionalActionTrailTests
         map.NPCs.Add(new Goblin(map, 11, 10, null) { State = NPCState.Active });
         var game = new GameState(map, new Player { X = 10, Y = 10 });
 
-        game.Update(PlayerCommand.CloseDoorRight);
+        game.Update(PlayerCommand.ToggleDoorRight);
 
         Assert.Equal(DoorState.Open, door.State);
-        Assert.Empty(map.GetAdjacentOpenDoors(10, 10));
+        Assert.Empty(map.GetAdjacentOperableDoors(10, 10));
         Assert.Contains("DOORWAY BLOCKED", game.EventLog.Entries);
+    }
+
+    [Fact]
+    public void ToggleDoorCommandOpensAdjacentClosedDoorWithoutMovingPlayer()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10), (12, 10));
+        Doorway door = AddDoor(map, 11, 10, DoorState.Closed);
+        var player = new Player { X = 10, Y = 10 };
+        var game = new GameState(map, player);
+
+        game.Update(PlayerCommand.ToggleDoorRight);
+
+        Assert.Equal(DoorState.Open, door.State);
+        Assert.Equal((10, 10), (player.X, player.Y));
+        Assert.Contains("OPENED DOOR", game.EventLog.Entries);
+    }
+
+    [Fact]
+    public void ToggleLockedDoorDoesNotConsumeTurn()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10), (11, 10));
+        Doorway door = AddDoor(map, 11, 10, DoorState.Locked);
+        map.RecordPlayerMovement(10, 10, 11, 10);
+        int remainingTurns = Assert.Single(map.PlayerTrail).RemainingTurns;
+        var game = new GameState(map, new Player { X = 10, Y = 10 });
+
+        game.Update(PlayerCommand.ToggleDoorRight);
+
+        Assert.Equal(DoorState.Locked, door.State);
+        Assert.Equal(remainingTurns, Assert.Single(map.PlayerTrail).RemainingTurns);
+        Assert.Contains("NO OPERABLE DOOR THAT WAY", game.EventLog.Entries);
     }
 
     [Fact]
