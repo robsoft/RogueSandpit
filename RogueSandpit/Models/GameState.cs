@@ -37,10 +37,10 @@ public class GameState
             PlayerCommand.UsePotion => UsePotion(),
             PlayerCommand.EquipItem => EquipItem(),
             PlayerCommand.DropItem => DropItem(),
-            PlayerCommand.CloseDoorUp => CloseDoor(0, -1),
-            PlayerCommand.CloseDoorDown => CloseDoor(0, 1),
-            PlayerCommand.CloseDoorLeft => CloseDoor(-1, 0),
-            PlayerCommand.CloseDoorRight => CloseDoor(1, 0),
+            PlayerCommand.ToggleDoorUp => ToggleDoor(0, -1),
+            PlayerCommand.ToggleDoorDown => ToggleDoor(0, 1),
+            PlayerCommand.ToggleDoorLeft => ToggleDoor(-1, 0),
+            PlayerCommand.ToggleDoorRight => ToggleDoor(1, 0),
             PlayerCommand.LayFalseTrailUp => LayFalseTrail(0, -1),
             PlayerCommand.LayFalseTrailDown => LayFalseTrail(0, 1),
             PlayerCommand.LayFalseTrailLeft => LayFalseTrail(-1, 0),
@@ -250,22 +250,23 @@ public class GameState
         if (listeners > 0) EventLog.Add($"{label} DREW {listeners} NPCS");
     }
 
-    private bool CloseDoor(int deltaX, int deltaY)
+    private bool ToggleDoor(int deltaX, int deltaY)
     {
         Doorway door = Map.GetDoorAt(Player.X + deltaX, Player.Y + deltaY);
-        if (door?.State != DoorState.Open)
+        if (door == null || door.State == DoorState.Locked)
         {
-            EventLog.Add("NO OPEN DOOR THAT WAY");
+            EventLog.Add("NO OPERABLE DOOR THAT WAY");
             return false;
         }
-        if (Map.IsOccupiedByLivingNPC(door.X1, door.Y1))
+        if (door.State == DoorState.Open && Map.IsOccupiedByLivingNPC(door.X1, door.Y1))
         {
             EventLog.Add("DOORWAY BLOCKED");
             return false;
         }
 
-        door.State = DoorState.Closed;
-        EventLog.Add("CLOSED DOOR");
+        bool opening = door.State == DoorState.Closed;
+        door.State = opening ? DoorState.Open : DoorState.Closed;
+        EventLog.Add(opening ? "OPENED DOOR" : "CLOSED DOOR");
         EmitNoise("DOOR NOISE", 6);
         Map.UpdateVisibility(Player.X, Player.Y);
         return true;

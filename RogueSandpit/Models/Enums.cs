@@ -18,7 +18,7 @@ public enum StatusEffectType { Stunned, Bleeding };
 public enum RenderMode { Rooms, Cells };
 public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };
-public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, SelectPreviousItem, SelectNextItem, UsePotion, EquipItem, DropItem, CloseDoorUp, CloseDoorDown, CloseDoorLeft, CloseDoorRight, LayFalseTrailUp, LayFalseTrailDown, LayFalseTrailLeft, LayFalseTrailRight, ThrowItemUp, ThrowItemDown, ThrowItemLeft, ThrowItemRight, PlaceTrapUp, PlaceTrapDown, PlaceTrapLeft, PlaceTrapRight };
+public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, SelectPreviousItem, SelectNextItem, UsePotion, EquipItem, DropItem, ToggleDoorUp, ToggleDoorDown, ToggleDoorLeft, ToggleDoorRight, LayFalseTrailUp, LayFalseTrailDown, LayFalseTrailLeft, LayFalseTrailRight, ThrowItemUp, ThrowItemDown, ThrowItemLeft, ThrowItemRight, PlaceTrapUp, PlaceTrapDown, PlaceTrapLeft, PlaceTrapRight };
 public enum NPCAwareness { Unaware, Pursuing, Investigating };
 public enum NPCInvestigationSource { None, Noise, AllyAlert, LastSeen, Trail };
 public enum ItemType { HealingPotion, Weapon, Key, Armor, Trap };

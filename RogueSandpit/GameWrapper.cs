@@ -27,7 +27,7 @@ namespace RogueSandpit
         private bool _inventoryOpen;
         private DirectionalAction _directionalAction;
 
-        private enum DirectionalAction { None, CloseDoor, LayFalseTrail, ThrowItem, PlaceTrap }
+        private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -177,17 +177,17 @@ namespace RogueSandpit
 
             if (WasPressed(Keys.C))
             {
-                var doors = _map.GetAdjacentOpenDoors(_player.X, _player.Y);
+                var doors = _map.GetAdjacentOperableDoors(_player.X, _player.Y);
                 if (doors.Count == 0)
                 {
-                    _gameState.EventLog.Add("NO OPEN DOOR NEARBY");
+                    _gameState.EventLog.Add("NO OPERABLE DOOR NEARBY");
                     return PlayerCommand.None;
                 }
                 if (doors.Count == 1)
                 {
-                    return CloseDoorCommand(doors[0].X1 - _player.X, doors[0].Y1 - _player.Y);
+                    return ToggleDoorCommand(doors[0].X1 - _player.X, doors[0].Y1 - _player.Y);
                 }
-                _directionalAction = DirectionalAction.CloseDoor;
+                _directionalAction = DirectionalAction.ToggleDoor;
                 return PlayerCommand.None;
             }
 
@@ -234,13 +234,14 @@ namespace RogueSandpit
 
         private PlayerCommand DirectionalCommand(int deltaX, int deltaY)
         {
-            if (_directionalAction == DirectionalAction.CloseDoor)
+            if (_directionalAction == DirectionalAction.ToggleDoor)
             {
                 Doorway door = _map.GetDoorAt(_player.X + deltaX, _player.Y + deltaY);
-                if (door?.State == DoorState.Open
-                    && !_map.IsOccupiedByLivingNPC(door.X1, door.Y1))
+                if (door != null && door.State != DoorState.Locked
+                    && (door.State == DoorState.Closed
+                        || !_map.IsOccupiedByLivingNPC(door.X1, door.Y1)))
                     _directionalAction = DirectionalAction.None;
-                return CloseDoorCommand(deltaX, deltaY);
+                return ToggleDoorCommand(deltaX, deltaY);
             }
 
             if (_directionalAction == DirectionalAction.LayFalseTrail)
@@ -262,12 +263,12 @@ namespace RogueSandpit
             return PlaceTrapCommand(deltaX, deltaY);
         }
 
-        private static PlayerCommand CloseDoorCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        private static PlayerCommand ToggleDoorCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
         {
-            (0, -1) => PlayerCommand.CloseDoorUp,
-            (0, 1) => PlayerCommand.CloseDoorDown,
-            (-1, 0) => PlayerCommand.CloseDoorLeft,
-            (1, 0) => PlayerCommand.CloseDoorRight,
+            (0, -1) => PlayerCommand.ToggleDoorUp,
+            (0, 1) => PlayerCommand.ToggleDoorDown,
+            (-1, 0) => PlayerCommand.ToggleDoorLeft,
+            (1, 0) => PlayerCommand.ToggleDoorRight,
             _ => PlayerCommand.None
         };
 
@@ -376,7 +377,7 @@ namespace RogueSandpit
         {
             string prompt = _directionalAction switch
             {
-                DirectionalAction.CloseDoor => "CLOSE DOOR: ARROW CHOOSES  ESC CANCELS",
+                DirectionalAction.ToggleDoor => "OPERATE DOOR: ARROW CHOOSES  ESC CANCELS",
                 DirectionalAction.LayFalseTrail => "FALSE TRAIL: ARROW CHOOSES  ESC CANCELS",
                 DirectionalAction.ThrowItem => "THROW ITEM: ARROW CHOOSES  ESC CANCELS",
                 _ => "PLACE TRAP: ARROW CHOOSES  ESC CANCELS"
