@@ -37,6 +37,8 @@ builds & runs on Mac and Windows
 - Actors support timed bleeding and stunned effects with turn-based duration and damage
 - Thrown weapons strike and bleed the first NPC in their path, while thrown potions shatter
 - Hunting traps stun surviving victims for their next action
+- NPC initiative rotates each turn so list order does not grant permanent priority over contested cells
+- NPCs investigate visible casualties; skilled archetypes can spot, remember, and avoid nearby traps
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
@@ -51,7 +53,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Remove NPC list-order effects with a fairer turn-resolution architecture
+- Evolve rotating NPC initiative into full simultaneous intent and conflict resolution
 - Graphics!  
 
 

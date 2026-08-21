@@ -7,10 +7,13 @@ namespace RogueSandpit.Models;
 
 public class GameState
 {
+    private readonly NpcTurnScheduler _npcTurnScheduler = new();
+
     public Map Map { get; private set; }
     public Player Player { get; private set; }
     public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
     public GameEventLog EventLog { get; } = new();
+    public int NextNpcInitiativeOffset => _npcTurnScheduler.InitiativeOffset;
 
     public GameState(Map map, Player player)
     {
@@ -90,13 +93,10 @@ public class GameState
 
     private void MoveNPCs()
     {
-        foreach (BaseNPC npc in Map.NPCs)
+        foreach (BaseNPC npc in _npcTurnScheduler.CreateTurnOrder(Map.NPCs))
         {
-            if (npc.State == NPCState.Active)
-            {
-                npc.Move(Player, EventLog.Add);
-                if (Player.Dead) return;
-            }
+            npc.Move(Player, EventLog.Add);
+            if (Player.Dead) return;
         }
     }
 

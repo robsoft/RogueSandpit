@@ -24,7 +24,7 @@ public static class Pathfinding
         var start = (X: startX, Y: startY);
         var goal = (X: goalX, Y: goalY);
         if (start == goal) return [];
-        if (!map.CanNpcEnter(goalX, goalY, movingNpc, allowClosedDoor: movingNpc != null)) return [];
+        if (!CanEnter(map, goal, movingNpc)) return [];
 
         var frontier = new PriorityQueue<(int X, int Y), int>();
         var cameFrom = new Dictionary<(int X, int Y), (int X, int Y)>();
@@ -60,7 +60,8 @@ public static class Pathfinding
         (int X, int Y) position,
         BaseNPC movingNpc)
     {
-        return map.CanNpcEnter(position.X, position.Y, movingNpc, allowClosedDoor: movingNpc != null);
+        return (movingNpc == null || !movingNpc.IsKnownHazard(position.X, position.Y))
+            && map.CanNpcEnter(position.X, position.Y, movingNpc, allowClosedDoor: movingNpc != null);
     }
 
     private static int Heuristic((int X, int Y) from, (int X, int Y) to)

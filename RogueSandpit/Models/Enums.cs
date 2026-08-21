@@ -20,7 +20,7 @@ public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };
 public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, SelectPreviousItem, SelectNextItem, UsePotion, EquipItem, DropItem, ToggleDoorUp, ToggleDoorDown, ToggleDoorLeft, ToggleDoorRight, LayFalseTrailUp, LayFalseTrailDown, LayFalseTrailLeft, LayFalseTrailRight, ThrowItemUp, ThrowItemDown, ThrowItemLeft, ThrowItemRight, PlaceTrapUp, PlaceTrapDown, PlaceTrapLeft, PlaceTrapRight };
 public enum NPCAwareness { Unaware, Pursuing, Investigating };
-public enum NPCInvestigationSource { None, Noise, AllyAlert, LastSeen, Trail };
+public enum NPCInvestigationSource { None, Noise, AllyAlert, Casualty, Trail, LastSeen };
 public enum ItemType { HealingPotion, Weapon, Key, Armor, Trap };
 public enum DoorState { Closed, Locked, Open };
 public enum PlayerItemActionResult { Success, NoSelection, WrongItemType, NoEffect, Blocked };

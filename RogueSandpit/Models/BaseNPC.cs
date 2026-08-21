@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RogueSandpit.Models;
 
@@ -9,6 +10,8 @@ public abstract class BaseNPC
     private readonly Queue<(int X, int Y)> _searchTargets = new();
     private bool _isLocalSearching;
     private long _lastObservedTrailSequence;
+    private readonly HashSet<Guid> _observedCasualties = new();
+    private readonly HashSet<(int X, int Y)> _knownHazards = new();
 
     public Guid Id { get; private set; } = Guid.NewGuid();
     public BaseContainingElement CurrentRoom { get; private set; }
@@ -52,6 +55,8 @@ public abstract class BaseNPC
     public (int X, int Y)? InvestigationTarget =>
         _searchTargets.Count > 0 ? _searchTargets.Peek() : InvestigationOrigin;
     public bool IsPursuingPlayer => Awareness == NPCAwareness.Pursuing;
+    public IReadOnlyCollection<(int X, int Y)> KnownHazards => _knownHazards;
+    public int ObservedCasualtyCount => _observedCasualties.Count;
 
 
     // this is where the NPC starts out from, and is where it will 'home' back to when it can't find a target   
@@ -137,6 +142,8 @@ public abstract class BaseNPC
             eventSink?.Invoke($"{Name} STUNNED");
             return;
         }
+
+        ObserveCasualtiesAndHazards(eventSink);
 
         int dx = Math.Abs(X - player.X);
         int dy = Math.Abs(Y - player.Y);
@@ -263,8 +270,9 @@ public abstract class BaseNPC
         {
             NPCInvestigationSource.Noise => 8,
             NPCInvestigationSource.AllyAlert => 10,
-            NPCInvestigationSource.LastSeen => 12,
+            NPCInvestigationSource.Casualty => 10,
             NPCInvestigationSource.Trail => 11,
+            NPCInvestigationSource.LastSeen => 12,
             _ => 0
         };
         return Math.Max(1, evidenceConfidence + AwarenessProfile.PersistenceAdjustment);
@@ -480,7 +488,45 @@ public abstract class BaseNPC
             default:
                 break;
         }
-        return Map.CanNpcEnter(newX, newY, this, player);
+        return !IsKnownHazard(newX, newY)
+            && Map.CanNpcEnter(newX, newY, this, player);
+    }
+
+    public bool IsKnownHazard(int x, int y) => _knownHazards.Contains((x, y));
+
+    private void ObserveCasualtiesAndHazards(Action<string> eventSink)
+    {
+        foreach ((int hazardX, int hazardY) in _knownHazards.ToArray())
+        {
+            if (CanSee(hazardX, hazardY) && Map.GetTrapAt(hazardX, hazardY) == null)
+                _knownHazards.Remove((hazardX, hazardY));
+        }
+
+        foreach (PlacedTrap trap in Map.PlacedTraps)
+        {
+            int distance = Math.Abs(X - trap.X) + Math.Abs(Y - trap.Y);
+            if (distance <= AwarenessProfile.TrapDetectionRange
+                && CanSee(trap.X, trap.Y)
+                && _knownHazards.Add((trap.X, trap.Y)))
+                eventSink?.Invoke($"{Name} SPOTTED TRAP");
+        }
+
+        foreach (BaseNPC casualty in Map.NPCs)
+        {
+            if (casualty == this || casualty.State != NPCState.Dead
+                || _observedCasualties.Contains(casualty.Id)
+                || !CanSee(casualty.X, casualty.Y)) continue;
+
+            _observedCasualties.Add(casualty.Id);
+            eventSink?.Invoke($"{Name} FOUND {casualty.Name} DEAD");
+            ReceiveInvestigation((casualty.X, casualty.Y), NPCInvestigationSource.Casualty);
+        }
+    }
+
+    private bool CanSee(int targetX, int targetY)
+    {
+        return Math.Abs(X - targetX) + Math.Abs(Y - targetY) <= AwarenessProfile.SightRange
+            && Map.HasLineOfSight(X, Y, targetX, targetY);
     }
 
 }
