@@ -23,7 +23,7 @@ public class GameState
         Player.Place(Map, player.X, player.Y);
     }
 
-    public void Update(PlayerCommand command)
+    public void Update(PlayerCommand command, bool suppressWaitEvent = false)
     {
         if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
 
@@ -35,7 +35,7 @@ public class GameState
             PlayerCommand.MoveDown => AttemptMove(0, 1),
             PlayerCommand.MoveLeft => AttemptMove(-1, 0),
             PlayerCommand.MoveRight => AttemptMove(1, 0),
-            PlayerCommand.Wait => Wait(),
+            PlayerCommand.Wait => Wait(!suppressWaitEvent),
             PlayerCommand.SelectPreviousItem => SelectItem(false),
             PlayerCommand.SelectNextItem => SelectItem(true),
             PlayerCommand.UsePotion => UsePotion(),
@@ -198,9 +198,9 @@ public class GameState
         return true;
     }
 
-    private bool Wait()
+    private bool Wait(bool addEvent)
     {
-        EventLog.Add("PLAYER WAITS");
+        if (addEvent) EventLog.Add("PLAYER WAITS");
         return true;
     }
 
