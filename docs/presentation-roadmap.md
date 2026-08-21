@@ -252,6 +252,10 @@ After the nine-tile slice is approved, the remaining current simulation requires
 
 Fog-of-war shading, debug paths, line-of-sight lines, valid/invalid targeting, and selection rectangles may remain code-rendered unless the chosen theme benefits from artwork.
 
+### Minor presentation follow-ups
+
+- Hovering the player in F1 debug mode should identify the player and show relevant player state in the inspection panel, comparable to the existing NPC inspection details.
+
 ## Deliberately out of scope
 
 - Player or NPC movement animation

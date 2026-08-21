@@ -15,6 +15,8 @@ The simulation is strictly turn based. Every successful player action advances t
 ### Exploration and environment
 
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
+- A scrolling 16×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
+- A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
 - Sound propagation, physical trails, and player-created false trails

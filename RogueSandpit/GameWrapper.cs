@@ -380,10 +380,12 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
+            DrawPresentationBackground();
             Point? hoveredCell = GetHoveredMapCell();
             _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
             DrawEventLog();
             DrawHud();
+            DrawContextStrip();
 
             if (_directionalAction != DirectionalAction.None) DrawDirectionalActionPrompt();
 
@@ -415,6 +417,81 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
+            if (_map.RenderMode == RenderMode.Cells)
+            {
+                DrawDebugHud();
+                return;
+            }
+
+            DrawSidebarHud();
+            DrawModeBar();
+        }
+
+        private void DrawSidebarHud()
+        {
+            const int x = 520;
+
+            _pixelFont.DrawText(_spriteBatch, "PLAYER", new Vector2(x, 10), 2, Color.White);
+            float healthRatio = _player.MaxHealth <= 0
+                ? 0f
+                : Math.Clamp((float)_player.Health / _player.MaxHealth, 0f, 1f);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(x, 32, 264, 12), Color.DarkRed);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(x, 32, (int)(264 * healthRatio), 12), Color.IndianRed);
+            _pixelFont.DrawText(_spriteBatch,
+                $"HP {_player.Health}/{_player.MaxHealth}", new Vector2(x + 4, 35), 1, Color.White);
+            _pixelFont.DrawText(_spriteBatch,
+                $"DAMAGE {_player.Damage}   DEFENCE {_player.Defence}",
+                new Vector2(x, 54), 1, Color.LightGray);
+
+            _pixelFont.DrawText(_spriteBatch, "EQUIPMENT", new Vector2(x, 90), 2, Color.White);
+            _pixelFont.DrawText(_spriteBatch,
+                $"MELEE  {_player.EquippedWeapon?.Name ?? "NONE"}",
+                new Vector2(x, 116), 1, Color.LightGray);
+            _pixelFont.DrawText(_spriteBatch,
+                $"RANGED {_player.EquippedRangedWeapon?.Name ?? "NONE"}",
+                new Vector2(x, 134), 1, Color.LightGray);
+            _pixelFont.DrawText(_spriteBatch,
+                $"ARMOR  {_player.EquippedArmor?.Name ?? "NONE"}",
+                new Vector2(x, 152), 1, Color.LightGray);
+
+            _pixelFont.DrawText(_spriteBatch, "INVENTORY", new Vector2(x, 186), 2, Color.White);
+            _pixelFont.DrawText(_spriteBatch,
+                $"SLOTS {_player.Inventory.Items.Count}/{_player.Inventory.Capacity}",
+                new Vector2(x, 212), 1, Color.LightGray);
+            Item selected = _player.Inventory.SelectedItem;
+            _pixelFont.DrawText(_spriteBatch,
+                $"SELECTED {selected?.Name ?? "NONE"}", new Vector2(x, 230), 1,
+                selected == null ? Color.DarkGray : Color.White);
+
+            _pixelFont.DrawText(_spriteBatch, "OBJECTIVE", new Vector2(x, 266), 2, Color.White);
+            _pixelFont.DrawText(_spriteBatch,
+                _player.HasSpecial ? "SPECIAL RECOVERED" : "FIND THE YELLOW SPECIAL",
+                new Vector2(x, 292), 1, _player.HasSpecial ? Color.Yellow : Color.LightGray);
+            _pixelFont.DrawText(_spriteBatch,
+                $"EFFECTS {EffectSummary(_player.StatusEffects)}",
+                new Vector2(x, 310), 1,
+                _player.StatusEffects.Effects.Count > 0 ? Color.OrangeRed : Color.DarkGray);
+
+            _pixelFont.DrawText(_spriteBatch, "EVENTS", new Vector2(x, 346), 2, Color.White);
+        }
+
+        private void DrawModeBar()
+        {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(0, 580, NativeWidth, 20), Color.Black);
+            string mode = !_realtimeTurnTimer.Enabled
+                ? "TURN-BASED"
+                : (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
+                    ? "REAL-TIME PAUSED"
+                    : "REAL-TIME";
+            _pixelFont.DrawText(_spriteBatch,
+                $"TURN {_gameState.TurnCount}   MODE {mode}   F1 DEBUG   F12 TOGGLE MODE",
+                new Vector2(8, 586), 1, Color.LightGray);
+        }
+
+        private void DrawDebugHud()
+        {
             if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
                 string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
@@ -445,6 +522,36 @@ namespace RogueSandpit
                 new Vector2(6, 585), 1, Color.White);
         }
 
+        private void DrawPresentationBackground()
+        {
+            if (_map.RenderMode == RenderMode.Cells) return;
+
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(MapViewport.VisibleColumns * MapViewport.TileSize, 0,
+                    NativeWidth - MapViewport.VisibleColumns * MapViewport.TileSize, 580),
+                new Color(18, 18, 24));
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(0, MapViewport.VisibleRows * MapViewport.TileSize,
+                    NativeWidth, 580 - MapViewport.VisibleRows * MapViewport.TileSize),
+                new Color(12, 12, 18));
+
+            foreach (int y in new[] { 80, 176, 256, 336 })
+            {
+                _uiDrawer.DrawLine(_spriteBatch, 520, y, 792, y, new Color(55, 55, 68));
+            }
+        }
+
+        private void DrawContextStrip()
+        {
+            if (_map.RenderMode == RenderMode.Cells || _directionalAction != DirectionalAction.None) return;
+
+            _pixelFont.DrawText(_spriteBatch, "COMMANDS", new Vector2(10, 524), 2, Color.White);
+            string hint = _inventoryOpen
+                ? "INVENTORY OPEN   ARROWS SELECT   I CLOSE"
+                : "ARROWS MOVE   . WAIT   I INVENTORY   C DOOR   F THROW   R FIRE";
+            _pixelFont.DrawText(_spriteBatch, hint, new Vector2(10, 554), 1, Color.DarkGray);
+        }
+
         private static string EffectSummary(StatusEffectCollection statusEffects)
         {
             return statusEffects.Effects.Count == 0
@@ -463,6 +570,15 @@ namespace RogueSandpit
                 DirectionalAction.PlaceTrap => "PLACE TRAP: ARROW CHOOSES  ESC CANCELS",
                 _ => "FIRE BOW: ARROW CHOOSES  ESC CANCELS"
             };
+
+            if (_map.RenderMode != RenderMode.Cells)
+            {
+                _pixelFont.DrawText(_spriteBatch, "ACTION", new Vector2(10, 524), 2, Color.Yellow);
+                _pixelFont.DrawText(_spriteBatch, prompt,
+                    new Vector2(10, 554), 1, Color.White);
+                return;
+            }
+
             const int panelWidth = 330;
             const int panelHeight = 28;
             int panelX = (NativeWidth - panelWidth) / 2;
@@ -522,16 +638,22 @@ namespace RogueSandpit
         {
             if (_gameState.EventLog.Entries.Count == 0) return;
 
-            const int panelX = 5;
-            const int panelY = 5;
-            int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
-            _uiDrawer.DrawFilledRectangle(_spriteBatch,
-                new Rectangle(panelX, panelY, 285, panelHeight), Color.Black * 0.75f);
+            int panelX = _map.RenderMode == RenderMode.Cells ? 5 : 520;
+            int panelY = _map.RenderMode == RenderMode.Cells ? 5 : 374;
+            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : 272;
+            if (_map.RenderMode == RenderMode.Cells)
+            {
+                int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
+                _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                    new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.75f);
+            }
 
             for (int i = 0; i < _gameState.EventLog.Entries.Count; i++)
             {
                 _pixelFont.DrawText(_spriteBatch, _gameState.EventLog.Entries[i],
-                    new Vector2(panelX + 5, panelY + 5 + i * 12), 1, Color.White);
+                    new Vector2(panelX + (_map.RenderMode == RenderMode.Cells ? 5 : 0),
+                        panelY + i * 18), 1,
+                    i == _gameState.EventLog.Entries.Count - 1 ? Color.White : Color.Gray);
             }
         }
 

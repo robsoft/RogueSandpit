@@ -12,6 +12,7 @@ public class MapRenderer
     private readonly Map _map;
     private readonly PrimitiveDrawer _drawer;
     private readonly PrototypeSpriteAtlas _atlas;
+    private readonly MapViewport _viewport = new();
 
     public MapRenderer(GraphicsDevice graphicsDevice, Map map, PrototypeSpriteAtlas atlas)
     {
@@ -30,7 +31,8 @@ public class MapRenderer
         }
         else
         {
-            RenderRooms(spriteBatch);
+            _viewport.Follow(player.X, player.Y, _map.Width, _map.Height);
+            RenderViewport(spriteBatch);
         }
 
         _atlas.Draw(spriteBatch, PrototypeSprite.Player,
@@ -38,16 +40,7 @@ public class MapRenderer
 
         if (_map.ShowGrid)
         {
-            for (int i = 0; i <= _map.Width; i++)
-            {
-                _drawer.DrawLine(spriteBatch, new Vector2(i * _map.CellScale, 0),
-                    new Vector2(i * _map.CellScale, _map.Height * _map.CellScale), Color.Black);
-            }
-            for (int i = 0; i <= _map.Height; i++)
-            {
-                _drawer.DrawLine(spriteBatch, new Vector2(0, i * _map.CellScale),
-                    new Vector2(_map.Width * _map.CellScale, i * _map.CellScale), Color.Black);
-            }
+            DrawGrid(spriteBatch);
         }
 
         if (_map.RenderMode == RenderMode.Cells && hoveredCell.HasValue)
@@ -98,8 +91,8 @@ public class MapRenderer
 
     private Vector2 CellCenter(int x, int y)
     {
-        float offset = _map.CellScale / 2f;
-        return new Vector2(x * _map.CellScale + offset, y * _map.CellScale + offset);
+        Rectangle destination = CellDestination(x, y);
+        return new Vector2(destination.Center.X, destination.Center.Y);
     }
 
     private void RenderMapCells(SpriteBatch spriteBatch)
@@ -129,15 +122,46 @@ public class MapRenderer
     {
         foreach (PlayerTrailClue clue in _map.PlayerTrail)
         {
+            if (!IsWorldCellDrawable(clue.X, clue.Y)) continue;
             float ageOpacity = Math.Clamp(clue.RemainingTurns / 18f, 0.2f, 1f);
             Color clueColor = clue.IsAuthentic ? Color.HotPink : Color.MediumPurple;
             Vector2 start = CellCenter(clue.X, clue.Y);
             Vector2 end = CellCenter(clue.NextX, clue.NextY);
+            Rectangle destination = CellDestination(clue.X, clue.Y);
+            int inset = Math.Max(2, ActiveCellScale / 4);
             _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(clue.X * _map.CellScale + 3, clue.Y * _map.CellScale + 3,
-                    _map.CellScale - 6, _map.CellScale - 6), clueColor * ageOpacity);
+                new Rectangle(destination.X + inset, destination.Y + inset,
+                    destination.Width - inset * 2, destination.Height - inset * 2),
+                clueColor * ageOpacity);
             _drawer.DrawLine(spriteBatch, start, end, clueColor * ageOpacity, clue.Strength);
         }
+    }
+
+    private void RenderViewport(SpriteBatch spriteBatch)
+    {
+        int right = Math.Min(_map.Width, _viewport.WorldX + MapViewport.VisibleColumns);
+        int bottom = Math.Min(_map.Height, _viewport.WorldY + MapViewport.VisibleRows);
+
+        for (int x = _viewport.WorldX; x < right; x++)
+        {
+            for (int y = _viewport.WorldY; y < bottom; y++)
+            {
+                DrawMapCell(spriteBatch, x, y);
+            }
+        }
+
+        DrawPlayerTrail(spriteBatch);
+        DrawEnvironmentalEffects(spriteBatch, true);
+        DrawGroundItems(spriteBatch, true);
+        DrawPlacedTraps(spriteBatch, true);
+
+        foreach (BaseNPC npc in _map.NPCs)
+        {
+            if (npc.State == NPCState.Dead || !IsWorldCellDrawable(npc.X, npc.Y)) continue;
+            if (_map.MapCells[npc.X, npc.Y].IsVisible) DrawNpc(spriteBatch, npc);
+        }
+
+        DrawViewportFog(spriteBatch);
     }
 
     private void RenderRooms(SpriteBatch spriteBatch)
@@ -235,6 +259,7 @@ public class MapRenderer
     {
         foreach (GroundItem groundItem in _map.GroundItems)
         {
+            if (!IsWorldCellDrawable(groundItem.X, groundItem.Y)) continue;
             if (visibleOnly && !_map.MapCells[groundItem.X, groundItem.Y].IsVisible) continue;
 
             if (groundItem.Item.Type == ItemType.HealingPotion)
@@ -256,9 +281,29 @@ public class MapRenderer
                 ItemType.FireBomb => Color.OrangeRed,
                 _ => Color.White
             };
+            Rectangle destination = CellDestination(groundItem.X, groundItem.Y);
+            int inset = Math.Max(2, ActiveCellScale / 5);
             _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(groundItem.X * _map.CellScale + 2, groundItem.Y * _map.CellScale + 2,
-                    _map.CellScale - 4, _map.CellScale - 4), color);
+                new Rectangle(destination.X + inset, destination.Y + inset,
+                    destination.Width - inset * 2, destination.Height - inset * 2), color);
+        }
+    }
+
+    private void DrawGrid(SpriteBatch spriteBatch)
+    {
+        int columns = _map.RenderMode == RenderMode.Cells ? _map.Width : MapViewport.VisibleColumns;
+        int rows = _map.RenderMode == RenderMode.Cells ? _map.Height : MapViewport.VisibleRows;
+        int scale = ActiveCellScale;
+
+        for (int i = 0; i <= columns; i++)
+        {
+            _drawer.DrawLine(spriteBatch, new Vector2(i * scale, 0),
+                new Vector2(i * scale, rows * scale), Color.Black);
+        }
+        for (int i = 0; i <= rows; i++)
+        {
+            _drawer.DrawLine(spriteBatch, new Vector2(0, i * scale),
+                new Vector2(columns * scale, i * scale), Color.Black);
         }
     }
 
@@ -266,10 +311,15 @@ public class MapRenderer
     {
         foreach (PlacedTrap trap in _map.PlacedTraps)
         {
+            if (!IsWorldCellDrawable(trap.X, trap.Y)) continue;
             if (visibleOnly && !_map.MapCells[trap.X, trap.Y].IsVisible) continue;
+            Rectangle destination = CellDestination(trap.X, trap.Y);
+            int horizontalInset = Math.Max(2, ActiveCellScale / 5);
+            int verticalInset = Math.Max(3, ActiveCellScale / 4);
             _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(trap.X * _map.CellScale + 2, trap.Y * _map.CellScale + 4,
-                    _map.CellScale - 4, _map.CellScale - 6), Color.OrangeRed);
+                new Rectangle(destination.X + horizontalInset, destination.Y + verticalInset,
+                    destination.Width - horizontalInset * 2,
+                    destination.Height - verticalInset * 2), Color.OrangeRed);
         }
     }
 
@@ -277,6 +327,7 @@ public class MapRenderer
     {
         foreach (EnvironmentalEffect effect in _map.EnvironmentalEffects)
         {
+            if (!IsWorldCellDrawable(effect.X, effect.Y)) continue;
             if (visibleOnly && !_map.MapCells[effect.X, effect.Y].IsVisible) continue;
             PrototypeSprite sprite = effect.Type == EnvironmentalEffectType.Smoke
                 ? PrototypeSprite.Smoke
@@ -352,8 +403,18 @@ public class MapRenderer
             CellDestination(npc.X, npc.Y), NpcColor(npc));
     }
 
+    private int ActiveCellScale => _map.RenderMode == RenderMode.Cells
+        ? _map.CellScale
+        : MapViewport.TileSize;
+
+    private bool IsWorldCellDrawable(int x, int y) =>
+        _map.RenderMode == RenderMode.Cells || _viewport.ContainsWorldCell(x, y);
+
     private Rectangle CellDestination(int x, int y) =>
-        new(x * _map.CellScale, y * _map.CellScale, _map.CellScale, _map.CellScale);
+        _map.RenderMode == RenderMode.Cells
+            ? new Rectangle(x * _map.CellScale, y * _map.CellScale,
+                _map.CellScale, _map.CellScale)
+            : _viewport.WorldToScreen(x, y);
 
     private static Color DoorColor(Doorway door)
     {
@@ -393,6 +454,24 @@ public class MapRenderer
         }
 
         return false;
+    }
+
+    private void DrawViewportFog(SpriteBatch spriteBatch)
+    {
+        int right = Math.Min(_map.Width, _viewport.WorldX + MapViewport.VisibleColumns);
+        int bottom = Math.Min(_map.Height, _viewport.WorldY + MapViewport.VisibleRows);
+
+        for (int x = _viewport.WorldX; x < right; x++)
+        {
+            for (int y = _viewport.WorldY; y < bottom; y++)
+            {
+                MapCell cell = _map.MapCells[x, y];
+                if (cell.IsVisible) continue;
+
+                Color fog = cell.IsDiscovered ? Color.Black * 0.65f : Color.Black;
+                _drawer.DrawFilledRectangle(spriteBatch, CellDestination(x, y), fog);
+            }
+        }
     }
 
     private void DrawFogOfWar(SpriteBatch spriteBatch)
