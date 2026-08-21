@@ -10,9 +10,14 @@ public sealed class RuntimeSettings
     public int MusicVolume { get; private set; } = 100;
     public bool MuteWhileUnfocused { get; private set; } = true;
 
-    public RuntimeSettings(double realtimeTurnSeconds)
+    public RuntimeSettings(double realtimeTurnSeconds, int masterVolume = 100,
+        int effectsVolume = 100, int musicVolume = 100, bool muteWhileUnfocused = true)
     {
         RealtimeTurnSeconds = Math.Clamp(realtimeTurnSeconds, 0.1, 10.0);
+        MasterVolume = ClampVolume(masterVolume);
+        EffectsVolume = ClampVolume(effectsVolume);
+        MusicVolume = ClampVolume(musicVolume);
+        MuteWhileUnfocused = muteWhileUnfocused;
     }
 
     public void AdjustRealtimeInterval(double delta) =>

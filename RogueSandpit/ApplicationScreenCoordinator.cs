@@ -8,6 +8,7 @@ public enum ApplicationScreen
     Playing,
     Paused,
     Options,
+    Controls,
     GameOver,
     Victory
 }
@@ -35,6 +36,16 @@ public sealed class ApplicationScreenCoordinator
     public void BackFromOptions()
     {
         if (CurrentScreen == ApplicationScreen.Options) CurrentScreen = ApplicationScreen.Paused;
+    }
+
+    public void OpenControls()
+    {
+        if (CurrentScreen == ApplicationScreen.Options) CurrentScreen = ApplicationScreen.Controls;
+    }
+
+    public void BackFromControls()
+    {
+        if (CurrentScreen == ApplicationScreen.Controls) CurrentScreen = ApplicationScreen.Options;
     }
 
     public void SynchronizeOutcome(GameOutcome outcome)

@@ -48,4 +48,18 @@ public class ApplicationScreenCoordinatorTests
 
         Assert.Equal(ApplicationScreen.Playing, coordinator.CurrentScreen);
     }
+
+    [Fact]
+    public void ControlsIsAnOptionsOffshoot()
+    {
+        var coordinator = new ApplicationScreenCoordinator();
+        coordinator.Pause();
+        coordinator.OpenOptions();
+
+        coordinator.OpenControls();
+        Assert.Equal(ApplicationScreen.Controls, coordinator.CurrentScreen);
+        coordinator.BackFromControls();
+
+        Assert.Equal(ApplicationScreen.Options, coordinator.CurrentScreen);
+    }
 }
