@@ -6,7 +6,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
 
-Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect loot, and retrieve the yellow special tile before returning to the entrance. The player can cautiously open or close adjacent doors in place with `C`, lay false trails with `T` plus an arrow, throw the selected item with `F` plus an arrow, and place a selected hunting trap with `P` plus an arrow. Throws travel up to six cells and create impact noise: weapons strike and bleed the first NPC in their path, potions shatter, and other items remain recoverable. Traps damage the first NPC entering them and stun survivors for their next action. Actors share timed bleeding and stunned effects, shown on the player HUD and in F1 inspection. Named archetypes retain distinct combat, awareness, tracking, and morale profiles. SPACE restarts.
+Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect loot, and retrieve the yellow special tile before returning to the entrance. The player can cautiously open or close adjacent doors in place with `C`, lay false trails with `T` plus an arrow, throw the selected item with `F` plus an arrow, and place a selected hunting trap with `P` plus an arrow. Throws travel up to six cells and create impact noise: weapons strike and bleed the first NPC in their path, potions shatter, and other items remain recoverable. Traps damage the first NPC entering them and stun survivors for their next action. NPC initiative rotates fairly; NPCs investigate visible casualties, while skilled archetypes spot and avoid nearby traps. Actors share timed bleeding and stunned effects, shown on the player HUD and in F1 inspection. SPACE restarts.
 
 ## Build & run
 
@@ -46,7 +46,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 - **`Program.cs`** — trivial entry point, just constructs and runs `GameWrapper`.
 - **`GameOptions.cs`** / **`GameWrapper.cs`** — command-line window scaling plus the MonoGame update/draw loop, inventory and directional-action UI, input translation, and aspect-ratio-preserving resizing. The native canvas remains 800×600 at every window scale.
-- **`Models/GameState.cs`** — framework-independent turn coordinator. It resolves targets, doors, objectives, event messages, and NPC response order while delegating player state changes and shared occupancy rules to their owning models.
+- **`Models/GameState.cs`** / **`Models/NpcTurnScheduler.cs`** — framework-independent turn coordination. The active NPC phase is snapshotted and its initiative rotates each turn, avoiding permanent map-list priority while retaining sequential action resolution.
 - **`Models/Map.cs`** — procedural map generation and centralized terrain/actor occupancy queries: rooms, corridors, doorways, and flattened cell types (`Wall`/`Floor`/`Door`/`Special`). It distributes noise and alerts and owns evidence trails, actor-aware throw trajectories, ground loot, and placed traps.
 - **`Models/Player.cs`**, **`Models/BaseNPC.cs`** / **`NPCs.cs`** / **`NPCAwarenessProfile.cs`** / **`NPCMoraleProfile.cs`** / **`StatusEffects.cs`** — character state, shared timed actor effects, and NPC identity/movement/AI. Five seeded archetypes have distinct combat, perception, tracking, morale, retreat, and help-call behavior. NPCs investigate evidence, coordinate searches, flee toward bounded safe targets, or enrage according to their profile.
 - **`Models/Items.cs`** / **`PlacedTrap.cs`** — item, ground-loot, inventory selection, item-factory, and placed-trap models. The player has an eight-slot inventory; potions heal, weapons and armor modify combat, keys unlock doors, items can be thrown, and hunting traps can be placed.
@@ -58,10 +58,10 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 ## Current state (per README + code)
 
-Working: map generation, fog-of-war exploration, player movement and bump combat, five named NPC archetypes with temperament and morale-driven AI, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, placed traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, and turn-based flow.
+Working: map generation, fog-of-war exploration, player movement and bump combat, five named NPC archetypes with temperament and morale-driven AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, placed traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, and turn-based flow.
 
 Known rough edges (from the README's "Pressing TODOs"):
-- NPC actions still resolve sequentially in map-list order, so earlier actors can affect the options available to later ones in the same turn.
+- Initiative is now fair across turns, but NPC actions still resolve sequentially rather than through fully simultaneous declared intentions.
 
 ## Where to look for "what's next"
 

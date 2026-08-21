@@ -468,7 +468,7 @@ namespace RogueSandpit
         {
             const int panelX = 485;
             const int panelY = 5;
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 160), Color.Black * 0.9f);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 176), Color.Black * 0.9f);
 
             MapCell cell = _map.MapCells[position.X, position.Y];
             _pixelFont.DrawText(_spriteBatch,
@@ -535,6 +535,9 @@ namespace RogueSandpit
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
             _pixelFont.DrawText(_spriteBatch, $"FX {EffectSummary(npc.StatusEffects)}",
                 new Vector2(panelX + 6, panelY + 139), 1, Color.Violet);
+            _pixelFont.DrawText(_spriteBatch,
+                $"HAZ {npc.KnownHazards.Count} DEAD {npc.ObservedCasualtyCount} TD {profile.TrapDetectionRange} INIT {_gameState.NextNpcInitiativeOffset}",
+                new Vector2(panelX + 6, panelY + 155), 1, Color.LightGoldenrodYellow);
         }
 
         private void DrawEndScreen()
