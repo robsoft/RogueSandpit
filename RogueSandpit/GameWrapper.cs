@@ -75,7 +75,9 @@ namespace RogueSandpit
             _renderTarget = new RenderTarget2D(GraphicsDevice, NativeWidth, NativeHeight);
             _uiDrawer = new PrimitiveDrawer(GraphicsDevice);
             _pixelFont = new PixelFont(GraphicsDevice);
-            _mapRenderer = new MapRenderer(GraphicsDevice, _map);
+            Texture2D prototypeAtlasTexture = Content.Load<Texture2D>("sprites/prototype-slice");
+            _mapRenderer = new MapRenderer(GraphicsDevice, _map,
+                new PrototypeSpriteAtlas(prototypeAtlasTexture));
             // initial calculation of the render destination rectangle
             CalculateRenderDestination();
         }
@@ -376,7 +378,7 @@ namespace RogueSandpit
             GraphicsDevice.SetRenderTarget(_renderTarget);
 
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            _spriteBatch.Begin();
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
             Point? hoveredCell = GetHoveredMapCell();
             _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
@@ -404,7 +406,7 @@ namespace RogueSandpit
             // then draw the render target to the screen
             GraphicsDevice.SetRenderTarget(null);
 
-            _spriteBatch.Begin();
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
             _spriteBatch.Draw(_renderTarget, _renderDestination, Color.White);
             _spriteBatch.End();
 

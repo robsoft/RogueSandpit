@@ -11,11 +11,13 @@ public class MapRenderer
 
     private readonly Map _map;
     private readonly PrimitiveDrawer _drawer;
+    private readonly PrototypeSpriteAtlas _atlas;
 
-    public MapRenderer(GraphicsDevice graphicsDevice, Map map)
+    public MapRenderer(GraphicsDevice graphicsDevice, Map map, PrototypeSpriteAtlas atlas)
     {
         _map = map;
         _drawer = new PrimitiveDrawer(graphicsDevice);
+        _atlas = atlas;
     }
 
     public void Display(SpriteBatch spriteBatch, Player player, Point? hoveredCell = null)
@@ -31,10 +33,8 @@ public class MapRenderer
             RenderRooms(spriteBatch);
         }
 
-        _drawer.DrawFilledRectangle(spriteBatch,
-            new Rectangle(_map.CurrentPlayerX * _map.CellScale, _map.CurrentPlayerY * _map.CellScale,
-                _map.CellScale, _map.CellScale),
-            Color.White);
+        _atlas.Draw(spriteBatch, PrototypeSprite.Player,
+            CellDestination(_map.CurrentPlayerX, _map.CurrentPlayerY));
 
         if (_map.ShowGrid)
         {
@@ -108,16 +108,7 @@ public class MapRenderer
         {
             for (int y = 0; y < _map.Height; y++)
             {
-                Color color = _map.MapCells[x, y].CellType switch
-                {
-                    MapCellType.Wall => Color.DarkGray,
-                    MapCellType.Floor => Color.LightGray,
-                    MapCellType.Door => DoorColor(_map.GetDoorAt(x, y)),
-                    MapCellType.Special => Color.Yellow,
-                    _ => MapBackgroundColor
-                };
-                _drawer.DrawFilledRectangle(spriteBatch,
-                    new Rectangle(x * _map.CellScale, y * _map.CellScale, _map.CellScale, _map.CellScale), color);
+                DrawMapCell(spriteBatch, x, y);
             }
         }
 
@@ -129,10 +120,7 @@ public class MapRenderer
         foreach (BaseNPC npc in _map.NPCs)
         {
             if (npc.State == NPCState.Dead) continue;
-            Color npcColor = NpcColor(npc);
-            _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale, _map.CellScale, _map.CellScale),
-                npcColor);
+            DrawNpc(spriteBatch, npc);
         }
 
     }
@@ -210,12 +198,12 @@ public class MapRenderer
                 (1 + corridor.Y2 - corridor.Y1) * _map.CellScale), corridor.Color);
         }
 
+        DrawDiscoveredAtlasTerrain(spriteBatch);
+
         foreach (Doorway door in _map.Doors)
         {
             if (!IsDoorVisible(door)) continue;
-            _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(door.X1 * _map.CellScale, door.Y1 * _map.CellScale,
-                    _map.CellScale, _map.CellScale), DoorColor(door));
+            DrawDoor(spriteBatch, door);
         }
 
         DrawGroundItems(spriteBatch, true);
@@ -227,10 +215,7 @@ public class MapRenderer
             if (npc.State == NPCState.Dead) continue;
             if (_map.MapCells[npc.X, npc.Y].IsVisible)
             {
-                Color npcColor = NpcColor(npc);
-                _drawer.DrawFilledRectangle(spriteBatch,
-                    new Rectangle(npc.X * _map.CellScale, npc.Y * _map.CellScale,
-                        _map.CellScale, _map.CellScale), npcColor);
+                DrawNpc(spriteBatch, npc);
             }
         }
 
@@ -252,9 +237,15 @@ public class MapRenderer
         {
             if (visibleOnly && !_map.MapCells[groundItem.X, groundItem.Y].IsVisible) continue;
 
+            if (groundItem.Item.Type == ItemType.HealingPotion)
+            {
+                _atlas.Draw(spriteBatch, PrototypeSprite.HealingPotion,
+                    CellDestination(groundItem.X, groundItem.Y));
+                continue;
+            }
+
             Color color = groundItem.Item.Type switch
             {
-                ItemType.HealingPotion => Color.LimeGreen,
                 ItemType.Weapon => Color.Silver,
                 ItemType.Key => Color.Gold,
                 ItemType.Armor => Color.SteelBlue,
@@ -287,14 +278,82 @@ public class MapRenderer
         foreach (EnvironmentalEffect effect in _map.EnvironmentalEffects)
         {
             if (visibleOnly && !_map.MapCells[effect.X, effect.Y].IsVisible) continue;
-            Color color = effect.Type == EnvironmentalEffectType.Smoke
-                ? Color.Gray * 0.8f
-                : Color.OrangeRed * 0.9f;
-            _drawer.DrawFilledRectangle(spriteBatch,
-                new Rectangle(effect.X * _map.CellScale + 1, effect.Y * _map.CellScale + 1,
-                    _map.CellScale - 2, _map.CellScale - 2), color);
+            PrototypeSprite sprite = effect.Type == EnvironmentalEffectType.Smoke
+                ? PrototypeSprite.Smoke
+                : PrototypeSprite.Fire;
+            _atlas.Draw(spriteBatch, sprite, CellDestination(effect.X, effect.Y));
         }
     }
+
+    private void DrawDiscoveredAtlasTerrain(SpriteBatch spriteBatch)
+    {
+        for (int x = 0; x < _map.Width; x++)
+        {
+            for (int y = 0; y < _map.Height; y++)
+            {
+                if (!_map.MapCells[x, y].IsDiscovered) continue;
+                DrawMapCell(spriteBatch, x, y);
+            }
+        }
+    }
+
+    private void DrawMapCell(SpriteBatch spriteBatch, int x, int y)
+    {
+        MapCellType cellType = _map.MapCells[x, y].CellType;
+        PrototypeSprite baseSprite = cellType == MapCellType.Wall
+            ? PrototypeSprite.Wall
+            : PrototypeSprite.Floor;
+        _atlas.Draw(spriteBatch, baseSprite, CellDestination(x, y));
+
+        if (cellType == MapCellType.Door)
+        {
+            DrawDoor(spriteBatch, _map.GetDoorAt(x, y));
+        }
+        else if (cellType == MapCellType.Special)
+        {
+            _drawer.DrawFilledRectangle(spriteBatch, CellDestination(x, y), Color.Yellow);
+        }
+    }
+
+    private void DrawDoor(SpriteBatch spriteBatch, Doorway door)
+    {
+        if (door?.State == DoorState.Open)
+        {
+            _atlas.Draw(spriteBatch, PrototypeSprite.OpenDoor,
+                CellDestination(door.X1, door.Y1));
+        }
+        else if (door?.State == DoorState.Closed)
+        {
+            _atlas.Draw(spriteBatch, PrototypeSprite.ClosedDoor,
+                CellDestination(door.X1, door.Y1));
+        }
+        else if (door != null)
+        {
+            _drawer.DrawFilledRectangle(spriteBatch,
+                CellDestination(door.X1, door.Y1), DoorColor(door));
+        }
+    }
+
+    private void DrawNpc(SpriteBatch spriteBatch, BaseNPC npc)
+    {
+        if (npc.CharacterType == CharacterTypes.Orc)
+        {
+            Color tint = npc.StatusEffects.Has(StatusEffectType.Stunned)
+                || npc.MoraleState is NPCMoraleState.Fleeing or NPCMoraleState.Enraged
+                || npc.Awareness != NPCAwareness.Unaware
+                    ? NpcColor(npc)
+                    : Color.White;
+            _atlas.Draw(spriteBatch, PrototypeSprite.Orc,
+                CellDestination(npc.X, npc.Y), tint);
+            return;
+        }
+
+        _drawer.DrawFilledRectangle(spriteBatch,
+            CellDestination(npc.X, npc.Y), NpcColor(npc));
+    }
+
+    private Rectangle CellDestination(int x, int y) =>
+        new(x * _map.CellScale, y * _map.CellScale, _map.CellScale, _map.CellScale);
 
     private static Color DoorColor(Doorway door)
     {
