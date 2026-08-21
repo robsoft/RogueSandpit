@@ -4,7 +4,7 @@ A grid-based rogue-like built with **MonoGame** (DesktopGL) on **.NET 9**. Singl
 
 ## What this project is
 
-From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and (eventually) collects loot. It's fully turn-based — NPCs only act once the player has made a move.
+From the README: a simple rogue-like where a player moves around a procedurally generated map (rooms + corridors), fights NPCs, and collects loot. Its simulation remains turn-based, with an optional timed-input mode that automatically waits for an idle player.
 
 Current gameplay: explore through persistent fog-of-war, bump into NPCs to attack, collect loot, and retrieve the yellow special tile before returning to the entrance. The player can cautiously open or close adjacent doors in place with `C`, lay false trails with `T` plus an arrow, throw the selected item with `F` plus an arrow, and place a selected hunting trap with `P` plus an arrow. Throws travel up to six cells and create impact noise: weapons strike and bleed the first NPC in their path, potions shatter, and other items remain recoverable. Traps damage the first NPC entering them and stun survivors for their next action. NPC initiative rotates fairly; NPCs investigate visible casualties, while skilled archetypes spot and avoid nearby traps. Actors share timed bleeding and stunned effects, shown on the player HUD and in F1 inspection. SPACE restarts.
 
@@ -16,7 +16,7 @@ Requires the .NET SDK (project targets `net9.0`; this machine has 9.0.306 and 10
 cd RogueSandpit
 dotnet build     # restores MonoGame + MGCB content-pipeline tools automatically, builds cleanly
 dotnet run        # launches at the accessibility-friendly 2x window scale
-dotnet run -- --scale 1  # original 800x600 window used for compact debugging
+dotnet run -- --scale 1 --turn-seconds 1.5  # compact window and custom real-time interval
 ```
 
 There's also a VS Code launch config (`RogueSandpit/.vscode/launch.json`, "C#: RogueSandpit Debug") and a solution file at the repo root (`RogueSandpit.slnx`) if you'd rather open it in an IDE. The README states it builds & runs on both Mac and Windows.
@@ -40,6 +40,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 | R + arrow | Fire the equipped ranged weapon up to six cells |
 | Period / numpad 5 | Wait one turn |
 | F1 | Toggle debug/map viewer (shows full map + NPCs) |
+| F12 | Toggle real-time mode; an idle countdown submits a wait turn |
 | SPACE | Generate a new map / restart |
 | ESCAPE | Cancel a directional action, otherwise quit |
 
@@ -59,7 +60,7 @@ Rule-level tests live in `RogueSandpit.Tests`; run them with `dotnet test` from 
 
 ## Current state (per README + code)
 
-Working: map generation, fog-of-war exploration, player movement, melee and bow combat, five named NPC archetypes with temperament and morale-driven AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, hunting/snare/alarm traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, and turn-based flow.
+Working: map generation, fog-of-war exploration, player movement, melee and bow combat, five named NPC archetypes with temperament and morale-driven AI, rotating initiative, casualty investigation, individual trap knowledge/avoidance, retreat/help calls, coordinated searches, prediction, evidence and false trails, hearing, loot/inventory/equipment, actor-aware directional throwing, hunting/snare/alarm traps, shared bleeding/stunned effects, doors, objective, HUD, debug view, strict turn-based play, and optional timed turns.
 
 Known rough edges (from the README's "Pressing TODOs"):
 - Initiative is now fair across turns, but NPC actions still resolve sequentially rather than through fully simultaneous declared intentions.

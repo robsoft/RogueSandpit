@@ -13,6 +13,7 @@ public class GameState
     public Player Player { get; private set; }
     public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
     public GameEventLog EventLog { get; } = new();
+    public long TurnCount { get; private set; }
     public int NextNpcInitiativeOffset => _npcTurnScheduler.InitiativeOffset;
 
     public GameState(Map map, Player player)
@@ -64,6 +65,7 @@ public class GameState
         };
 
         if (!turnTaken) return;
+        TurnCount++;
 
         StatusTurnResult playerStatus = Player.AdvanceStatusTurn();
         if (playerStatus.BleedingDamage > 0)
