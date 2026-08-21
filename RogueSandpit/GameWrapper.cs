@@ -380,6 +380,7 @@ namespace RogueSandpit
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
+            DrawPresentationBackground();
             Point? hoveredCell = GetHoveredMapCell();
             _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
             DrawEventLog();
@@ -443,6 +444,20 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName} RNG {rangedName}",
                 new Vector2(6, 585), 1, Color.White);
+        }
+
+        private void DrawPresentationBackground()
+        {
+            if (_map.RenderMode == RenderMode.Cells) return;
+
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(MapViewport.VisibleColumns * MapViewport.TileSize, 0,
+                    NativeWidth - MapViewport.VisibleColumns * MapViewport.TileSize, 580),
+                new Color(18, 18, 24));
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(0, MapViewport.VisibleRows * MapViewport.TileSize,
+                    NativeWidth, 580 - MapViewport.VisibleRows * MapViewport.TileSize),
+                new Color(12, 12, 18));
         }
 
         private static string EffectSummary(StatusEffectCollection statusEffects)
@@ -522,11 +537,12 @@ namespace RogueSandpit
         {
             if (_gameState.EventLog.Entries.Count == 0) return;
 
-            const int panelX = 5;
+            int panelX = _map.RenderMode == RenderMode.Cells ? 5 : 520;
             const int panelY = 5;
+            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : 272;
             int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
-                new Rectangle(panelX, panelY, 285, panelHeight), Color.Black * 0.75f);
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.75f);
 
             for (int i = 0; i < _gameState.EventLog.Entries.Count; i++)
             {
