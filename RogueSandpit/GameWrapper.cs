@@ -346,7 +346,7 @@ namespace RogueSandpit
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
             NPCAwarenessProfile profile = npc.AwarenessProfile;
             _pixelFont.DrawText(_spriteBatch,
-                $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")} S{profile.SightRange} H{profile.HearingAdjustment:+#;-#;0} A{profile.AllyAlertRadius} P{profile.PersistenceAdjustment:+#;-#;0}",
+                $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")} S{profile.SightRange} H{profile.HearingAdjustment:+#;-#;0} A{profile.AllyAlertRadius} P{profile.PersistenceAdjustment:+#;-#;0} T{profile.TrailDetectionRange}",
                 new Vector2(panelX + 6, panelY + 107), 1,
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
         }

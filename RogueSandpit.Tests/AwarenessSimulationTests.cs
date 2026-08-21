@@ -71,14 +71,14 @@ public class AwarenessSimulationTests
         spotter.Move(player, events.Add);
 
         Assert.Equal(NPCInvestigationSource.AllyAlert, nearbyAlly.InvestigationSource);
-        Assert.Equal((13, 10), nearbyAlly.InvestigationOrigin);
+        Assert.Equal((14, 10), nearbyAlly.InvestigationOrigin);
         Assert.Equal(NPCAwareness.Unaware, distantAlly.Awareness);
         Assert.Contains(events, entry => entry.Contains("ALERTED 1 ALLIES"));
 
         player.X = 14;
         spotter.Move(player, events.Add);
 
-        Assert.Equal((13, 10), nearbyAlly.InvestigationOrigin);
+        Assert.Equal((14, 10), nearbyAlly.InvestigationOrigin);
         Assert.Single(events, entry => entry.Contains("ALERTED"));
     }
 

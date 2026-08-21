@@ -490,11 +490,12 @@ public class Map
         PlayerTrail.RemoveAll(clue => clue.RemainingTurns <= 0);
     }
 
-    public PlayerTrailClue FindNewestTrailNear(int x, int y, long afterSequence)
+    public PlayerTrailClue FindNewestTrailNear(int x, int y, long afterSequence, int detectionRange = 1)
     {
+        if (detectionRange < 0) return null;
         return PlayerTrail
             .Where(clue => clue.Sequence > afterSequence
-                && Math.Abs(clue.X - x) + Math.Abs(clue.Y - y) <= 1)
+                && Math.Abs(clue.X - x) + Math.Abs(clue.Y - y) <= detectionRange)
             .OrderByDescending(clue => clue.Sequence)
             .FirstOrDefault();
     }
@@ -526,18 +527,31 @@ public class Map
     public int AlertNearbyAllies(BaseNPC sourceNpc, int observedPlayerX, int observedPlayerY)
     {
         int alerted = 0;
+        List<(int X, int Y)> assignments = CoordinatedSearchAssignments(observedPlayerX, observedPlayerY);
         foreach (BaseNPC npc in NPCs)
         {
             if (npc == sourceNpc) continue;
             int distance = Math.Abs(npc.X - sourceNpc.X) + Math.Abs(npc.Y - sourceNpc.Y);
+            (int X, int Y) target = alerted < assignments.Count
+                ? assignments[alerted]
+                : (observedPlayerX, observedPlayerY);
             if (distance <= sourceNpc.AwarenessProfile.AllyAlertRadius
-                && npc.ReceiveInvestigation(
-                    (observedPlayerX, observedPlayerY), NPCInvestigationSource.AllyAlert))
+                && npc.ReceiveInvestigation(target, NPCInvestigationSource.AllyAlert))
             {
                 alerted++;
             }
         }
         return alerted;
+    }
+
+    private List<(int X, int Y)> CoordinatedSearchAssignments(int x, int y)
+    {
+        var assignments = new List<(int X, int Y)>();
+        foreach ((int dx, int dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
+        {
+            if (IsWalkable(x + dx, y + dy)) assignments.Add((x + dx, y + dy));
+        }
+        return assignments;
     }
 
     public GroundItem GetGroundItemAt(int x, int y)
