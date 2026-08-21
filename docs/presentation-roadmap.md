@@ -269,6 +269,6 @@ Tiled may later be useful for prefab rooms, special encounters, tileset testing,
 
 ## Resume point
 
-The prototype atlas, 18×16 scrolling viewport, and structured normal-play HUD are now implemented. The next visual input is expanded artwork following the approved 32×32 conventions. The next UI engineering milestone is the application-screen boundary and Gum inventory proof after the desired visual theme is clearer.
+The prototype atlas, 18×16 scrolling viewport, structured normal-play HUD, and application-screen boundary are now implemented. The next visual input is expanded artwork following the approved 32×32 conventions. The next UI engineering milestone is the Gum inventory proof after the desired visual theme is clearer.
 
 Audio is planned separately in [the audio roadmap](audio-plan.md), beginning with structured presentation events and an eight-cue gameplay slice once suitable licensed assets are available.
