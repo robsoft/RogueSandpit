@@ -40,9 +40,9 @@ Suggested atlas layout:
 | Row 0, column 2 | Player | Transparent actor sprite |
 | Row 1, column 0 | Orc | Transparent actor sprite |
 | Row 1, column 1 | Healing potion | Transparent ground item |
-| Row 1, column 2 | Closed door | Transparent terrain feature |
+| Row 1, column 2 | Smoke | Transparent environmental overlay |
 | Row 2, column 0 | Open door | Transparent terrain feature |
-| Row 2, column 1 | Smoke | Transparent environmental overlay |
+| Row 2, column 1 | Closed door | Transparent terrain feature |
 | Row 2, column 2 | Fire | Transparent environmental overlay |
 
 The layout may change before integration, but the final positions must be recorded and remain stable once referenced by code.
