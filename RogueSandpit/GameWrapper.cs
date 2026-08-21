@@ -226,6 +226,13 @@ namespace RogueSandpit
 
         private void UpdateLive(GameTime gameTime)
         {
+            if (WasPressed(Keys.F11))
+            {
+                DeveloperLoadout.Apply(_player);
+                _realtimeTurnTimer.Reset();
+                _gameState.EventLog.Add("DEVELOPER LOADOUT APPLIED");
+            }
+
             if (WasPressed(Keys.F12))
             {
                 _realtimeTurnTimer.Toggle();
@@ -518,15 +525,17 @@ namespace RogueSandpit
 
         private void DrawSidebarHud()
         {
-            const int x = 520;
+            int x = MapViewport.VisibleColumns * MapViewport.TileSize + 8;
+            int contentWidth = NativeWidth - x - 8;
 
             _pixelFont.DrawText(_spriteBatch, "PLAYER", new Vector2(x, 10), 2, Color.White);
             float healthRatio = _player.MaxHealth <= 0
                 ? 0f
                 : Math.Clamp((float)_player.Health / _player.MaxHealth, 0f, 1f);
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(x, 32, 264, 12), Color.DarkRed);
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
-                new Rectangle(x, 32, (int)(264 * healthRatio), 12), Color.IndianRed);
+                new Rectangle(x, 32, contentWidth, 12), Color.DarkRed);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(x, 32, (int)(contentWidth * healthRatio), 12), Color.IndianRed);
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth}", new Vector2(x + 4, 35), 1, Color.White);
             _pixelFont.DrawText(_spriteBatch,
@@ -628,7 +637,9 @@ namespace RogueSandpit
 
             foreach (int y in new[] { 80, 176, 256, 336 })
             {
-                _uiDrawer.DrawLine(_spriteBatch, 520, y, 792, y, new Color(55, 55, 68));
+                int sidebarX = MapViewport.VisibleColumns * MapViewport.TileSize + 8;
+                _uiDrawer.DrawLine(_spriteBatch, sidebarX, y, NativeWidth - 8, y,
+                    new Color(55, 55, 68));
             }
         }
 
@@ -796,9 +807,11 @@ namespace RogueSandpit
         {
             if (_gameState.EventLog.Entries.Count == 0) return;
 
-            int panelX = _map.RenderMode == RenderMode.Cells ? 5 : 520;
+            int panelX = _map.RenderMode == RenderMode.Cells
+                ? 5
+                : MapViewport.VisibleColumns * MapViewport.TileSize + 8;
             int panelY = _map.RenderMode == RenderMode.Cells ? 5 : 374;
-            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : 272;
+            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : NativeWidth - panelX - 8;
             if (_map.RenderMode == RenderMode.Cells)
             {
                 int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;

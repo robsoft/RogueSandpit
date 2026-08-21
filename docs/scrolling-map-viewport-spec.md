@@ -7,8 +7,8 @@ Render the existing large procedural world through a readable local camera witho
 ## Normal presentation
 
 - Use 32×32 destination tiles at their atlas source size.
-- Show a 16×16-cell map viewport occupying the top-left 512×512 pixels of the 800×600 native canvas.
-- Reserve the 288-pixel right side and lower 88 pixels for HUD, log, prompts, and later Gum UI.
+- Show an 18×16-cell map viewport occupying the top-left 576×512 pixels of the 800×600 native canvas.
+- Reserve the 224-pixel right side and lower 88 pixels for HUD, log, prompts, and later Gum UI.
 - Follow the player only after they leave a four-cell inset dead zone.
 - Move the camera in whole cells and clamp it to the map boundaries.
 - Cull all world drawing to the camera rectangle so off-screen sprites cannot spill into UI space.
