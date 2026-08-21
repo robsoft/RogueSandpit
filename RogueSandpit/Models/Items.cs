@@ -100,6 +100,7 @@ public static class ItemFactory
             ItemType.Weapon => new Item("IRON SWORD", type, 8),
             ItemType.Key => new Item("BRASS KEY", type),
             ItemType.Armor => new Item("LEATHER ARMOR", type, 5),
+            ItemType.Trap => new Item("HUNTING TRAP", type, 18),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }
