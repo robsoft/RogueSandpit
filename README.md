@@ -48,7 +48,7 @@ builds & runs on Mac and Windows
 - Goblins fight at range when possible, retreating from adjacency before falling back to melee
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
-- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus
+- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus; its countdown is visible only in F1 debug mode
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
 - Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot

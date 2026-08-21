@@ -413,7 +413,7 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
-            if (_realtimeTurnTimer.Enabled)
+            if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
                 string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
                     ? "REALTIME PAUSED"
