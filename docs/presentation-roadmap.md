@@ -108,7 +108,7 @@ The current logical map cell is smaller than the 32×32 source artwork. Source a
 
 After approving the visual slice:
 
-1. Pin both MonoGame packages to the tested stable version `3.8.5.1` instead of the floating `3.8.*` range.
+1. Keep the MonoGame packages and project-local content tools pinned to the tested stable version `3.8.5.1`.
 2. Document palette, transparency, grid, naming, export, and point-sampling conventions.
 3. Decide whether door art is orientation-neutral or needs horizontal and vertical variants.
 4. Decide how actor awareness, morale, bleeding, and stun are communicated: sprite variants, icons, tinting, animation, or debug-only overlays.
@@ -269,4 +269,6 @@ Tiled may later be useful for prefab rooms, special encounters, tileset testing,
 
 ## Resume point
 
-The next external input is `prototype-slice.aseprite` and/or its 96×96 exported PNG. Once available, begin Milestone 1 on a feature branch with a short integration spec and plan, inspect the atlas before editing code, and validate it in the running game before expanding the asset list.
+The prototype atlas, 18×16 scrolling viewport, structured normal-play HUD, and application-screen boundary are now implemented. The next visual input is expanded artwork following the approved 32×32 conventions. The next UI engineering milestone is the Gum inventory proof after the desired visual theme is clearer.
+
+Audio is planned separately in [the audio roadmap](audio-plan.md), beginning with structured presentation events and an eight-cue gameplay slice once suitable licensed assets are available.

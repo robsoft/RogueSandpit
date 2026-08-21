@@ -6,9 +6,9 @@ Settle the information hierarchy and permanent regions of the 800×600 native ca
 
 ## Normal-play layout
 
-- Keep the 512×512 scrolling map unchanged.
-- Divide the 288×580 right sidebar into player, equipment, inventory, objective/effects, and event-log sections.
-- Use the 512×68 strip below the map for contextual actions and restrained control hints.
+- Keep the 576×512 scrolling map unchanged.
+- Divide the 224×580 right sidebar into player, equipment, inventory, objective/effects, and event-log sections.
+- Use the 576×68 strip below the map for contextual actions and restrained control hints.
 - Reduce the 800×20 bottom bar to turn and mode-level information.
 - Prefer labelled sections, whitespace, and a small number of semantic colours over the previous single dense status line.
 

@@ -6,7 +6,7 @@ namespace RogueSandpit.Graphics;
 public sealed class MapViewport
 {
     public const int TileSize = 32;
-    public const int VisibleColumns = 16;
+    public const int VisibleColumns = 18;
     public const int VisibleRows = 16;
     public const int DeadZoneInset = 4;
 

@@ -8,15 +8,17 @@ The project has reached its first systems-complete prototype milestone. Its next
 
 Each run places the player, enemies, equipment, consumables, traps, doors, environmental hazards, and an objective on a seeded rooms-and-corridors map. Normal play uses persistent fog of war; the complete simulation can be inspected through the F1 developer view.
 
-The simulation is strictly turn based. Every successful player action advances the NPC phase once, while cancelled prompts and invalid selections cost no time. F12 optionally enables a real-time input mode: if the player remains idle for the configured interval, the game submits a silent wait action. Timed turns pause while a prompt or inventory panel is open and whenever the window loses focus.
+The simulation is strictly turn based. Every successful player action advances the NPC phase once, while cancelled prompts and invalid selections cost no time. F12 optionally enables a real-time input mode: if the player remains idle for the configured interval, the game submits a silent wait action. Timed turns pause while a prompt, inventory, pause, or options panel is open and whenever the window loses focus.
 
 ## Current systems
 
 ### Exploration and environment
 
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
-- A scrolling 16×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
+- A scrolling 18×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
+- Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
+- Remappable gameplay controls and persistent per-user runtime settings
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
 - Sound propagation, physical trails, and player-created false trails
@@ -73,7 +75,7 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | Key | Action |
 |---|---|
 | Arrow keys | Move or answer a directional prompt |
-| `.` or numpad `5` | Wait one turn |
+| `Space`, `.`, or numpad `5` | Wait one turn |
 | `[` / `]` | Select an inventory item |
 | `I` | Open or close the inventory panel; arrows select while open |
 | `E` | Equip the selected weapon, bow, or armor |
@@ -85,9 +87,15 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | `P`, then arrow | Place the selected trap |
 | `T`, then arrow | Lay a false trail |
 | `F1` | Toggle the developer view |
+| `F11` | Restore health and apply a representative developer test loadout |
 | `F12` | Toggle real-time mode |
-| `Space` | Generate a new run |
-| `Escape` | Cancel the current prompt, or quit when no prompt is active |
+| `Space` | Restart after victory or defeat |
+| `Escape` | Cancel a prompt, close inventory, return from options, resume, or pause |
+| Arrows / `Enter` | Navigate and confirm pause/options menu choices |
+
+Gameplay keys can be changed under **Pause → Options → Controls**. Each action has a primary and optional secondary binding; Tab chooses the slot, Enter captures a new key, Backspace resets one action, and Delete clears its secondary binding. Conflicting keys are rejected. Escape, Enter, menu arrows, F1, F11, and F12 remain fixed so navigation and developer controls cannot become inaccessible.
+
+Bindings and runtime options are saved to the platform's per-user application-data folder (`RogueSandpit/settings.json`). A missing or damaged file safely falls back to defaults.
 
 ## Developer diagnostics
 

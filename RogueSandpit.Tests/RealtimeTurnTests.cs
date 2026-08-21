@@ -37,6 +37,18 @@ public class RealtimeTurnTests
     }
 
     [Fact]
+    public void ChangingIntervalResetsElapsedProgress()
+    {
+        var timer = new RealtimeTurnTimer(1, enabled: true);
+        timer.Advance(0.6, paused: false);
+
+        timer.SetInterval(1.5);
+
+        Assert.Equal(1.5, timer.IntervalSeconds, 6);
+        Assert.Equal(1.5, timer.RemainingSeconds, 6);
+    }
+
+    [Fact]
     public void GameStateCountsOnlyConsumedTurns()
     {
         var map = new Map(123);

@@ -27,8 +27,20 @@ namespace RogueSandpit
         private bool _inventoryOpen;
         private DirectionalAction _directionalAction;
         private readonly RealtimeTurnTimer _realtimeTurnTimer;
+        private readonly ApplicationScreenCoordinator _screens = new();
+        private readonly RuntimeSettings _runtimeSettings;
+        private readonly InputBindings _bindings;
+        private readonly SettingsStore _settingsStore;
+        private int _pauseMenuSelection;
+        private int _optionsSelection;
+        private int _controlsSelection;
+        private int _bindingSlot;
+        private bool _capturingBinding;
+        private string _controlsMessage = "";
 
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
+        private enum PauseMenuItem { Resume, Options, Restart, Quit }
+        private enum OptionsItem { RealtimeInterval, MasterVolume, EffectsVolume, MusicVolume, MuteUnfocused, Controls, Back }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -37,7 +49,12 @@ namespace RogueSandpit
             double turnSeconds = GameOptions.DefaultTurnSeconds,
             bool fullscreen = false, bool startRealtime = false)
         {
-            _realtimeTurnTimer = new RealtimeTurnTimer(turnSeconds, startRealtime);
+            _settingsStore = new SettingsStore(SettingsStore.DefaultPath);
+            LoadedSettings loadedSettings = _settingsStore.Load(turnSeconds);
+            _runtimeSettings = loadedSettings.Runtime;
+            _bindings = loadedSettings.Bindings;
+            _realtimeTurnTimer = new RealtimeTurnTimer(
+                _runtimeSettings.RealtimeTurnSeconds, startRealtime);
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
@@ -94,51 +111,246 @@ namespace RogueSandpit
             _player = new Player();
             _player.Place(_map, _map.StartPosX, _map.StartPosY);
             _gameState = new GameState(_map, _player);
+            _screens.StartPlaying();
 
             Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
         }
 
         protected override void Update(GameTime gameTime)
         {
-            // deal with the meta stuff - updates that have nothing to do with the actual game itself
             _previousKeyboardState = _currentKeyboardState;
-
-            // Get the new current state
             _currentKeyboardState = Keyboard.GetState();
 
-            if (WasPressed(Keys.Escape))
+            if (WasPressed(Keys.Escape) && HandleEscape())
             {
-                if (_directionalAction != DirectionalAction.None)
+                base.Update(gameTime);
+                return;
+            }
+
+            switch (_screens.CurrentScreen)
+            {
+                case ApplicationScreen.Playing:
+                    UpdateLive(gameTime);
+                    _screens.SynchronizeOutcome(_gameState.Outcome);
+                    break;
+                case ApplicationScreen.Paused:
+                    UpdatePauseMenu();
+                    break;
+                case ApplicationScreen.Options:
+                    UpdateOptionsMenu();
+                    break;
+                case ApplicationScreen.Controls:
+                    UpdateControlsMenu();
+                    break;
+                case ApplicationScreen.GameOver:
+                case ApplicationScreen.Victory:
+                    UpdateTerminalScreen();
+                    break;
+            }
+
+            base.Update(gameTime);
+        }
+
+        private bool HandleEscape()
+        {
+            if (_directionalAction != DirectionalAction.None)
+            {
+                _directionalAction = DirectionalAction.None;
+                return true;
+            }
+
+            if (_inventoryOpen)
+            {
+                _inventoryOpen = false;
+                return true;
+            }
+
+            if (_screens.CurrentScreen == ApplicationScreen.Controls)
+            {
+                if (_capturingBinding)
                 {
-                    _directionalAction = DirectionalAction.None;
+                    _capturingBinding = false;
+                    _controlsMessage = "CAPTURE CANCELLED";
                 }
                 else
                 {
-                    Exit();
+                    _screens.BackFromControls();
                 }
+                return true;
             }
 
-            if (_gameState.Outcome != GameOutcome.Playing)
-            {
-                UpdateDead(gameTime);           
-            }
-            else
-            {
-                UpdateLive(gameTime);
-            }
+            if (_screens.CurrentScreen == ApplicationScreen.Options) _screens.BackFromOptions();
+            else if (_screens.CurrentScreen == ApplicationScreen.Paused) _screens.Resume();
+            else if (_screens.CurrentScreen == ApplicationScreen.Playing) _screens.Pause();
+            else return false;
+            return true;
         }
 
-        private void UpdateDead(GameTime gameTime)
+        private void UpdateTerminalScreen()
         {
-            if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
+            if (WasPressed(Keys.Space)) KickOffNewGame();
+        }
+
+        private void UpdatePauseMenu()
+        {
+            int count = Enum.GetValues<PauseMenuItem>().Length;
+            if (WasPressed(Keys.Up)) _pauseMenuSelection = (_pauseMenuSelection - 1 + count) % count;
+            if (WasPressed(Keys.Down)) _pauseMenuSelection = (_pauseMenuSelection + 1) % count;
+            if (!WasPressed(Keys.Enter)) return;
+
+            switch ((PauseMenuItem)_pauseMenuSelection)
             {
-                KickOffNewGame();
+                case PauseMenuItem.Resume:
+                    _screens.Resume();
+                    break;
+                case PauseMenuItem.Options:
+                    _optionsSelection = 0;
+                    _screens.OpenOptions();
+                    break;
+                case PauseMenuItem.Restart:
+                    KickOffNewGame();
+                    break;
+                case PauseMenuItem.Quit:
+                    Exit();
+                    break;
             }
         }
 
+        private void UpdateOptionsMenu()
+        {
+            int count = Enum.GetValues<OptionsItem>().Length;
+            if (WasPressed(Keys.Up)) _optionsSelection = (_optionsSelection - 1 + count) % count;
+            if (WasPressed(Keys.Down)) _optionsSelection = (_optionsSelection + 1) % count;
+
+            int direction = WasPressed(Keys.Left) ? -1 : WasPressed(Keys.Right) ? 1 : 0;
+            if (direction != 0) AdjustSelectedOption(direction);
+            if (!WasPressed(Keys.Enter)) return;
+            if ((OptionsItem)_optionsSelection == OptionsItem.Controls)
+            {
+                _controlsSelection = 0;
+                _controlsMessage = "";
+                _screens.OpenControls();
+            }
+            else if ((OptionsItem)_optionsSelection == OptionsItem.Back)
+            {
+                _screens.BackFromOptions();
+            }
+        }
+
+        private void AdjustSelectedOption(int direction)
+        {
+            bool changed = true;
+            switch ((OptionsItem)_optionsSelection)
+            {
+                case OptionsItem.RealtimeInterval:
+                    _runtimeSettings.AdjustRealtimeInterval(direction * 0.1);
+                    _realtimeTurnTimer.SetInterval(_runtimeSettings.RealtimeTurnSeconds);
+                    break;
+                case OptionsItem.MasterVolume:
+                    _runtimeSettings.AdjustMasterVolume(direction * 10);
+                    break;
+                case OptionsItem.EffectsVolume:
+                    _runtimeSettings.AdjustEffectsVolume(direction * 10);
+                    break;
+                case OptionsItem.MusicVolume:
+                    _runtimeSettings.AdjustMusicVolume(direction * 10);
+                    break;
+                case OptionsItem.MuteUnfocused:
+                    _runtimeSettings.ToggleMuteWhileUnfocused();
+                    break;
+                default:
+                    changed = false;
+                    break;
+            }
+            if (changed) SaveSettings();
+        }
+
+        private void UpdateControlsMenu()
+        {
+            InputAction[] actions = Enum.GetValues<InputAction>();
+            int resetRow = actions.Length;
+            int backRow = actions.Length + 1;
+            int rowCount = actions.Length + 2;
+
+            if (_capturingBinding)
+            {
+                Keys? captured = NewlyPressedKey();
+                if (!captured.HasValue) return;
+                InputAction action = actions[_controlsSelection];
+                if (InputBindings.IsReserved(captured.Value))
+                {
+                    _controlsMessage = $"{captured.Value} IS RESERVED";
+                }
+                else if (_bindings.TrySet(action, _bindingSlot, captured.Value,
+                    out InputAction? conflict))
+                {
+                    _controlsMessage = $"{action} SET TO {captured.Value}";
+                    SaveSettings();
+                }
+                else
+                {
+                    _controlsMessage = conflict.HasValue
+                        ? $"{captured.Value} IS BOUND TO {conflict.Value}"
+                        : $"CANNOT BIND {captured.Value}";
+                }
+                _capturingBinding = false;
+                return;
+            }
+
+            if (WasPressed(Keys.Up)) _controlsSelection = (_controlsSelection - 1 + rowCount) % rowCount;
+            if (WasPressed(Keys.Down)) _controlsSelection = (_controlsSelection + 1) % rowCount;
+            if (WasPressed(Keys.Tab)) _bindingSlot = 1 - _bindingSlot;
+
+            if (_controlsSelection < actions.Length && WasPressed(Keys.Back))
+            {
+                _bindings.Reset(actions[_controlsSelection]);
+                _controlsMessage = $"{actions[_controlsSelection]} RESET";
+                SaveSettings();
+            }
+            if (_controlsSelection < actions.Length && _bindingSlot == 1 && WasPressed(Keys.Delete))
+            {
+                if (_bindings.ClearSecondary(actions[_controlsSelection])) SaveSettings();
+                _controlsMessage = "SECONDARY CLEARED";
+            }
+            if (!WasPressed(Keys.Enter)) return;
+
+            if (_controlsSelection < actions.Length)
+            {
+                _capturingBinding = true;
+                _controlsMessage = "PRESS A KEY   ESC CANCELS";
+            }
+            else if (_controlsSelection == resetRow)
+            {
+                _bindings.ResetAll();
+                _controlsMessage = "ALL BINDINGS RESET";
+                SaveSettings();
+            }
+            else if (_controlsSelection == backRow)
+            {
+                _screens.BackFromControls();
+            }
+        }
+
+        private Keys? NewlyPressedKey()
+        {
+            foreach (Keys key in _currentKeyboardState.GetPressedKeys())
+            {
+                if (_previousKeyboardState.IsKeyUp(key)) return key;
+            }
+            return null;
+        }
+
+        private void SaveSettings() => _settingsStore.Save(_runtimeSettings, _bindings);
 
         private void UpdateLive(GameTime gameTime)
         {
+            if (WasPressed(Keys.F11))
+            {
+                DeveloperLoadout.Apply(_player);
+                _realtimeTurnTimer.Reset();
+                _gameState.EventLog.Add("DEVELOPER LOADOUT APPLIED");
+            }
+
             if (WasPressed(Keys.F12))
             {
                 _realtimeTurnTimer.Toggle();
@@ -147,14 +359,9 @@ namespace RogueSandpit
                     : "REAL-TIME MODE OFF");
             }
 
-            if (WasPressed(Keys.I))
+            if (WasPressed(InputAction.Inventory))
             {
                 _inventoryOpen = !_inventoryOpen;
-            }
-
-            if (_currentKeyboardState.IsKeyUp(Keys.Space) && _previousKeyboardState.IsKeyDown(Keys.Space))
-            {
-                KickOffNewGame();
             }
 
             if (_currentKeyboardState.IsKeyUp(Keys.F1) && _previousKeyboardState.IsKeyDown(Keys.F1))
@@ -188,34 +395,35 @@ namespace RogueSandpit
                 }
             }
 
-            base.Update(gameTime);
         }
 
         private PlayerCommand GetPlayerCommand()
         {
             if (_inventoryOpen)
             {
-                if (WasPressed(Keys.Up) || WasPressed(Keys.Left) || WasPressed(Keys.OemOpenBrackets))
+                if (WasPressed(InputAction.MoveUp) || WasPressed(InputAction.MoveLeft)
+                    || WasPressed(InputAction.SelectPreviousItem))
                     return PlayerCommand.SelectPreviousItem;
-                if (WasPressed(Keys.Down) || WasPressed(Keys.Right) || WasPressed(Keys.OemCloseBrackets))
+                if (WasPressed(InputAction.MoveDown) || WasPressed(InputAction.MoveRight)
+                    || WasPressed(InputAction.SelectNextItem))
                     return PlayerCommand.SelectNextItem;
-                if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
-                if (WasPressed(Keys.B)) return PlayerCommand.UseBandage;
-                if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
-                if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
+                if (WasPressed(InputAction.UsePotion)) return PlayerCommand.UsePotion;
+                if (WasPressed(InputAction.UseBandage)) return PlayerCommand.UseBandage;
+                if (WasPressed(InputAction.Equip)) return PlayerCommand.EquipItem;
+                if (WasPressed(InputAction.Drop)) return PlayerCommand.DropItem;
                 return PlayerCommand.None;
             }
 
             if (_directionalAction != DirectionalAction.None)
             {
-                if (WasPressed(Keys.Up)) return DirectionalCommand(0, -1);
-                if (WasPressed(Keys.Down)) return DirectionalCommand(0, 1);
-                if (WasPressed(Keys.Left)) return DirectionalCommand(-1, 0);
-                if (WasPressed(Keys.Right)) return DirectionalCommand(1, 0);
+                if (WasPressed(InputAction.MoveUp)) return DirectionalCommand(0, -1);
+                if (WasPressed(InputAction.MoveDown)) return DirectionalCommand(0, 1);
+                if (WasPressed(InputAction.MoveLeft)) return DirectionalCommand(-1, 0);
+                if (WasPressed(InputAction.MoveRight)) return DirectionalCommand(1, 0);
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.C))
+            if (WasPressed(InputAction.ToggleDoor))
             {
                 var doors = _map.GetAdjacentOperableDoors(_player.X, _player.Y);
                 if (doors.Count == 0)
@@ -231,13 +439,13 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.T))
+            if (WasPressed(InputAction.LayFalseTrail))
             {
                 _directionalAction = DirectionalAction.LayFalseTrail;
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.F))
+            if (WasPressed(InputAction.ThrowItem))
             {
                 if (_player.Inventory.SelectedItem == null)
                 {
@@ -248,7 +456,7 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.P))
+            if (WasPressed(InputAction.PlaceTrap))
             {
                 if (_player.Inventory.SelectedItem?.Type != ItemType.Trap)
                 {
@@ -259,7 +467,7 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.R))
+            if (WasPressed(InputAction.FireRanged))
             {
                 if (_player.EquippedRangedWeapon == null)
                 {
@@ -270,17 +478,17 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
-            if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
-            if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
-            if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
-            if (WasPressed(Keys.Right)) return PlayerCommand.MoveRight;
-            if (WasPressed(Keys.OemPeriod) || WasPressed(Keys.NumPad5)) return PlayerCommand.Wait;
-            if (WasPressed(Keys.OemOpenBrackets)) return PlayerCommand.SelectPreviousItem;
-            if (WasPressed(Keys.OemCloseBrackets)) return PlayerCommand.SelectNextItem;
-            if (WasPressed(Keys.H)) return PlayerCommand.UsePotion;
-            if (WasPressed(Keys.B)) return PlayerCommand.UseBandage;
-            if (WasPressed(Keys.E)) return PlayerCommand.EquipItem;
-            if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
+            if (WasPressed(InputAction.MoveUp)) return PlayerCommand.MoveUp;
+            if (WasPressed(InputAction.MoveDown)) return PlayerCommand.MoveDown;
+            if (WasPressed(InputAction.MoveLeft)) return PlayerCommand.MoveLeft;
+            if (WasPressed(InputAction.MoveRight)) return PlayerCommand.MoveRight;
+            if (WasPressed(InputAction.Wait)) return PlayerCommand.Wait;
+            if (WasPressed(InputAction.SelectPreviousItem)) return PlayerCommand.SelectPreviousItem;
+            if (WasPressed(InputAction.SelectNextItem)) return PlayerCommand.SelectNextItem;
+            if (WasPressed(InputAction.UsePotion)) return PlayerCommand.UsePotion;
+            if (WasPressed(InputAction.UseBandage)) return PlayerCommand.UseBandage;
+            if (WasPressed(InputAction.Equip)) return PlayerCommand.EquipItem;
+            if (WasPressed(InputAction.Drop)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
         }
 
@@ -372,6 +580,9 @@ namespace RogueSandpit
             return _currentKeyboardState.IsKeyDown(key) && !_previousKeyboardState.IsKeyDown(key);
         }
 
+        private bool WasPressed(InputAction action) =>
+            _bindings.IsPressed(action, _currentKeyboardState, _previousKeyboardState);
+
         protected override void Draw(GameTime gameTime)
         {
             // draw to our render target first
@@ -399,7 +610,19 @@ namespace RogueSandpit
                 DrawDebugInspection(hoveredCell.Value);
             }
 
-            if (_gameState.Outcome != GameOutcome.Playing)
+            if (_screens.CurrentScreen == ApplicationScreen.Paused)
+            {
+                DrawPauseMenu();
+            }
+            else if (_screens.CurrentScreen == ApplicationScreen.Options)
+            {
+                DrawOptionsMenu();
+            }
+            else if (_screens.CurrentScreen == ApplicationScreen.Controls)
+            {
+                DrawControlsMenu();
+            }
+            else if (_screens.CurrentScreen is ApplicationScreen.GameOver or ApplicationScreen.Victory)
             {
                 DrawEndScreen();
             }
@@ -429,15 +652,17 @@ namespace RogueSandpit
 
         private void DrawSidebarHud()
         {
-            const int x = 520;
+            int x = MapViewport.VisibleColumns * MapViewport.TileSize + 8;
+            int contentWidth = NativeWidth - x - 8;
 
             _pixelFont.DrawText(_spriteBatch, "PLAYER", new Vector2(x, 10), 2, Color.White);
             float healthRatio = _player.MaxHealth <= 0
                 ? 0f
                 : Math.Clamp((float)_player.Health / _player.MaxHealth, 0f, 1f);
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(x, 32, 264, 12), Color.DarkRed);
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
-                new Rectangle(x, 32, (int)(264 * healthRatio), 12), Color.IndianRed);
+                new Rectangle(x, 32, contentWidth, 12), Color.DarkRed);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(x, 32, (int)(contentWidth * healthRatio), 12), Color.IndianRed);
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth}", new Vector2(x + 4, 35), 1, Color.White);
             _pixelFont.DrawText(_spriteBatch,
@@ -482,7 +707,8 @@ namespace RogueSandpit
                 new Rectangle(0, 580, NativeWidth, 20), Color.Black);
             string mode = !_realtimeTurnTimer.Enabled
                 ? "TURN-BASED"
-                : (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
+                : (_inventoryOpen || _directionalAction != DirectionalAction.None
+                    || !_screens.SimulationActive || !IsActive)
                     ? "REAL-TIME PAUSED"
                     : "REAL-TIME";
             _pixelFont.DrawText(_spriteBatch,
@@ -494,7 +720,8 @@ namespace RogueSandpit
         {
             if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
-                string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
+                string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None
+                    || !_screens.SimulationActive || !IsActive)
                     ? "REALTIME PAUSED"
                     : $"REALTIME {_realtimeTurnTimer.RemainingSeconds:0.0}s";
                 _uiDrawer.DrawFilledRectangle(_spriteBatch,
@@ -537,7 +764,9 @@ namespace RogueSandpit
 
             foreach (int y in new[] { 80, 176, 256, 336 })
             {
-                _uiDrawer.DrawLine(_spriteBatch, 520, y, 792, y, new Color(55, 55, 68));
+                int sidebarX = MapViewport.VisibleColumns * MapViewport.TileSize + 8;
+                _uiDrawer.DrawLine(_spriteBatch, sidebarX, y, NativeWidth - 8, y,
+                    new Color(55, 55, 68));
             }
         }
 
@@ -634,13 +863,173 @@ namespace RogueSandpit
                 new Vector2(panelX + 14, panelY + panelHeight - 22), 1, Color.LightGray);
         }
 
+        private void DrawPauseMenu()
+        {
+            const int panelX = 210;
+            const int panelY = 105;
+            const int panelWidth = 380;
+            const int panelHeight = 370;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.94f);
+            _pixelFont.DrawText(_spriteBatch, "PAUSED",
+                new Vector2(panelX + 103, panelY + 35), 5, Color.White);
+
+            PauseMenuItem[] items = Enum.GetValues<PauseMenuItem>();
+            for (int index = 0; index < items.Length; index++)
+            {
+                int y = panelY + 125 + index * 48;
+                bool selected = index == _pauseMenuSelection;
+                if (selected)
+                {
+                    _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                        new Rectangle(panelX + 55, y - 9, panelWidth - 110, 34), Color.DarkSlateBlue);
+                }
+                _pixelFont.DrawText(_spriteBatch, items[index].ToString().ToUpperInvariant(),
+                    new Vector2(panelX + 78, y), 3, selected ? Color.White : Color.Gray);
+            }
+
+            _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT   ENTER CONFIRM   ESC RESUME",
+                new Vector2(panelX + 42, panelY + panelHeight - 30), 1, Color.LightGray);
+        }
+
+        private void DrawOptionsMenu()
+        {
+            const int panelX = 145;
+            const int panelY = 65;
+            const int panelWidth = 510;
+            const int panelHeight = 470;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.96f);
+            _pixelFont.DrawText(_spriteBatch, "OPTIONS",
+                new Vector2(panelX + 135, panelY + 28), 5, Color.White);
+
+            string[] values =
+            [
+                $"REAL-TIME INTERVAL   {_runtimeSettings.RealtimeTurnSeconds:0.0} SECONDS",
+                $"MASTER VOLUME        {_runtimeSettings.MasterVolume}%  FUTURE AUDIO",
+                $"EFFECTS VOLUME       {_runtimeSettings.EffectsVolume}%  FUTURE AUDIO",
+                $"MUSIC VOLUME         {_runtimeSettings.MusicVolume}%  FUTURE AUDIO",
+                $"MUTE WHEN UNFOCUSED  {(_runtimeSettings.MuteWhileUnfocused ? "YES" : "NO")}",
+                "CONTROLS",
+                "BACK"
+            ];
+
+            for (int index = 0; index < values.Length; index++)
+            {
+                int y = panelY + 115 + index * 52;
+                bool selected = index == _optionsSelection;
+                if (selected)
+                {
+                    _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                        new Rectangle(panelX + 25, y - 10, panelWidth - 50, 34), Color.DarkSlateBlue);
+                }
+                _pixelFont.DrawText(_spriteBatch, values[index],
+                    new Vector2(panelX + 42, y), 2, selected ? Color.White : Color.Gray);
+            }
+
+            _pixelFont.DrawText(_spriteBatch, "UP DOWN SELECT   LEFT RIGHT CHANGE   ENTER BACK   ESC BACK",
+                new Vector2(panelX + 32, panelY + panelHeight - 27), 1, Color.LightGray);
+        }
+
+        private void DrawControlsMenu()
+        {
+            const int panelX = 80;
+            const int panelY = 20;
+            const int panelWidth = 640;
+            const int panelHeight = 560;
+            const int firstRowY = 72;
+            const int rowHeight = 25;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.97f);
+            _pixelFont.DrawText(_spriteBatch, "CONTROLS",
+                new Vector2(panelX + 205, panelY + 15), 4, Color.White);
+            _pixelFont.DrawText(_spriteBatch, "ACTION",
+                new Vector2(panelX + 22, panelY + 47), 1, Color.Gray);
+            _pixelFont.DrawText(_spriteBatch, "PRIMARY       SECONDARY",
+                new Vector2(panelX + 345, panelY + 47), 1, Color.Gray);
+
+            InputAction[] actions = Enum.GetValues<InputAction>();
+            for (int index = 0; index < actions.Length; index++)
+            {
+                int y = firstRowY + index * rowHeight;
+                bool selected = index == _controlsSelection;
+                if (selected)
+                {
+                    _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                        new Rectangle(panelX + 12, y - 5, panelWidth - 24, 20), Color.DarkSlateBlue);
+                }
+
+                InputAction action = actions[index];
+                var keys = _bindings.GetKeys(action);
+                string primary = keys.Count > 0 ? FriendlyKeyName(keys[0]) : "NONE";
+                string secondary = keys.Count > 1
+                    ? string.Join(" / ", keys.Skip(1).Select(FriendlyKeyName))
+                    : "NONE";
+                _pixelFont.DrawText(_spriteBatch, FriendlyActionName(action),
+                    new Vector2(panelX + 22, y), 1, selected ? Color.White : Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch, primary,
+                    new Vector2(panelX + 345, y), 1,
+                    selected && _bindingSlot == 0 ? Color.Yellow : Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch, secondary,
+                    new Vector2(panelX + 475, y), 1,
+                    selected && _bindingSlot == 1 ? Color.Yellow : Color.LightGray);
+            }
+
+            int resetY = firstRowY + actions.Length * rowHeight;
+            DrawControlCommandRow("RESET ALL", actions.Length, resetY, panelX, panelWidth);
+            DrawControlCommandRow("BACK", actions.Length + 1, resetY + rowHeight, panelX, panelWidth);
+
+            string message = string.IsNullOrEmpty(_controlsMessage)
+                ? "TAB SLOT  ENTER CHANGE  BACKSPACE RESET  DELETE CLEAR SECONDARY"
+                : _controlsMessage;
+            _pixelFont.DrawText(_spriteBatch, message,
+                new Vector2(panelX + 20, panelY + panelHeight - 20), 1, Color.LightGray);
+        }
+
+        private void DrawControlCommandRow(string label, int index, int y, int panelX, int panelWidth)
+        {
+            bool selected = index == _controlsSelection;
+            if (selected)
+            {
+                _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                    new Rectangle(panelX + 12, y - 5, panelWidth - 24, 20), Color.DarkSlateBlue);
+            }
+            _pixelFont.DrawText(_spriteBatch, label,
+                new Vector2(panelX + 22, y), 1, selected ? Color.White : Color.Gray);
+        }
+
+        private static string FriendlyActionName(InputAction action) => action switch
+        {
+            InputAction.SelectPreviousItem => "SELECT PREVIOUS ITEM",
+            InputAction.SelectNextItem => "SELECT NEXT ITEM",
+            InputAction.UsePotion => "USE POTION",
+            InputAction.UseBandage => "USE BANDAGE",
+            InputAction.ToggleDoor => "TOGGLE DOOR",
+            InputAction.LayFalseTrail => "LAY FALSE TRAIL",
+            InputAction.ThrowItem => "THROW ITEM",
+            InputAction.PlaceTrap => "PLACE TRAP",
+            InputAction.FireRanged => "FIRE RANGED",
+            _ => string.Concat(action.ToString().Select((character, index) =>
+                index > 0 && char.IsUpper(character) ? $" {character}" : character.ToString())).ToUpperInvariant()
+        };
+
+        private static string FriendlyKeyName(Keys key) => key switch
+        {
+            Keys.OemPeriod => ".",
+            Keys.OemOpenBrackets => "[",
+            Keys.OemCloseBrackets => "]",
+            _ => key.ToString().ToUpperInvariant()
+        };
+
         private void DrawEventLog()
         {
             if (_gameState.EventLog.Entries.Count == 0) return;
 
-            int panelX = _map.RenderMode == RenderMode.Cells ? 5 : 520;
+            int panelX = _map.RenderMode == RenderMode.Cells
+                ? 5
+                : MapViewport.VisibleColumns * MapViewport.TileSize + 8;
             int panelY = _map.RenderMode == RenderMode.Cells ? 5 : 374;
-            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : 272;
+            int panelWidth = _map.RenderMode == RenderMode.Cells ? 285 : NativeWidth - panelX - 8;
             if (_map.RenderMode == RenderMode.Cells)
             {
                 int panelHeight = 8 + _gameState.EventLog.Entries.Count * 12;
@@ -709,6 +1098,23 @@ namespace RogueSandpit
                 : $"TRACK {(trail.IsAuthentic ? "REAL" : "FALSE")} S{trail.Strength} T{trail.RemainingTurns} TO {trail.NextX} {trail.NextY}";
             _pixelFont.DrawText(_spriteBatch, trailDetails,
                 new Vector2(panelX + 6, panelY + 59), 1, Color.HotPink);
+
+            if (position.X == _player.X && position.Y == _player.Y)
+            {
+                _pixelFont.DrawText(_spriteBatch,
+                    $"PLAYER HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence}",
+                    new Vector2(panelX + 6, panelY + 75), 1, Color.White);
+                _pixelFont.DrawText(_spriteBatch,
+                    $"WPN {_player.EquippedWeapon?.Name ?? "NONE"} ARM {_player.EquippedArmor?.Name ?? "NONE"}",
+                    new Vector2(panelX + 6, panelY + 91), 1, Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch,
+                    $"RNG {_player.EquippedRangedWeapon?.Name ?? "NONE"} INV {_player.Inventory.Items.Count}/{_player.Inventory.Capacity}",
+                    new Vector2(panelX + 6, panelY + 107), 1, Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch,
+                    $"FX {EffectSummary(_player.StatusEffects)} SPECIAL {(_player.HasSpecial ? "YES" : "NO")}",
+                    new Vector2(panelX + 6, panelY + 123), 1, Color.Violet);
+                return;
+            }
 
             BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
             if (npc == null)
