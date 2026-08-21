@@ -24,6 +24,9 @@ namespace RogueSandpit
         private KeyboardState _currentKeyboardState;
         private KeyboardState _previousKeyboardState;
         private bool _inventoryOpen;
+        private DirectionalAction _directionalAction;
+
+        private enum DirectionalAction { None, CloseDoor, LayFalseTrail }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -64,6 +67,7 @@ namespace RogueSandpit
         private void KickOffNewGame(bool regenerateMap = true)
         {
             _inventoryOpen = false;
+            _directionalAction = DirectionalAction.None;
             if (regenerateMap)
             {
                 _map.Initialise();
@@ -83,8 +87,17 @@ namespace RogueSandpit
             // Get the new current state
             _currentKeyboardState = Keyboard.GetState();
 
-            if (_currentKeyboardState.IsKeyDown(Keys.Escape))
-                Exit();
+            if (WasPressed(Keys.Escape))
+            {
+                if (_directionalAction != DirectionalAction.None)
+                {
+                    _directionalAction = DirectionalAction.None;
+                }
+                else
+                {
+                    Exit();
+                }
+            }
 
             if (_gameState.Outcome != GameOutcome.Playing)
             {
@@ -152,6 +165,37 @@ namespace RogueSandpit
                 return PlayerCommand.None;
             }
 
+            if (_directionalAction != DirectionalAction.None)
+            {
+                if (WasPressed(Keys.Up)) return DirectionalCommand(0, -1);
+                if (WasPressed(Keys.Down)) return DirectionalCommand(0, 1);
+                if (WasPressed(Keys.Left)) return DirectionalCommand(-1, 0);
+                if (WasPressed(Keys.Right)) return DirectionalCommand(1, 0);
+                return PlayerCommand.None;
+            }
+
+            if (WasPressed(Keys.C))
+            {
+                var doors = _map.GetAdjacentOpenDoors(_player.X, _player.Y);
+                if (doors.Count == 0)
+                {
+                    _gameState.EventLog.Add("NO OPEN DOOR NEARBY");
+                    return PlayerCommand.None;
+                }
+                if (doors.Count == 1)
+                {
+                    return CloseDoorCommand(doors[0].X1 - _player.X, doors[0].Y1 - _player.Y);
+                }
+                _directionalAction = DirectionalAction.CloseDoor;
+                return PlayerCommand.None;
+            }
+
+            if (WasPressed(Keys.T))
+            {
+                _directionalAction = DirectionalAction.LayFalseTrail;
+                return PlayerCommand.None;
+            }
+
             if (WasPressed(Keys.Up)) return PlayerCommand.MoveUp;
             if (WasPressed(Keys.Down)) return PlayerCommand.MoveDown;
             if (WasPressed(Keys.Left)) return PlayerCommand.MoveLeft;
@@ -164,6 +208,40 @@ namespace RogueSandpit
             if (WasPressed(Keys.D)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
         }
+
+        private PlayerCommand DirectionalCommand(int deltaX, int deltaY)
+        {
+            if (_directionalAction == DirectionalAction.CloseDoor)
+            {
+                Doorway door = _map.GetDoorAt(_player.X + deltaX, _player.Y + deltaY);
+                if (door?.State == DoorState.Open
+                    && !_map.IsOccupiedByLivingNPC(door.X1, door.Y1))
+                    _directionalAction = DirectionalAction.None;
+                return CloseDoorCommand(deltaX, deltaY);
+            }
+
+            if (_map.IsWalkable(_player.X + deltaX, _player.Y + deltaY))
+                _directionalAction = DirectionalAction.None;
+            return FalseTrailCommand(deltaX, deltaY);
+        }
+
+        private static PlayerCommand CloseDoorCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        {
+            (0, -1) => PlayerCommand.CloseDoorUp,
+            (0, 1) => PlayerCommand.CloseDoorDown,
+            (-1, 0) => PlayerCommand.CloseDoorLeft,
+            (1, 0) => PlayerCommand.CloseDoorRight,
+            _ => PlayerCommand.None
+        };
+
+        private static PlayerCommand FalseTrailCommand(int deltaX, int deltaY) => (deltaX, deltaY) switch
+        {
+            (0, -1) => PlayerCommand.LayFalseTrailUp,
+            (0, 1) => PlayerCommand.LayFalseTrailDown,
+            (-1, 0) => PlayerCommand.LayFalseTrailLeft,
+            (1, 0) => PlayerCommand.LayFalseTrailRight,
+            _ => PlayerCommand.None
+        };
 
         private bool WasPressed(Keys key)
         {
@@ -182,6 +260,8 @@ namespace RogueSandpit
             _mapRenderer.Display(_spriteBatch, _player, hoveredCell);
             DrawEventLog();
             DrawHud();
+
+            if (_directionalAction != DirectionalAction.None) DrawDirectionalActionPrompt();
 
             if (_inventoryOpen && _gameState.Outcome == GameOutcome.Playing)
             {
@@ -219,6 +299,21 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName}",
                 new Vector2(6, 585), 1, Color.White);
+        }
+
+        private void DrawDirectionalActionPrompt()
+        {
+            string prompt = _directionalAction == DirectionalAction.CloseDoor
+                ? "CLOSE DOOR: ARROW CHOOSES  ESC CANCELS"
+                : "FALSE TRAIL: ARROW CHOOSES  ESC CANCELS";
+            const int panelWidth = 330;
+            const int panelHeight = 28;
+            int panelX = (NativeWidth - panelWidth) / 2;
+            const int panelY = 545;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.9f);
+            _pixelFont.DrawText(_spriteBatch, prompt,
+                new Vector2(panelX + 10, panelY + 10), 1, Color.White);
         }
 
         private void DrawInventoryPanel()
@@ -297,7 +392,7 @@ namespace RogueSandpit
         {
             const int panelX = 485;
             const int panelY = 5;
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 128), Color.Black * 0.9f);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 144), Color.Black * 0.9f);
 
             MapCell cell = _map.MapCells[position.X, position.Y];
             _pixelFont.DrawText(_spriteBatch,
@@ -321,17 +416,24 @@ namespace RogueSandpit
                     new Vector2(panelX + 155, panelY + 43), 1, Color.Gold);
             }
 
+            PlayerTrailClue trail = _map.FindNewestTrailNear(position.X, position.Y, 0, 0);
+            string trailDetails = trail == null
+                ? "TRACK NONE"
+                : $"TRACK {(trail.IsAuthentic ? "REAL" : "FALSE")} S{trail.Strength} T{trail.RemainingTurns} TO {trail.NextX} {trail.NextY}";
+            _pixelFont.DrawText(_spriteBatch, trailDetails,
+                new Vector2(panelX + 6, panelY + 59), 1, Color.HotPink);
+
             BaseNPC npc = _map.GetLivingNPCAt(position.X, position.Y);
             if (npc == null)
             {
-                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 59), 1, Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch, "NPC NONE", new Vector2(panelX + 6, panelY + 75), 1, Color.LightGray);
                 return;
             }
 
             _pixelFont.DrawText(_spriteBatch, $"NPC {npc.CharacterType} {npc.Name} HP {npc.HP} DMG {npc.Damage}",
-                new Vector2(panelX + 6, panelY + 59), 1, Color.White);
-            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
                 new Vector2(panelX + 6, panelY + 75), 1, Color.White);
+            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
+                new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             string investigationTarget = npc.InvestigationTarget is { } searchTarget
                 ? $"{searchTarget.X} {searchTarget.Y}"
@@ -341,13 +443,13 @@ namespace RogueSandpit
                 : "NONE";
             _pixelFont.DrawText(_spriteBatch,
                 $"SRC {npc.InvestigationSource} C{npc.InvestigationConfidence} AT {investigationTarget} PR {predictedTarget}",
-                new Vector2(panelX + 6, panelY + 91), 1, Color.White);
+                new Vector2(panelX + 6, panelY + 107), 1, Color.White);
 
             bool hasLineOfSight = _map.HasLineOfSight(npc.X, npc.Y, _player.X, _player.Y);
             NPCAwarenessProfile profile = npc.AwarenessProfile;
             _pixelFont.DrawText(_spriteBatch,
                 $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")} S{profile.SightRange} H{profile.HearingAdjustment:+#;-#;0} A{profile.AllyAlertRadius} P{profile.PersistenceAdjustment:+#;-#;0} T{profile.TrailDetectionRange}",
-                new Vector2(panelX + 6, panelY + 107), 1,
+                new Vector2(panelX + 6, panelY + 123), 1,
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
         }
 

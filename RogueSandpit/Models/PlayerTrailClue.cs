@@ -8,8 +8,11 @@ public sealed class PlayerTrailClue
     public int NextX { get; }
     public int NextY { get; }
     public int RemainingTurns { get; set; }
+    public int Strength { get; }
+    public bool IsAuthentic { get; }
 
-    public PlayerTrailClue(long sequence, int x, int y, int nextX, int nextY, int remainingTurns)
+    public PlayerTrailClue(long sequence, int x, int y, int nextX, int nextY,
+        int remainingTurns, int strength = 1, bool isAuthentic = true)
     {
         Sequence = sequence;
         X = x;
@@ -17,5 +20,7 @@ public sealed class PlayerTrailClue
         NextX = nextX;
         NextY = nextY;
         RemainingTurns = remainingTurns;
+        Strength = strength;
+        IsAuthentic = isAuthentic;
     }
 }
