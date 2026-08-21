@@ -170,7 +170,7 @@ namespace RogueSandpit
                         || _directionalAction != DirectionalAction.None
                         || !IsActive;
                     if (_realtimeTurnTimer.Advance(gameTime.ElapsedGameTime.TotalSeconds, paused))
-                        _gameState.Update(PlayerCommand.Wait);
+                        _gameState.Update(PlayerCommand.Wait, suppressWaitEvent: true);
                 }
             }
 

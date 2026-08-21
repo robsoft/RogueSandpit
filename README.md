@@ -14,7 +14,7 @@ builds & runs on Mac and Windows
 - NPCs do damage to the player if they're adjacent  
 - Player can see entire map & NPCs in debug mode  
 - Normal play uses persistent fog-of-war; F1 remains an omniscient developer view
-- The simulation is fully turn-based; optional F12 real-time mode automatically waits after an idle countdown
+- The simulation is fully turn-based; optional F12 real-time mode silently waits after an idle countdown
 - Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
 - Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
 - Retrieve the yellow special tile and return it to the entrance to win

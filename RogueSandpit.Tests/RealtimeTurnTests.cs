@@ -41,4 +41,31 @@ public class RealtimeTurnTests
         game.Update(PlayerCommand.Wait);
         Assert.Equal(1, game.TurnCount);
     }
+
+    [Fact]
+    public void AutomaticWaitCanAdvanceTurnWithoutLoggingPlayerWaits()
+    {
+        var map = new Map(123);
+        map.NPCs.Clear();
+        var game = new GameState(map,
+            new Player { X = map.StartPosX, Y = map.StartPosY });
+
+        game.Update(PlayerCommand.Wait, suppressWaitEvent: true);
+
+        Assert.Equal(1, game.TurnCount);
+        Assert.DoesNotContain("PLAYER WAITS", game.EventLog.Entries);
+    }
+
+    [Fact]
+    public void ManualWaitStillLogsWhileSuppressionIsAvailable()
+    {
+        var map = new Map(123);
+        map.NPCs.Clear();
+        var game = new GameState(map,
+            new Player { X = map.StartPosX, Y = map.StartPosY });
+
+        game.Update(PlayerCommand.Wait);
+
+        Assert.Contains("PLAYER WAITS", game.EventLog.Entries);
+    }
 }
