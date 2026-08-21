@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -345,6 +346,14 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
+            if (_player.StatusEffects.Effects.Count > 0)
+            {
+                _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                    new Rectangle(0, 566, NativeWidth, 14), Color.Black);
+                _pixelFont.DrawText(_spriteBatch,
+                    $"EFFECTS {EffectSummary(_player.StatusEffects)}",
+                    new Vector2(6, 569), 1, Color.OrangeRed);
+            }
             _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(0, 580, NativeWidth, 20), Color.Black);
             string specialStatus = _player.HasSpecial ? "YES" : "NO";
             string weaponName = _player.EquippedWeapon?.Name ?? "NONE";
@@ -353,6 +362,14 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"HP {_player.Health}/{_player.MaxHealth} DMG {_player.Damage} DEF {_player.Defence} SPECIAL {specialStatus} INV {_player.Inventory.Items.Count} SEL {selectedName} WPN {weaponName} ARM {armorName}",
                 new Vector2(6, 585), 1, Color.White);
+        }
+
+        private static string EffectSummary(StatusEffectCollection statusEffects)
+        {
+            return statusEffects.Effects.Count == 0
+                ? "NONE"
+                : string.Join(" ", statusEffects.Effects.Select(
+                    effect => $"{effect.Type} {effect.RemainingTurns}"));
         }
 
         private void DrawDirectionalActionPrompt()
@@ -450,7 +467,7 @@ namespace RogueSandpit
         {
             const int panelX = 485;
             const int panelY = 5;
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 144), Color.Black * 0.9f);
+            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(panelX, panelY, 305, 160), Color.Black * 0.9f);
 
             MapCell cell = _map.MapCells[position.X, position.Y];
             _pixelFont.DrawText(_spriteBatch,
@@ -515,6 +532,8 @@ namespace RogueSandpit
                 $"LOS {(hasLineOfSight ? "CLEAR" : "BLOCKED")} S{profile.SightRange} H{profile.HearingAdjustment:+#;-#;0} A{profile.AllyAlertRadius} P{profile.PersistenceAdjustment:+#;-#;0} T{profile.TrailDetectionRange}",
                 new Vector2(panelX + 6, panelY + 123), 1,
                 hasLineOfSight ? Color.LightGreen : Color.OrangeRed);
+            _pixelFont.DrawText(_spriteBatch, $"FX {EffectSummary(npc.StatusEffects)}",
+                new Vector2(panelX + 6, panelY + 139), 1, Color.Violet);
         }
 
         private void DrawEndScreen()

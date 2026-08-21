@@ -335,6 +335,7 @@ public class MapRenderer
 
     private static Color NpcColor(BaseNPC npc)
     {
+        if (npc.StatusEffects.Has(StatusEffectType.Stunned)) return Color.Violet;
         if (npc.MoraleState == NPCMoraleState.Fleeing) return Color.DeepSkyBlue;
         if (npc.MoraleState == NPCMoraleState.Enraged) return Color.Red;
         if (npc.Awareness == NPCAwareness.Pursuing) return Color.OrangeRed;

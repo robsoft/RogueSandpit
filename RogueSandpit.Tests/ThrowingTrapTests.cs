@@ -30,8 +30,8 @@ public class ThrowingTrapTests
         Map wallMap = CreateBlankMap();
         AddFloor(wallMap, (10, 10), (11, 10), (12, 10));
         var wallPlayer = new Player { X = 10, Y = 10 };
-        Item potion = ItemFactory.Create(ItemType.HealingPotion);
-        wallPlayer.Inventory.TryAdd(potion);
+        Item armor = ItemFactory.Create(ItemType.Armor);
+        wallPlayer.Inventory.TryAdd(armor);
         new GameState(wallMap, wallPlayer).Update(PlayerCommand.ThrowItemRight);
 
         Map actorMap = CreateBlankMap();
@@ -42,7 +42,7 @@ public class ThrowingTrapTests
         actorMap.NPCs.Add(new Orc(actorMap, 13, 10, null) { State = NPCState.Active });
         new GameState(actorMap, actorPlayer).Update(PlayerCommand.ThrowItemRight);
 
-        Assert.Same(potion, wallMap.GetGroundItemAt(12, 10)?.Item);
+        Assert.Same(armor, wallMap.GetGroundItemAt(12, 10)?.Item);
         Assert.Same(key, actorMap.GetGroundItemAt(12, 10)?.Item);
     }
 
