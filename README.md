@@ -1,97 +1,120 @@
-# Rogue Sandpit 
+# Rogue Sandpit
 
-A simple rogue-like game built with Monogame and .net 9. The game features a player character that can move around a grid-based map, collect items, and fight NPCs. The game is designed to be simple and easy to understand, with a focus on the core mechanics of a rogue-like game.
+Rogue Sandpit is a playable roguelike prototype built with MonoGame DesktopGL and .NET 9. Explore a procedurally generated level, survive an increasingly coordinated cast of enemies, recover the yellow objective, and return it to the entrance.
 
-## Monogame, .Net9
-builds & runs on Mac and Windows
+The project has reached its first systems-complete prototype milestone. Its next phase is deliberately less about adding mechanics and more about establishing a visual identity, clearer UI, assets, animation, and balance.
 
-`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `--scale 1` through `--scale 4` for integer window scaling, or `--fullscreen` for borderless desktop fullscreen. Use `--realtime` to start timed turns immediately and `--turn-seconds 1.5` to configure their interval. Options can be combined after `dotnet run --`.
+## The playable loop
 
+Each run places the player, enemies, equipment, consumables, traps, doors, environmental hazards, and an objective on a seeded rooms-and-corridors map. Normal play uses persistent fog of war; the complete simulation can be inspected through the F1 developer view.
 
-## Current Status
-- Player character can move around the map  
-- Map is generated with rooms and corridors  
-- NPCs do damage to the player if they're adjacent  
-- Player can see entire map & NPCs in debug mode  
-- Normal play uses persistent fog-of-war; F1 remains an omniscient developer view
-- The simulation is fully turn-based; optional F12 real-time mode silently waits after an idle countdown
-- Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
-- Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
-- Retrieve the yellow special tile and return it to the entrance to win
-- HUD displays health, damage, and objective status
-- NPCs pursue the player with line of sight and A* pathfinding, then attack from cardinally adjacent cells
-- NPCs remember and investigate the last place they saw the player
-- NPCs hear nearby combat, opened doors, and dropped items, then investigate the sound
-- NPCs alert nearby allies when they first spot the player, sharing the observed location once
-- Investigation confidence decays each turn until an NPC abandons stale evidence
-- NPCs predict the player's likely continuation from movement they personally observed
-- Successful movement leaves a short-lived trail that nearby investigating NPCs can discover
-- Alerted allies fan out across distinct nearby search cells instead of stacking on one target
-- Archetypes differ in tracking skill; Skeletons cannot interpret physical trails
-- Room, corridor, and doorway movement leave clues with different strength and lifetime
-- Players can cautiously open or close nearby doors in place and lay directional false trails to mislead weaker trackers
-- Wounded NPCs react by archetype: some flee, Skeletons remain fearless, and Trolls become enraged
-- Fleeing NPCs retreat from remembered threats and call nearby allies for help once per retreat
-- Selected inventory items can be thrown directionally as recoverable, noise-making distractions
-- Hunting, snare, and alarm traps provide damage, restraint, and loud-alert choices
-- Actors support timed bleeding and stunned effects with turn-based duration and damage
-- Thrown weapons strike and bleed the first NPC in their path, while thrown potions shatter
-- Hunting traps stun surviving victims for their next action
-- NPC initiative rotates each turn so list order does not grant permanent priority over contested cells
-- NPCs investigate visible casualties; skilled archetypes can spot, remember, and avoid nearby traps
-- Short bows provide reusable directional ranged attacks with impact noise
-- Generated weapons, armor, and bows have three named power tiers
-- Bandages stop bleeding and restore a small amount of health when needed
-- Smoke bombs create temporary walkable cover that blocks sight and ranged attacks
-- Fire bombs create temporary damaging terrain that NPCs route around
-- Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
-- Goblins fight at range when possible, retreating from adjacency before falling back to melee
-- Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
-- F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
-- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus; its countdown is visible only in F1 debug mode
-- A compact event log shows recent combat and objective events
-- Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
-- Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot
-- The first weapon collected is equipped automatically when the weapon slot is empty
-- Equipped armor reduces incoming damage and is shown with defence in the HUD
-- I opens an eight-slot inventory panel with selection, item details, and equipment state
-- Closed doors take a turn to open; locked doors require a carried, reusable key
-- Chasing and investigating NPCs can spend a turn opening closed doors, but not locked ones
- 
+The simulation is strictly turn based. Every successful player action advances the NPC phase once, while cancelled prompts and invalid selections cost no time. F12 optionally enables a real-time input mode: if the player remains idle for the configured interval, the game submits a silent wait action. Timed turns pause while a prompt or inventory panel is open and whenever the window loses focus.
 
-## Pressing TODOs
-- Evolve rotating NPC initiative into full simultaneous intent and conflict resolution
-- Graphics!  
+## Current systems
 
+### Exploration and environment
+
+- Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
+- Persistent fog of war with an omniscient developer view
+- Doors that can be opened or closed in place; locked doors require a reusable key
+- Sound propagation, physical trails, and player-created false trails
+- Temporary smoke that blocks sight and ranged attacks
+- Temporary fire that damages actors and influences pathfinding
+
+### Combat and items
+
+- Bump-to-attack melee combat and directional short-bow attacks
+- Three generated power tiers for weapons, armor, and bows
+- Eight-slot selectable inventory with automatic first-weapon equip
+- Potions, bandages, keys, throwable distractions, smoke bombs, and fire bombs
+- Hunting, snare, and alarm traps; shared bleeding and stunned effects
+- Recoverable thrown weapons and loot drops from defeated NPCs
+
+### NPC simulation
+
+- Orc, Goblin, Skeleton, Troll, and Wretch archetypes with seeded names and distinct profiles
+- Line of sight, A* pursuit, hearing, last-known-position memory, prediction, and local searching
+- Confidence decay, evidence trails, coordinated alerts, distributed searches, calls for help, and casualty investigation
+- Archetype-specific morale, tracking skill, trap awareness, and hazard avoidance
+- Goblin ranged combat and retreat-to-range behaviour
+- Rotating initiative so fixed list order does not permanently decide contested movement
+
+## Build and run
+
+From the repository root:
+
+```powershell
+dotnet build RogueSandpit.slnx
+dotnet run --project RogueSandpit/RogueSandpit.csproj
+dotnet test RogueSandpit.slnx
+```
+
+The project targets `net9.0` and restores MonoGame and its content-pipeline tooling through NuGet. It has been developed for Windows and macOS using the DesktopGL backend. The default window is 1600×1200, presenting an integer-scaled 800×600 native canvas.
+
+### Launch options
+
+| Option | Effect |
+|---|---|
+| `--scale 1` to `--scale 4` | Select an integer window scale; the default is `2` |
+| `--fullscreen` | Use borderless desktop fullscreen with aspect-ratio-preserving scaling |
+| `--realtime` | Start with timed turns enabled |
+| `--turn-seconds <number>` | Set the idle interval used by real-time mode |
+
+Options can be combined:
+
+```powershell
+dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime --turn-seconds 1.5
+```
 
 ## Controls
-- Arrow keys (WASD will come) to move the player character
-- H to use a healing potion
-- B to use a selected bandage
-- E to equip the selected melee weapon, ranged weapon, or armor
-- D to drop the selected item
-- C to open or close an adjacent unlocked door; arrows choose if more than one is available
-- T followed by an arrow to lay a false trail in that direction
-- F followed by an arrow to throw the selected inventory item
-- P followed by an arrow to place a selected hunting trap
-- R followed by an arrow to fire the equipped ranged weapon
-- Left/right bracket to select an inventory item
-- I to open or close the inventory panel; arrows select items while it is open
-- Period or numpad 5 to wait one turn
-- F1 to toggle debug/map viewer  
-- F12 to toggle real-time turn mode
-- In debug mode, hover a cell to inspect it and visualize NPC decisions
-- SPACE to generate a new map (effectively restart)
-- ESCAPE to cancel a directional action, or quit the game otherwise
 
+| Key | Action |
+|---|---|
+| Arrow keys | Move or answer a directional prompt |
+| `.` or numpad `5` | Wait one turn |
+| `[` / `]` | Select an inventory item |
+| `I` | Open or close the inventory panel; arrows select while open |
+| `E` | Equip the selected weapon, bow, or armor |
+| `H` / `B` | Use the selected healing potion / bandage |
+| `D` | Drop the selected item |
+| `C` | Toggle an adjacent unlocked door; choose a direction if ambiguous |
+| `F`, then arrow | Throw the selected item |
+| `R`, then arrow | Fire the equipped ranged weapon |
+| `P`, then arrow | Place the selected trap |
+| `T`, then arrow | Lay a false trail |
+| `F1` | Toggle the developer view |
+| `F12` | Toggle real-time mode |
+| `Space` | Generate a new run |
+| `Escape` | Cancel the current prompt, or quit when no prompt is active |
 
-## Intended Features
-- Exits to be shown inside the room (it's not a bug, it's an undesired feature right now)  
-- Player character with movement and combat mechanics  
-- Items that can be collected and used, with additional item types to come
-- NPCs that can be fought and defeated  
-- Simple UI with health and inventory displays  
-- Expand doors with distinct keys or consumable keys
-- Extend the current inventory with stacking and possibly weight
-- Something needs to be found & retrieved on the level, make your way back to the starting point  
-   
+## Developer diagnostics
+
+F1 reveals the full map and development-only state. Hovering a cell identifies its contents and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The real-time countdown is shown only in this view.
+
+These diagnostics intentionally expose simulation information that normal play hides. They are expected to evolve or disappear behind better player-facing visual language later.
+
+## Project layout
+
+| Path | Purpose |
+|---|---|
+| `RogueSandpit/` | MonoGame application and framework-independent game models |
+| `RogueSandpit/Models/` | Map generation, actors, items, combat, AI, and turn simulation |
+| `RogueSandpit/Graphics/` | Primitive rendering, pixel text, viewport mapping, and debug presentation |
+| `RogueSandpit/Content/` | MonoGame content pipeline; intentionally sparse at this milestone |
+| `RogueSandpit.Tests/` | xUnit rule and simulation tests |
+| `docs/` | Short specifications and plans from completed milestones |
+| `onboarding.md` | Engineering handoff, invariants, architecture, and workflow |
+
+## Current boundary and next phase
+
+Rogue Sandpit currently communicates almost everything with coloured primitives, terse text, and developer diagnostics. That was useful while proving the rules, but it is now the main constraint on further design.
+
+Before expanding the simulation again, the next useful decisions are:
+
+- Theme, tone, palette, and the visual character of the world
+- Tile, character, item, effect, and animation approach
+- A production HUD and contextual interaction language
+- Which simulation signals deserve player-facing emphasis and which should remain hidden
+- Font, resolution, input, accessibility, and asset-pipeline conventions
+
+NPC actions still resolve sequentially within a fair rotating initiative rather than through simultaneous intent and conflict resolution. That remains worthwhile architectural work, but it can wait until the presentation direction clarifies what the game most needs next.
