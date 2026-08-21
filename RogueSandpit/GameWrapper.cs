@@ -430,9 +430,13 @@ namespace RogueSandpit
                 return;
             }
 
-            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.CharacterType} {npc.Name} HP {npc.HP} DMG {npc.Damage}",
+            _pixelFont.DrawText(_spriteBatch, $"NPC {npc.CharacterType} {npc.Name} HP {npc.HP}/{npc.MaxHP} DMG {npc.EffectiveDamage}",
                 new Vector2(panelX + 6, panelY + 75), 1, Color.White);
-            _pixelFont.DrawText(_spriteBatch, $"AI {npc.Awareness}  SEEN {(npc.HasSeenPlayer ? "YES" : "NO")}",
+            string retreatTarget = npc.RetreatTarget is { } retreat
+                ? $"{retreat.X} {retreat.Y}"
+                : "NONE";
+            _pixelFont.DrawText(_spriteBatch,
+                $"AI {npc.Awareness} M {npc.MoraleState} RT {retreatTarget}",
                 new Vector2(panelX + 6, panelY + 91), 1, Color.White);
 
             string investigationTarget = npc.InvestigationTarget is { } searchTarget

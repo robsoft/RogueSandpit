@@ -48,10 +48,12 @@ public class Orc : BaseNPC
     {
         CharacterType = CharacterTypes.Orc;
         AwarenessProfile = NPCAwarenessProfile.Orc;
+        MoraleProfile = NPCMoraleProfile.Orc;
         Description = "Orc";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(10, 16);
         HP = RandGen.RandInt(35, 46);
+        MaxHP = HP;
     }
 }
 
@@ -61,10 +63,12 @@ public class Goblin : BaseNPC
     {
         CharacterType = CharacterTypes.Goblin;
         AwarenessProfile = NPCAwarenessProfile.Goblin;
+        MoraleProfile = NPCMoraleProfile.Goblin;
         Description = "Goblin";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(7, 13);
         HP = RandGen.RandInt(20, 29);
+        MaxHP = HP;
     }
 }
 
@@ -74,10 +78,13 @@ public class Skeleton : BaseNPC
     {
         CharacterType = CharacterTypes.Skeleton;
         AwarenessProfile = NPCAwarenessProfile.Skeleton;
+        MoraleProfile = NPCMoraleProfile.Skeleton;
         Description = "Skeleton";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(8, 14);
         HP = RandGen.RandInt(28, 37);
+        MaxHP = HP;
+        MoraleState = NPCMoraleState.Fearless;
     }
 }
 
@@ -87,10 +94,12 @@ public class Troll : BaseNPC
     {
         CharacterType = CharacterTypes.Troll;
         AwarenessProfile = NPCAwarenessProfile.Troll;
+        MoraleProfile = NPCMoraleProfile.Troll;
         Description = "Troll";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(12, 19);
         HP = RandGen.RandInt(55, 71);
+        MaxHP = HP;
     }
 }
 
@@ -100,9 +109,11 @@ public class Wretch : BaseNPC
     {
         CharacterType = CharacterTypes.Wretch;
         AwarenessProfile = NPCAwarenessProfile.Wretch;
+        MoraleProfile = NPCMoraleProfile.Wretch;
         Description = "Wretch";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(4, 9);
         HP = RandGen.RandInt(15, 23);
+        MaxHP = HP;
     }
 }

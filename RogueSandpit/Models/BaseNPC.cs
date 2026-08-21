@@ -21,9 +21,16 @@ public abstract class BaseNPC
     public int X { get; set; }
     public int Y { get; set; }
     public int HP { get; set; }
+    public int MaxHP { get; protected set; }
     public int Damage { get; set; }
     public Item HeldItem { get; set; }
     public NPCAwarenessProfile AwarenessProfile { get; protected set; }
+    public NPCMoraleProfile MoraleProfile { get; protected set; }
+    public NPCMoraleState MoraleState { get; protected set; } = NPCMoraleState.Steady;
+    public (int X, int Y)? RetreatTarget { get; private set; }
+    public bool HasCalledForHelp { get; private set; }
+    public int EffectiveDamage => Damage + (MoraleState == NPCMoraleState.Enraged
+        ? MoraleProfile.EnrageDamageBonus : 0);
 
     public int AssetID { get; set; }
     public int AnimFrame { get; set; }
@@ -80,6 +87,33 @@ public abstract class BaseNPC
             _searchTargets.Clear();
             _isLocalSearching = false;
             Console.WriteLine($"{Name} has been killed!");
+            return;
+        }
+
+        ReactToWounds();
+    }
+
+    private void ReactToWounds()
+    {
+        if (MoraleProfile.IsFearless)
+        {
+            MoraleState = NPCMoraleState.Fearless;
+            return;
+        }
+
+        int healthPercent = HP * 100 / MaxHP;
+        if (healthPercent > MoraleProfile.FleeHealthPercent) return;
+        if (MoraleProfile.EnragesWhenWounded)
+        {
+            MoraleState = NPCMoraleState.Enraged;
+            return;
+        }
+
+        if (MoraleState != NPCMoraleState.Fleeing)
+        {
+            MoraleState = NPCMoraleState.Fleeing;
+            RetreatTarget = null;
+            HasCalledForHelp = false;
         }
     }
 
@@ -111,16 +145,18 @@ public abstract class BaseNPC
             _searchTargets.Clear();
             _isLocalSearching = false;
 
-            if (newlySpottedPlayer)
+            if (newlySpottedPlayer && MoraleState != NPCMoraleState.Fleeing)
             {
                 int alertedAllies = Map.AlertNearbyAllies(this, player.X, player.Y);
                 if (alertedAllies > 0) eventSink?.Invoke($"{Name} ALERTED {alertedAllies} ALLIES");
             }
 
+            if (TryFlee(eventSink)) return;
+
             if (dx + dy == 1)
             {
-                Console.WriteLine($"{Name} attacked player with {Damage} damage!");
-                int actualDamage = player.TakeDamage(Damage);
+                Console.WriteLine($"{Name} attacked player with {EffectiveDamage} damage!");
+                int actualDamage = player.TakeDamage(EffectiveDamage);
                 eventSink?.Invoke($"{Name} HIT PLAYER {actualDamage}");
                 int listeners = Map.NotifyNoise(X, Y, 10, this);
                 if (listeners > 0) eventSink?.Invoke($"COMBAT DREW {listeners} NPCS");
@@ -130,6 +166,8 @@ public abstract class BaseNPC
             MoveToward(player.X, player.Y, eventSink);
             return;
         }
+
+        if (TryFlee(eventSink)) return;
 
         if (Awareness == NPCAwareness.Pursuing && PredictedInvestigationTarget is { } prediction)
         {
@@ -224,6 +262,40 @@ public abstract class BaseNPC
         Awareness = NPCAwareness.Unaware;
         _searchTargets.Clear();
         _isLocalSearching = false;
+    }
+
+    private bool TryFlee(Action<string> eventSink)
+    {
+        if (MoraleState != NPCMoraleState.Fleeing) return false;
+        if (LastKnownPlayerPosition is not { } threat) return false;
+
+        if (!HasCalledForHelp)
+        {
+            int listeners = Map.NotifyNoise(X, Y, MoraleProfile.HelpCallRadius, this);
+            int alerted = Map.AlertNearbyAllies(this, threat.X, threat.Y, MoraleProfile.HelpCallRadius);
+            HasCalledForHelp = true;
+            eventSink?.Invoke($"{Name} CALLED FOR HELP {alerted}");
+            if (listeners > alerted) eventSink?.Invoke($"CALL HEARD BY {listeners} NPCS");
+        }
+
+        RetreatTarget ??= Map.FindRetreatTarget(this, threat.X, threat.Y);
+        if (RetreatTarget is not { } retreat)
+        {
+            MoraleState = NPCMoraleState.Shaken;
+            return true;
+        }
+
+        if (X == retreat.X && Y == retreat.Y)
+        {
+            MoraleState = NPCMoraleState.Shaken;
+            RetreatTarget = null;
+            eventSink?.Invoke($"{Name} REACHED SAFETY");
+            return true;
+        }
+
+        Awareness = NPCAwareness.Investigating;
+        MoveToward(retreat.X, retreat.Y, eventSink);
+        return true;
     }
 
     private void FollowNearbyTrail(Action<string> eventSink)
