@@ -552,7 +552,12 @@ namespace RogueSandpit
             string itemName = groundItem?.Item.Name ?? "NONE";
             PlacedTrap placedTrap = _map.GetTrapAt(position.X, position.Y);
             string trapDetails = placedTrap == null ? "NONE" : $"{placedTrap.Kind} DMG {placedTrap.Damage}";
-            _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName} TRAP {trapDetails}",
+            EnvironmentalEffect environment = _map.EnvironmentalEffects.Find(effect =>
+                effect.X == position.X && effect.Y == position.Y);
+            string environmentDetails = environment == null
+                ? "NONE"
+                : $"{environment.Type} {environment.RemainingTurns}";
+            _pixelFont.DrawText(_spriteBatch, $"ITEM {itemName} TRAP {trapDetails} ENV {environmentDetails}",
                 new Vector2(panelX + 6, panelY + 43), 1, Color.LightGray);
 
             Doorway door = _map.GetDoorAt(position.X, position.Y);
