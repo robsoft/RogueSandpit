@@ -47,6 +47,7 @@ public class Orc : BaseNPC
     public Orc(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         CharacterType = CharacterTypes.Orc;
+        AwarenessProfile = NPCAwarenessProfile.Orc;
         Description = "Orc";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(10, 16);
@@ -59,6 +60,7 @@ public class Goblin : BaseNPC
     public Goblin(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         CharacterType = CharacterTypes.Goblin;
+        AwarenessProfile = NPCAwarenessProfile.Goblin;
         Description = "Goblin";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(7, 13);
@@ -71,6 +73,7 @@ public class Skeleton : BaseNPC
     public Skeleton(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         CharacterType = CharacterTypes.Skeleton;
+        AwarenessProfile = NPCAwarenessProfile.Skeleton;
         Description = "Skeleton";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(8, 14);
@@ -83,6 +86,7 @@ public class Troll : BaseNPC
     public Troll(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         CharacterType = CharacterTypes.Troll;
+        AwarenessProfile = NPCAwarenessProfile.Troll;
         Description = "Troll";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(12, 19);
@@ -95,6 +99,7 @@ public class Wretch : BaseNPC
     public Wretch(Map map, int x, int y, BaseContainingElement currentRoom) : base(map, x, y, currentRoom)
     {
         CharacterType = CharacterTypes.Wretch;
+        AwarenessProfile = NPCAwarenessProfile.Wretch;
         Description = "Wretch";
         Name = NPCNameGenerator.Generate(CharacterType);
         Damage = RandGen.RandInt(4, 9);

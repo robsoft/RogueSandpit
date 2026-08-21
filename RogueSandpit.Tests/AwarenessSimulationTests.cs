@@ -10,7 +10,7 @@ public class AwarenessSimulationTests
     {
         Map map = CreateBlankMap();
         var nearNpc = new Goblin(map, 13, 10, null) { State = NPCState.Active };
-        var farNpc = new Orc(map, 15, 10, null) { State = NPCState.Active };
+        var farNpc = new Orc(map, 17, 10, null) { State = NPCState.Active };
         var inactiveNpc = new Wretch(map, 11, 10, null) { State = NPCState.InActive };
         map.NPCs.AddRange([nearNpc, farNpc, inactiveNpc]);
 
@@ -99,6 +99,105 @@ public class AwarenessSimulationTests
 
         Assert.Equal(DoorState.Open, door.State);
         Assert.Contains("DOOR NOISE DREW 1 NPCS", game.EventLog.Entries);
+    }
+
+    [Fact]
+    public void InvestigationConfidenceDecaysUntilNpcAbandonsSearch()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 40, Y = 40 };
+
+        npc.ReceiveInvestigation((30, 30), NPCInvestigationSource.Noise);
+        int startingConfidence = npc.InvestigationConfidence;
+
+        for (int turn = 0; turn < startingConfidence; turn++) npc.Move(player);
+
+        Assert.Equal(0, npc.InvestigationConfidence);
+        Assert.Equal(NPCAwareness.Unaware, npc.Awareness);
+        Assert.Equal(NPCInvestigationSource.None, npc.InvestigationSource);
+        Assert.Null(npc.InvestigationOrigin);
+    }
+
+    [Fact]
+    public void FreshEqualEvidenceRefreshesConfidenceAndTarget()
+    {
+        Map map = CreateBlankMap();
+        AddFloor(map, (10, 10));
+        var npc = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var player = new Player { X = 40, Y = 40 };
+
+        npc.ReceiveInvestigation((30, 30), NPCInvestigationSource.Noise);
+        int fullConfidence = npc.InvestigationConfidence;
+        npc.Move(player);
+
+        Assert.True(npc.ReceiveInvestigation((25, 25), NPCInvestigationSource.Noise));
+        Assert.Equal(fullConfidence, npc.InvestigationConfidence);
+        Assert.Equal((25, 25), npc.InvestigationOrigin);
+    }
+
+    [Fact]
+    public void ArchetypeHearingChangesWhoReceivesSameNoise()
+    {
+        Map map = CreateBlankMap();
+        var troll = new Troll(map, 18, 10, null) { State = NPCState.Active };
+        var skeleton = new Skeleton(map, 10, 18, null) { State = NPCState.Active };
+        map.NPCs.AddRange([troll, skeleton]);
+
+        int listeners = map.NotifyNoise(10, 10, 6);
+
+        Assert.Equal(1, listeners);
+        Assert.Equal(NPCInvestigationSource.Noise, troll.InvestigationSource);
+        Assert.Equal(NPCAwareness.Unaware, skeleton.Awareness);
+    }
+
+    [Fact]
+    public void ArchetypePersistenceChangesStartingConfidence()
+    {
+        Map map = CreateBlankMap();
+        var goblin = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var skeleton = new Skeleton(map, 20, 20, null) { State = NPCState.Active };
+
+        goblin.ReceiveInvestigation((30, 30), NPCInvestigationSource.AllyAlert);
+        skeleton.ReceiveInvestigation((30, 30), NPCInvestigationSource.AllyAlert);
+
+        Assert.True(skeleton.InvestigationConfidence > goblin.InvestigationConfidence);
+    }
+
+    [Fact]
+    public void ArchetypeSightRangeChangesWhoSpotsPlayer()
+    {
+        Map map = CreateBlankMap();
+        for (int x = 10; x <= 23; x++) AddFloor(map, (x, 10));
+        for (int x = 10; x <= 19; x++) AddFloor(map, (x, 20));
+        var goblin = new Goblin(map, 10, 10, null) { State = NPCState.Active };
+        var troll = new Troll(map, 10, 20, null) { State = NPCState.Active };
+
+        goblin.Move(new Player { X = 23, Y = 10 });
+        troll.Move(new Player { X = 19, Y = 20 });
+
+        Assert.Equal(NPCAwareness.Pursuing, goblin.Awareness);
+        Assert.Equal(NPCAwareness.Unaware, troll.Awareness);
+    }
+
+    [Fact]
+    public void ArchetypeAlertRadiusChangesHowFarSightingSpreads()
+    {
+        Map goblinMap = CreateBlankMap();
+        var goblin = new Goblin(goblinMap, 10, 10, null) { State = NPCState.Active };
+        var goblinAlly = new Orc(goblinMap, 19, 10, null) { State = NPCState.Active };
+        goblinMap.NPCs.AddRange([goblin, goblinAlly]);
+
+        Map skeletonMap = CreateBlankMap();
+        var skeleton = new Skeleton(skeletonMap, 10, 10, null) { State = NPCState.Active };
+        var skeletonAlly = new Orc(skeletonMap, 19, 10, null) { State = NPCState.Active };
+        skeletonMap.NPCs.AddRange([skeleton, skeletonAlly]);
+
+        Assert.Equal(1, goblinMap.AlertNearbyAllies(goblin, 20, 20));
+        Assert.Equal(0, skeletonMap.AlertNearbyAllies(skeleton, 20, 20));
+        Assert.Equal(NPCInvestigationSource.AllyAlert, goblinAlly.InvestigationSource);
+        Assert.Equal(NPCAwareness.Unaware, skeletonAlly.Awareness);
     }
 
     private static Map CreateBlankMap()

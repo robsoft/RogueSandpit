@@ -23,7 +23,8 @@ builds & runs on Mac and Windows
 - NPCs remember and investigate the last place they saw the player
 - NPCs hear nearby combat, opened doors, and dropped items, then investigate the sound
 - NPCs alert nearby allies when they first spot the player, sharing the observed location once
-- Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names and distinct combat profiles
+- Investigation confidence decays each turn until an NPC abandons stale evidence
+- Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red and investigating NPCs render yellow during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
 - A compact event log shows recent combat and objective events
@@ -37,7 +38,7 @@ builds & runs on Mac and Windows
  
 
 ## Pressing TODOs
-- Extend local NPC searching with prediction, environmental clues, or memory decay
+- Extend local NPC searching with prediction or environmental clues
 - Graphics!  
 
 
