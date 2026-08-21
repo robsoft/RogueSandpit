@@ -13,9 +13,9 @@ public class MapViewportTests
 
         viewport.Follow(40, 30, 80, 58);
 
-        Assert.Equal(29, viewport.WorldX);
+        Assert.Equal(27, viewport.WorldX);
         Assert.Equal(19, viewport.WorldY);
-        Assert.Equal(new Rectangle(352, 352, 32, 32), viewport.WorldToScreen(40, 30));
+        Assert.Equal(new Rectangle(416, 352, 32, 32), viewport.WorldToScreen(40, 30));
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class MapViewportTests
 
         viewport.Follow(36, 23, 80, 58);
 
-        Assert.Equal(29, viewport.WorldX);
+        Assert.Equal(27, viewport.WorldX);
         Assert.Equal(19, viewport.WorldY);
     }
 
@@ -38,13 +38,13 @@ public class MapViewportTests
 
         viewport.Follow(41, 31, 80, 58);
 
-        Assert.Equal(30, viewport.WorldX);
+        Assert.Equal(28, viewport.WorldX);
         Assert.Equal(20, viewport.WorldY);
     }
 
     [Theory]
     [InlineData(0, 0, 0, 0)]
-    [InlineData(79, 57, 64, 42)]
+    [InlineData(79, 57, 62, 42)]
     public void FollowClampsAtWorldEdges(int playerX, int playerY, int expectedX, int expectedY)
     {
         var viewport = new MapViewport();
@@ -61,9 +61,9 @@ public class MapViewportTests
         var viewport = new MapViewport();
         viewport.Follow(40, 30, 80, 58);
 
-        Assert.True(viewport.ContainsWorldCell(29, 19));
+        Assert.True(viewport.ContainsWorldCell(27, 19));
         Assert.True(viewport.ContainsWorldCell(44, 34));
-        Assert.False(viewport.ContainsWorldCell(28, 19));
-        Assert.False(viewport.ContainsWorldCell(45, 34));
+        Assert.False(viewport.ContainsWorldCell(26, 19));
+        Assert.False(viewport.ContainsWorldCell(45, 35));
     }
 }

@@ -15,7 +15,7 @@ The simulation is strictly turn based. Every successful player action advances t
 ### Exploration and environment
 
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
-- A scrolling 16×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
+- A scrolling 18×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
@@ -85,6 +85,7 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | `P`, then arrow | Place the selected trap |
 | `T`, then arrow | Lay a false trail |
 | `F1` | Toggle the developer view |
+| `F11` | Restore health and apply a representative developer test loadout |
 | `F12` | Toggle real-time mode |
 | `Space` | Generate a new run |
 | `Escape` | Cancel the current prompt, or quit when no prompt is active |
