@@ -108,7 +108,7 @@ The current logical map cell is smaller than the 32×32 source artwork. Source a
 
 After approving the visual slice:
 
-1. Pin both MonoGame packages to the tested stable version `3.8.5.1` instead of the floating `3.8.*` range.
+1. Keep the MonoGame packages and project-local content tools pinned to the tested stable version `3.8.5.1`.
 2. Document palette, transparency, grid, naming, export, and point-sampling conventions.
 3. Decide whether door art is orientation-neutral or needs horizontal and vertical variants.
 4. Decide how actor awareness, morale, bleeding, and stun are communicated: sprite variants, icons, tinting, animation, or debug-only overlays.

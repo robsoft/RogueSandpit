@@ -1,0 +1,47 @@
+using System;
+using RogueSandpit.Models;
+
+namespace RogueSandpit;
+
+public enum ApplicationScreen
+{
+    Playing,
+    Paused,
+    Options,
+    GameOver,
+    Victory
+}
+
+public sealed class ApplicationScreenCoordinator
+{
+    public ApplicationScreen CurrentScreen { get; private set; } = ApplicationScreen.Playing;
+    public bool SimulationActive => CurrentScreen == ApplicationScreen.Playing;
+
+    public void Pause()
+    {
+        if (CurrentScreen == ApplicationScreen.Playing) CurrentScreen = ApplicationScreen.Paused;
+    }
+
+    public void Resume()
+    {
+        if (CurrentScreen == ApplicationScreen.Paused) CurrentScreen = ApplicationScreen.Playing;
+    }
+
+    public void OpenOptions()
+    {
+        if (CurrentScreen == ApplicationScreen.Paused) CurrentScreen = ApplicationScreen.Options;
+    }
+
+    public void BackFromOptions()
+    {
+        if (CurrentScreen == ApplicationScreen.Options) CurrentScreen = ApplicationScreen.Paused;
+    }
+
+    public void SynchronizeOutcome(GameOutcome outcome)
+    {
+        if (outcome == GameOutcome.Won) CurrentScreen = ApplicationScreen.Victory;
+        else if (outcome == GameOutcome.Lost) CurrentScreen = ApplicationScreen.GameOver;
+    }
+
+    public void StartPlaying() => CurrentScreen = ApplicationScreen.Playing;
+}

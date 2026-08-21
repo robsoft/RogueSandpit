@@ -8,7 +8,7 @@ The project has reached its first systems-complete prototype milestone. Its next
 
 Each run places the player, enemies, equipment, consumables, traps, doors, environmental hazards, and an objective on a seeded rooms-and-corridors map. Normal play uses persistent fog of war; the complete simulation can be inspected through the F1 developer view.
 
-The simulation is strictly turn based. Every successful player action advances the NPC phase once, while cancelled prompts and invalid selections cost no time. F12 optionally enables a real-time input mode: if the player remains idle for the configured interval, the game submits a silent wait action. Timed turns pause while a prompt or inventory panel is open and whenever the window loses focus.
+The simulation is strictly turn based. Every successful player action advances the NPC phase once, while cancelled prompts and invalid selections cost no time. F12 optionally enables a real-time input mode: if the player remains idle for the configured interval, the game submits a silent wait action. Timed turns pause while a prompt, inventory, pause, or options panel is open and whenever the window loses focus.
 
 ## Current systems
 
@@ -17,6 +17,7 @@ The simulation is strictly turn based. Every successful player action advances t
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
 - A scrolling 16×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
+- Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
 - Sound propagation, physical trails, and player-created false trails
@@ -86,8 +87,9 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | `T`, then arrow | Lay a false trail |
 | `F1` | Toggle the developer view |
 | `F12` | Toggle real-time mode |
-| `Space` | Generate a new run |
-| `Escape` | Cancel the current prompt, or quit when no prompt is active |
+| `Space` | Restart after victory or defeat |
+| `Escape` | Cancel a prompt, close inventory, return from options, resume, or pause |
+| Arrows / `Enter` | Navigate and confirm pause/options menu choices |
 
 ## Developer diagnostics
 
