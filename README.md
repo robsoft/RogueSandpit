@@ -5,7 +5,7 @@ A simple rogue-like game built with Monogame and .net 9. The game features a pla
 ## Monogame, .Net9
 builds & runs on Mac and Windows
 
-`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `dotnet run -- --scale 1` for the original window size, or `--scale 3` / `--scale 4` for larger integer scaling.
+`dotnet run` opens a 2× (1600×1200) window while preserving the native 800×600 pixel canvas. Use `dotnet run -- --scale 1` for the original window size, or `--scale 3` / `--scale 4` for larger integer scaling. The optional real-time turn interval can be set with `--turn-seconds 1.5`.
 
 
 ## Current Status
@@ -14,7 +14,7 @@ builds & runs on Mac and Windows
 - NPCs do damage to the player if they're adjacent  
 - Player can see entire map & NPCs in debug mode  
 - Normal play uses persistent fog-of-war; F1 remains an omniscient developer view
-- Fully turn-based, so NPCs 'pause' until the player makes a move  
+- The simulation is fully turn-based; optional F12 real-time mode automatically waits after an idle countdown
 - Player can register a 'move' even if they don't actually move (eg, against a wall), so NPCs will then move  
 - Player attacks NPCs by moving into them; defeated NPCs stop acting and blocking cells
 - Retrieve the yellow special tile and return it to the entrance to win
@@ -43,6 +43,7 @@ builds & runs on Mac and Windows
 - Orcs, Goblins, Skeletons, Trolls, and Wretches have seeded names plus distinct combat and awareness profiles
 - Pursuing NPCs render orange-red, investigating NPCs yellow, fleeing NPCs blue, and enraged NPCs red during development
 - F1 debug mode supports hover inspection plus NPC path and line-of-sight visualization
+- F12 toggles optional timed turns, pausing for prompts, inventory, and lost window focus
 - A compact event log shows recent combat and objective events
 - Reachable potions, weapons, armor, and keys can be collected in an eight-slot inventory
 - Brackets select inventory items; H uses a selected potion, E equips selected weapons or armor, and defeated NPCs may drop loot
@@ -72,6 +73,7 @@ builds & runs on Mac and Windows
 - I to open or close the inventory panel; arrows select items while it is open
 - Period or numpad 5 to wait one turn
 - F1 to toggle debug/map viewer  
+- F12 to toggle real-time turn mode
 - In debug mode, hover a cell to inspect it and visualize NPC decisions
 - SPACE to generate a new map (effectively restart)
 - ESCAPE to cancel a directional action, or quit the game otherwise

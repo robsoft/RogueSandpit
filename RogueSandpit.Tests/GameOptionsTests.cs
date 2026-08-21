@@ -11,6 +11,7 @@ public class GameOptionsTests
         GameOptions options = GameOptions.Parse([]);
 
         Assert.Equal(2, options.WindowScale);
+        Assert.Equal(1.0, options.TurnSeconds);
     }
 
     [Theory]
@@ -36,5 +37,22 @@ public class GameOptionsTests
     public void MissingScaleValueIsRejected()
     {
         Assert.Throws<ArgumentException>(() => GameOptions.Parse(["--scale"]));
+    }
+
+    [Theory]
+    [InlineData(new[] { "--turn-seconds", "0.5" }, 0.5)]
+    [InlineData(new[] { "--turn-seconds=2.5" }, 2.5)]
+    public void TurnSecondsSupportsSeparatedAndEqualsForms(string[] args, double expected)
+    {
+        Assert.Equal(expected, GameOptions.Parse(args).TurnSeconds);
+    }
+
+    [Theory]
+    [InlineData("--turn-seconds=0")]
+    [InlineData("--turn-seconds=11")]
+    [InlineData("--turn-seconds=nope")]
+    public void InvalidTurnSecondsAreRejected(string argument)
+    {
+        Assert.Throws<ArgumentException>(() => GameOptions.Parse([argument]));
     }
 }

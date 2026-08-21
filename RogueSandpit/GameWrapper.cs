@@ -26,14 +26,17 @@ namespace RogueSandpit
         private KeyboardState _previousKeyboardState;
         private bool _inventoryOpen;
         private DirectionalAction _directionalAction;
+        private readonly RealtimeTurnTimer _realtimeTurnTimer;
 
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
 
-        public GameWrapper(int windowScale = GameOptions.DefaultWindowScale)
+        public GameWrapper(int windowScale = GameOptions.DefaultWindowScale,
+            double turnSeconds = GameOptions.DefaultTurnSeconds)
         {
+            _realtimeTurnTimer = new RealtimeTurnTimer(turnSeconds);
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
@@ -67,6 +70,7 @@ namespace RogueSandpit
 
         private void KickOffNewGame(bool regenerateMap = true)
         {
+            _realtimeTurnTimer.Reset();
             _inventoryOpen = false;
             _directionalAction = DirectionalAction.None;
             if (regenerateMap)
@@ -121,6 +125,14 @@ namespace RogueSandpit
 
         private void UpdateLive(GameTime gameTime)
         {
+            if (WasPressed(Keys.F12))
+            {
+                _realtimeTurnTimer.Toggle();
+                _gameState.EventLog.Add(_realtimeTurnTimer.Enabled
+                    ? "REAL-TIME MODE ON"
+                    : "REAL-TIME MODE OFF");
+            }
+
             if (WasPressed(Keys.I))
             {
                 _inventoryOpen = !_inventoryOpen;
@@ -146,7 +158,20 @@ namespace RogueSandpit
             if (!_player.Dead)
             {
                 // this will take care of the player's turn, and the computer's responses
+                long previousTurn = _gameState.TurnCount;
                 _gameState.Update(GetPlayerCommand());
+                if (_gameState.TurnCount != previousTurn)
+                {
+                    _realtimeTurnTimer.Reset();
+                }
+                else
+                {
+                    bool paused = _inventoryOpen
+                        || _directionalAction != DirectionalAction.None
+                        || !IsActive;
+                    if (_realtimeTurnTimer.Advance(gameTime.ElapsedGameTime.TotalSeconds, paused))
+                        _gameState.Update(PlayerCommand.Wait);
+                }
             }
 
             base.Update(gameTime);
@@ -374,6 +399,17 @@ namespace RogueSandpit
 
         private void DrawHud()
         {
+            if (_realtimeTurnTimer.Enabled)
+            {
+                string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None || !IsActive)
+                    ? "REALTIME PAUSED"
+                    : $"REALTIME {_realtimeTurnTimer.RemainingSeconds:0.0}s";
+                _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                    new Rectangle(650, 552, 150, 14), Color.Black);
+                _pixelFont.DrawText(_spriteBatch, timerText,
+                    new Vector2(656, 555), 1, Color.Yellow);
+            }
+
             if (_player.StatusEffects.Effects.Count > 0)
             {
                 _uiDrawer.DrawFilledRectangle(_spriteBatch,
