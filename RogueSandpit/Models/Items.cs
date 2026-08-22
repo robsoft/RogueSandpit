@@ -6,15 +6,17 @@ namespace RogueSandpit.Models;
 
 public class Item
 {
-    public Guid Id { get; } = Guid.NewGuid();
+    public Guid Id { get; }
     public string Name { get; }
     public ItemType Type { get; }
     public int Power { get; }
     public int Tier { get; }
     public TrapKind? TrapKind { get; }
 
-    public Item(string name, ItemType type, int power = 0, TrapKind? trapKind = null, int tier = 0)
+    public Item(string name, ItemType type, int power = 0, TrapKind? trapKind = null, int tier = 0,
+        Guid? id = null)
     {
+        Id = id ?? Guid.NewGuid();
         Name = name;
         Type = type;
         Power = power;
@@ -98,6 +100,11 @@ public class Inventory
         if (index < 0 || index >= _items.Count || index == SelectedIndex) return false;
         SelectedIndex = index;
         return true;
+    }
+
+    internal void RestoreSelection(int index)
+    {
+        SelectedIndex = _items.Count == 0 ? -1 : Math.Clamp(index, 0, _items.Count - 1);
     }
 }
 

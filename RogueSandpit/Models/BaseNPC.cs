@@ -59,6 +59,56 @@ public abstract class BaseNPC
     public IReadOnlyCollection<(int X, int Y)> KnownHazards => _knownHazards;
     public int ObservedCasualtyCount => _observedCasualties.Count;
 
+    internal NpcSaveSnapshot CapturePersistence() => new()
+    {
+        Id = Id, CharacterType = CharacterType, Name = Name, Description = Description,
+        X = X, Y = Y, HomeX = HomeX, HomeY = HomeY, HP = HP, MaxHP = MaxHP,
+        Damage = Damage, Direction = Direction, State = State, Mood = Mood, MoodValue = MoodValue,
+        Visibility = Visibility, MoraleState = MoraleState, RetreatTarget = PointSnapshot.From(RetreatTarget),
+        HasCalledForHelp = HasCalledForHelp, HasSeenPlayer = HasSeenPlayer, Awareness = Awareness,
+        LastKnownPlayerPosition = PointSnapshot.From(LastKnownPlayerPosition),
+        InvestigationOrigin = PointSnapshot.From(InvestigationOrigin), InvestigationSource = InvestigationSource,
+        InvestigationConfidence = InvestigationConfidence,
+        LastObservedPlayerMovement = PointSnapshot.From(LastObservedPlayerMovement),
+        PredictedInvestigationTarget = PointSnapshot.From(PredictedInvestigationTarget),
+        IsLocalSearching = _isLocalSearching, LastObservedTrailSequence = _lastObservedTrailSequence,
+        SearchTargets = _searchTargets.Select(point => new PointSnapshot(point.X, point.Y)).ToList(),
+        ObservedCasualties = _observedCasualties.ToList(),
+        KnownHazards = _knownHazards.Select(point => new PointSnapshot(point.X, point.Y)).ToList(),
+        HeldItemId = HeldItem?.Id,
+        StatusEffects = StatusEffects.Effects.Select(StatusEffectSnapshot.From).ToList()
+    };
+
+    internal void RestorePersistence(NpcSaveSnapshot snapshot, IReadOnlyDictionary<Guid, Item> items)
+    {
+        Id = snapshot.Id;
+        Name = snapshot.Name;
+        Description = snapshot.Description;
+        X = snapshot.X; Y = snapshot.Y; HomeX = snapshot.HomeX; HomeY = snapshot.HomeY;
+        HP = snapshot.HP; MaxHP = snapshot.MaxHP; Damage = snapshot.Damage;
+        Direction = snapshot.Direction; State = snapshot.State; Mood = snapshot.Mood;
+        MoodValue = snapshot.MoodValue; Visibility = snapshot.Visibility;
+        MoraleState = snapshot.MoraleState; RetreatTarget = snapshot.RetreatTarget?.ToTuple();
+        HasCalledForHelp = snapshot.HasCalledForHelp; HasSeenPlayer = snapshot.HasSeenPlayer;
+        Awareness = snapshot.Awareness; LastKnownPlayerPosition = snapshot.LastKnownPlayerPosition?.ToTuple();
+        InvestigationOrigin = snapshot.InvestigationOrigin?.ToTuple();
+        InvestigationSource = snapshot.InvestigationSource;
+        InvestigationConfidence = snapshot.InvestigationConfidence;
+        LastObservedPlayerMovement = snapshot.LastObservedPlayerMovement?.ToTuple();
+        PredictedInvestigationTarget = snapshot.PredictedInvestigationTarget?.ToTuple();
+        _isLocalSearching = snapshot.IsLocalSearching;
+        _lastObservedTrailSequence = snapshot.LastObservedTrailSequence;
+        _searchTargets.Clear();
+        foreach (PointSnapshot point in snapshot.SearchTargets) _searchTargets.Enqueue(point.ToTuple());
+        _observedCasualties.Clear();
+        foreach (Guid id in snapshot.ObservedCasualties) _observedCasualties.Add(id);
+        _knownHazards.Clear();
+        foreach (PointSnapshot point in snapshot.KnownHazards) _knownHazards.Add(point.ToTuple());
+        HeldItem = snapshot.HeldItemId is Guid itemId ? items[itemId] : null;
+        StatusEffects.Restore(snapshot.StatusEffects.Select(effect => effect.ToModel()));
+        CurrentRoom = Map.MapCells[X, Y].ParentElement;
+    }
+
 
     // this is where the NPC starts out from, and is where it will 'home' back to when it can't find a target   
     // (the target is dead or disappeared etc)

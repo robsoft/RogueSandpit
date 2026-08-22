@@ -9,7 +9,7 @@ public class MapRenderer
 {
     private static readonly Color MapBackgroundColor = Color.CornflowerBlue;
 
-    private readonly Map _map;
+    private Map _map;
     private readonly PrimitiveDrawer _drawer;
     private readonly PrototypeSpriteAtlas _atlas;
     private readonly MapViewport _viewport = new();
@@ -136,6 +136,8 @@ public class MapRenderer
             _drawer.DrawLine(spriteBatch, start, end, clueColor * ageOpacity, clue.Strength);
         }
     }
+
+    public void SetMap(Map map) => _map = map ?? throw new ArgumentNullException(nameof(map));
 
     private void RenderViewport(SpriteBatch spriteBatch)
     {

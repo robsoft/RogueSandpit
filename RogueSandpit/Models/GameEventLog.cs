@@ -24,4 +24,10 @@ public class GameEventLog
             _entries.RemoveAt(0);
         }
     }
+
+    internal void Restore(IEnumerable<string> entries)
+    {
+        _entries.Clear();
+        foreach (string entry in entries) Add(entry);
+    }
 }

@@ -17,6 +17,7 @@ public class Map
     private const int DoorClusterRadius = 2;
     public const int EntranceSafetyDistance = 10;
     private long _nextTrailSequence;
+    internal long NextTrailSequence => _nextTrailSequence;
     private Dictionary<(int X, int Y), int> _entranceDistances = [];
     public bool IsInitialising { get; private set; } = false;
     public int Seed { get; private set; }
@@ -127,6 +128,49 @@ public class Map
     {
         Seed = seed;
         Initialise();
+    }
+
+    internal void RestorePersistence(SaveGameSnapshot snapshot, IReadOnlyDictionary<Guid, Item> items)
+    {
+        foreach (CellSnapshot saved in snapshot.Cells)
+        {
+            MapCell cell = MapCells[saved.X, saved.Y];
+            cell.SetCellType(saved.CellType);
+            cell.IsVisible = saved.IsVisible;
+            cell.IsDiscovered = saved.IsDiscovered;
+            if (cell.ParentElement != null) cell.ParentElement.HasVisited = saved.ParentVisited;
+        }
+
+        foreach (Room room in RoomList) room.Specials.Clear();
+        foreach (CellSnapshot saved in snapshot.Cells.Where(cell => cell.CellType == MapCellType.Special))
+        {
+            if (MapCells[saved.X, saved.Y].ParentElement is Room room)
+                room.Specials.Add(new Special(saved.X, saved.Y, room));
+        }
+
+        Doors = snapshot.Doors.Select(door => new Doorway(door.X, door.Y, door.State)).ToList();
+        GroundItems = snapshot.GroundItems.Select(ground =>
+            new GroundItem(items[ground.ItemId], ground.X, ground.Y)).ToList();
+        PlacedTraps.Clear();
+        PlacedTraps.AddRange(snapshot.Traps.Select(trap =>
+            new PlacedTrap(trap.X, trap.Y, trap.Damage, trap.Kind)));
+        EnvironmentalEffects.Clear();
+        EnvironmentalEffects.AddRange(snapshot.Effects.Select(effect => new EnvironmentalEffect(
+            effect.Type, effect.X, effect.Y, effect.RemainingTurns, effect.Power)));
+        PlayerTrail.Clear();
+        PlayerTrail.AddRange(snapshot.Trails.Select(trail => new PlayerTrailClue(trail.Sequence,
+            trail.X, trail.Y, trail.NextX, trail.NextY, trail.RemainingTurns,
+            trail.Strength, trail.IsAuthentic)));
+        _nextTrailSequence = snapshot.NextTrailSequence;
+
+        NPCs.Clear();
+        foreach (NpcSaveSnapshot saved in snapshot.Npcs)
+        {
+            BaseContainingElement room = MapCells[saved.X, saved.Y].ParentElement;
+            BaseNPC npc = NPCFactory.CreateNPC(this, saved.CharacterType, saved.X, saved.Y, room);
+            npc.RestorePersistence(saved, items);
+            NPCs.Add(npc);
+        }
     }
 
     private void CalculateRoomAreas()
