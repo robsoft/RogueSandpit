@@ -34,6 +34,7 @@ namespace RogueSandpit
         private int _pauseMenuSelection;
         private int _optionsSelection;
         private int _controlsSelection;
+        private int _terminalMenuSelection;
         private int _bindingSlot;
         private bool _capturingBinding;
         private string _controlsMessage = "";
@@ -42,6 +43,7 @@ namespace RogueSandpit
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
         private enum PauseMenuItem { Resume, Options, RestartThisSeed, NewRun, Quit }
         private enum OptionsItem { RealtimeInterval, MasterVolume, EffectsVolume, MusicVolume, MuteUnfocused, Controls, Back }
+        private enum TerminalMenuItem { RestartThisSeed, NewRun, Quit }
 
         public const int NativeWidth = 800;
         public const int NativeHeight = 600;
@@ -106,6 +108,7 @@ namespace RogueSandpit
             _realtimeTurnTimer.Reset();
             _inventoryOpen = false;
             _directionalAction = DirectionalAction.None;
+            _terminalMenuSelection = 0;
             if (regenerateMap)
             {
                 if (newSeed.HasValue) _map.Regenerate(newSeed.Value);
@@ -198,7 +201,29 @@ namespace RogueSandpit
 
         private void UpdateTerminalScreen()
         {
-            if (WasPressed(Keys.Space)) StartNewRun();
+            if (WasPressed(Keys.Space))
+            {
+                StartNewRun();
+                return;
+            }
+
+            int count = Enum.GetValues<TerminalMenuItem>().Length;
+            if (WasPressed(Keys.Up)) _terminalMenuSelection = (_terminalMenuSelection - 1 + count) % count;
+            if (WasPressed(Keys.Down)) _terminalMenuSelection = (_terminalMenuSelection + 1) % count;
+            if (!WasPressed(Keys.Enter)) return;
+
+            switch ((TerminalMenuItem)_terminalMenuSelection)
+            {
+                case TerminalMenuItem.RestartThisSeed:
+                    KickOffNewGame();
+                    break;
+                case TerminalMenuItem.NewRun:
+                    StartNewRun();
+                    break;
+                case TerminalMenuItem.Quit:
+                    Exit();
+                    break;
+            }
         }
 
         private void UpdatePauseMenu()
@@ -404,7 +429,8 @@ namespace RogueSandpit
                         || _directionalAction != DirectionalAction.None
                         || !IsActive;
                     if (_realtimeTurnTimer.Advance(gameTime.ElapsedGameTime.TotalSeconds, paused))
-                        _gameState.Update(PlayerCommand.Wait, suppressWaitEvent: true);
+                        _gameState.Update(PlayerCommand.Wait, suppressWaitEvent: true,
+                            automaticRealtimeWait: true);
                 }
             }
 
@@ -754,6 +780,12 @@ namespace RogueSandpit
             _pixelFont.DrawText(_spriteBatch,
                 $"SEED {_map.Seed}  DOORS {_map.Doors.Count}/{_map.DoorCandidateCount}  PRUNED {_map.PrunedDoorwayCount}",
                 new Vector2(6, 555), 1, Color.LightGoldenrodYellow);
+            RunStatistics statistics = _gameState.Statistics;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(300, 552, 350, 14), Color.Black);
+            _pixelFont.DrawText(_spriteBatch,
+                $"T {statistics.Turns} K {statistics.NpcsDefeated} DEALT {statistics.DamageDealt} TAKEN {statistics.DamageReceived} DET {statistics.DetectionEpisodes} MAX {statistics.MaximumPursuers}",
+                new Vector2(304, 555), 1, Color.LightGreen);
 
             if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
@@ -933,6 +965,15 @@ namespace RogueSandpit
             int headingX = panelX + (panelWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
             _pixelFont.DrawText(_spriteBatch, heading,
                 new Vector2(headingX, panelY + 35), headingScale, Color.White);
+
+            RunStatistics statistics = _gameState.Statistics;
+            string objective = _player.HasSpecial ? "CARRYING" : "SEARCHING";
+            _pixelFont.DrawText(_spriteBatch,
+                $"SEED {_map.Seed}  TURN {statistics.Turns}  OBJECTIVE {objective}",
+                new Vector2(panelX + 42, panelY + 82), 1, Color.LightGoldenrodYellow);
+            _pixelFont.DrawText(_spriteBatch,
+                $"KILLS {statistics.NpcsDefeated}  DEALT {statistics.DamageDealt}  TAKEN {statistics.DamageReceived}  DET {statistics.DetectionEpisodes}  MAX {statistics.MaximumPursuers}",
+                new Vector2(panelX + 42, panelY + 99), 1, Color.LightGray);
 
             PauseMenuItem[] items = Enum.GetValues<PauseMenuItem>();
             for (int index = 0; index < items.Length; index++)
@@ -1231,18 +1272,70 @@ namespace RogueSandpit
 
         private void DrawEndScreen()
         {
-            _uiDrawer.DrawFilledRectangle(_spriteBatch, new Rectangle(150, 205, 500, 170), Color.Black * 0.9f);
+            const int panelX = 70;
+            const int panelY = 35;
+            const int panelWidth = 660;
+            const int panelHeight = 530;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.96f);
 
             string heading = _gameState.Outcome == GameOutcome.Won ? "YOU WIN" : "GAME OVER";
             Color headingColor = _gameState.Outcome == GameOutcome.Won ? Color.Yellow : Color.Red;
             int headingScale = 5;
             int headingX = (NativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
-            _pixelFont.DrawText(_spriteBatch, heading, new Vector2(headingX, 240), headingScale, headingColor);
+            _pixelFont.DrawText(_spriteBatch, heading,
+                new Vector2(headingX, panelY + 25), headingScale, headingColor);
 
-            const string restartText = "SPACE FOR NEW RUN";
-            int restartScale = 3;
-            int restartX = (NativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
-            _pixelFont.DrawText(_spriteBatch, restartText, new Vector2(restartX, 320), restartScale, Color.White);
+            RunStatistics statistics = _gameState.Statistics;
+            string objective = statistics.ObjectiveCollectedTurn.HasValue
+                ? $"FOUND T{statistics.ObjectiveCollectedTurn}"
+                : "NOT FOUND";
+            string escape = statistics.EscapeTurn.HasValue ? $" ESCAPED T{statistics.EscapeTurn}" : "";
+            string cause = _gameState.Outcome == GameOutcome.Lost
+                ? statistics.DefeatCause
+                : "OBJECTIVE RECOVERED";
+            string[] report =
+            [
+                $"SEED {_map.Seed}   {cause}",
+                $"TURNS {statistics.Turns}   DELIBERATE {statistics.DeliberateTurns}   REALTIME {statistics.RealtimeTurns}",
+                $"OBJECTIVE {objective}{escape}",
+                $"DEFEATED {statistics.NpcsDefeated}   DAMAGE DEALT {statistics.DamageDealt}   TAKEN {statistics.DamageReceived}   HEALED {statistics.HealingReceived}",
+                $"ORC {statistics.DefeatsByArchetype[CharacterTypes.Orc]}  GOBLIN {statistics.DefeatsByArchetype[CharacterTypes.Goblin]}  SKELETON {statistics.DefeatsByArchetype[CharacterTypes.Skeleton]}",
+                $"TROLL {statistics.DefeatsByArchetype[CharacterTypes.Troll]}  WRETCH {statistics.DefeatsByArchetype[CharacterTypes.Wretch]}",
+                $"MELEE {statistics.MeleeAttacks}   RANGED HITS/SHOTS {statistics.RangedHits}/{statistics.RangedShots}",
+                $"DETECTIONS {statistics.DetectionEpisodes}   NPCS ALERTED {statistics.NpcsAlerted}   MAX PURSUERS {statistics.MaximumPursuers}",
+                $"ITEMS FOUND {statistics.ItemsCollected}  USED {statistics.ItemsConsumed}  THROWN {statistics.ItemsThrown}  DROPPED {statistics.ItemsDropped}",
+                $"DOORS OPEN {statistics.DoorsOpened}  CLOSED {statistics.DoorsClosed}  UNLOCKED {statistics.DoorsUnlocked}   TRAPS {statistics.TrapsTriggered}/{statistics.TrapsPlaced}"
+            ];
+            for (int index = 0; index < report.Length; index++)
+            {
+                _pixelFont.DrawText(_spriteBatch, report[index],
+                    new Vector2(panelX + 30, panelY + 105 + index * 24), 1, Color.LightGray);
+            }
+
+            TerminalMenuItem[] items = Enum.GetValues<TerminalMenuItem>();
+            for (int index = 0; index < items.Length; index++)
+            {
+                int y = panelY + 345 + index * 42;
+                bool selected = index == _terminalMenuSelection;
+                if (selected)
+                {
+                    _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                        new Rectangle(panelX + 170, y - 8, panelWidth - 340, 30), Color.DarkSlateBlue);
+                }
+                string label = items[index] switch
+                {
+                    TerminalMenuItem.RestartThisSeed => "RESTART THIS SEED",
+                    TerminalMenuItem.NewRun => "NEW RUN",
+                    _ => "QUIT"
+                };
+                _pixelFont.DrawText(_spriteBatch, label,
+                    new Vector2(panelX + 195, y), 2, selected ? Color.White : Color.Gray);
+            }
+
+            _pixelFont.DrawText(_spriteBatch,
+                "ARROWS SELECT   ENTER CONFIRM   SPACE NEW RUN",
+                new Vector2(panelX + 180, panelY + panelHeight - 24), 1, Color.LightGray);
         }
 
 
