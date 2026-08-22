@@ -22,7 +22,7 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen
 dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime --turn-seconds 1.5
 ```
 
-At this milestone the full rule suite contains 168 passing tests. The native render canvas is always 800×600; window scaling and fullscreen presentation do not alter simulation or layout coordinates.
+The native render canvas is always 800×600; window scaling and fullscreen presentation do not alter simulation or layout coordinates.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ At this milestone the full rule suite contains 168 passing tests. The native ren
 ### Simulation and turns
 
 - `Models/GameState.cs` coordinates the current run and player-to-NPC turn boundary.
+- `Models/RunStatistics.cs` is the framework-independent per-run record used by pause, developer, and terminal reports. `GameState` updates it from successful actions and reconciled before/after simulation state rather than event-log text.
 - `Models/NpcTurnScheduler.cs` snapshots the active NPC phase and rotates initiative between turns.
 - Simulation models are independent of MonoGame so rules can be exercised by xUnit without a graphics device.
 - NPC actions currently resolve sequentially. Rotation provides fairness, but this is not simultaneous intent resolution.
@@ -68,6 +69,7 @@ Preserve these behaviours when changing input, UI, animation, or timing:
 - One successful player turn advances at most one complete NPC phase.
 - Invalid actions, opening or navigating a selection UI, and cancelled directional prompts do not spend a turn.
 - Automatic real-time waits are silent in the event log; deliberate wait actions are logged.
+- Invalid and UI-only actions do not alter run statistics. A restarted or new `GameState` always begins with a fresh statistics record, even when the map seed is reused.
 - Timed turns pause for modal prompts, the inventory panel, terminal game states, and lost window focus.
 - A defeated NPC neither acts nor occupies a cell, but its death remains available as casualty evidence and its drops remain on the map.
 - Normal fog of war and F1 omniscience are distinct presentation modes over the same simulation.

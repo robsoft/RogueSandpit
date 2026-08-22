@@ -13,6 +13,7 @@ public class GameState
     public Player Player { get; private set; }
     public GameOutcome Outcome { get; private set; } = GameOutcome.Playing;
     public GameEventLog EventLog { get; } = new();
+    public RunStatistics Statistics { get; } = new();
     public long TurnCount { get; private set; }
     public int NextNpcInitiativeOffset => _npcTurnScheduler.InitiativeOffset;
 
@@ -23,9 +24,11 @@ public class GameState
         Player.Place(Map, player.X, player.Y);
     }
 
-    public void Update(PlayerCommand command, bool suppressWaitEvent = false)
+    public void Update(PlayerCommand command, bool suppressWaitEvent = false,
+        bool automaticRealtimeWait = false)
     {
         if (Outcome != GameOutcome.Playing || command == PlayerCommand.None) return;
+        TurnSnapshot snapshot = CaptureStatistics();
 
         bool stunnedTurn = IsPotentialTurnCommand(command)
             && Player.StatusEffects.Has(StatusEffectType.Stunned);
@@ -67,6 +70,7 @@ public class GameState
 
         if (!turnTaken) return;
         TurnCount++;
+        Statistics.RecordTurn(automaticRealtimeWait);
 
         StatusTurnResult playerStatus = Player.AdvanceStatusTurn();
         if (playerStatus.BleedingDamage > 0)
@@ -75,8 +79,10 @@ public class GameState
 
         if (Player.Dead)
         {
+            Statistics.DefeatCause = "BLED OUT";
             Outcome = GameOutcome.Lost;
             EventLog.Add("PLAYER DIED");
+            CompleteStatistics(snapshot);
             return;
         }
 
@@ -88,18 +94,21 @@ public class GameState
             EventLog.Add($"PLAYER BURNED {damage}");
             if (Player.Dead)
             {
+                Statistics.DefeatCause = "BURNED TO DEATH";
                 Outcome = GameOutcome.Lost;
                 EventLog.Add("PLAYER DIED");
+                CompleteStatistics(snapshot);
                 return;
             }
         }
 
         if (Outcome == GameOutcome.Won)
         {
+            CompleteStatistics(snapshot);
             return;
         }
 
-        MoveNPCs();
+        BaseNPC killer = MoveNPCs();
         Map.AgePlayerTrail();
         Map.AgeEnvironmentalEffects();
         Map.UpdateVisibility(Player.X, Player.Y);
@@ -107,20 +116,24 @@ public class GameState
 
         if (Player.Dead)
         {
+            Statistics.DefeatCause = killer == null ? "SLAIN IN THE DUNGEON" : $"SLAIN BY {killer.Name}";
             Outcome = GameOutcome.Lost;
             EventLog.Add("PLAYER DIED");
             Console.WriteLine("Player is dead! Game over.");
+            CompleteStatistics(snapshot);
             return;
         }
+        CompleteStatistics(snapshot);
     }
 
-    private void MoveNPCs()
+    private BaseNPC MoveNPCs()
     {
         foreach (BaseNPC npc in _npcTurnScheduler.CreateTurnOrder(Map.NPCs))
         {
             npc.Move(Player, EventLog.Add);
-            if (Player.Dead) return;
+            if (Player.Dead) return npc;
         }
+        return null;
     }
 
     internal bool AttemptMove(int deltaX, int deltaY)
@@ -139,6 +152,8 @@ public class GameState
             }
 
             door.State = DoorState.Open;
+            if (wasLocked) Statistics.DoorsUnlocked++;
+            else Statistics.DoorsOpened++;
             EventLog.Add(wasLocked ? "UNLOCKED DOOR" : "OPENED DOOR");
             EmitNoise("DOOR NOISE", 6);
             Map.UpdateVisibility(Player.X, Player.Y);
@@ -148,6 +163,7 @@ public class GameState
         BaseNPC target = Map.GetLivingNPCAt(newX, newY);
         if (target != null)
         {
+            Statistics.MeleeAttacks++;
             target.TakeDamage(Player.Damage);
             EventLog.Add($"PLAYER HIT {target.Name} {Player.Damage}");
             EmitNoise("COMBAT", 10);
@@ -165,6 +181,7 @@ public class GameState
             if (cell.CellType == MapCellType.Special)
             {
                 Player.CollectSpecial();
+                Statistics.ObjectiveCollectedTurn ??= TurnCount + 1;
                 cell.SetCellType(MapCellType.Floor);
                 EventLog.Add("SPECIAL COLLECTED");
             }
@@ -174,6 +191,7 @@ public class GameState
             if (Player.HasSpecial && newX == Map.StartPosX && newY == Map.StartPosY)
             {
                 Outcome = GameOutcome.Won;
+                Statistics.EscapeTurn = TurnCount + 1;
                 EventLog.Add("YOU ESCAPED WITH SPECIAL");
             }
         }
@@ -192,6 +210,7 @@ public class GameState
         }
 
         Map.RemoveGroundItem(groundItem);
+        Statistics.ItemsCollected++;
         EventLog.Add($"PICKED UP {groundItem.Item.Name}");
         if (autoEquipped) EventLog.Add($"AUTO-EQUIPPED {groundItem.Item.Name}");
     }
@@ -212,6 +231,8 @@ public class GameState
         }
 
         EventLog.Add($"HEALED {healed}");
+        Statistics.HealingReceived += healed;
+        Statistics.ItemsConsumed++;
         return true;
     }
 
@@ -237,6 +258,8 @@ public class GameState
 
         if (stoppedBleeding) EventLog.Add("BLEEDING STOPPED");
         if (healed > 0) EventLog.Add($"BANDAGED {healed}");
+        Statistics.HealingReceived += healed;
+        Statistics.ItemsConsumed++;
         return true;
     }
 
@@ -256,6 +279,7 @@ public class GameState
         }
 
         EventLog.Add($"DROPPED {item.Name}");
+        Statistics.ItemsDropped++;
         EmitNoise("DROP NOISE", 4);
         return true;
     }
@@ -304,6 +328,8 @@ public class GameState
 
         bool opening = door.State == DoorState.Closed;
         door.State = opening ? DoorState.Open : DoorState.Closed;
+        if (opening) Statistics.DoorsOpened++;
+        else Statistics.DoorsClosed++;
         EventLog.Add(opening ? "OPENED DOOR" : "CLOSED DOOR");
         EmitNoise("DOOR NOISE", 6);
         Map.UpdateVisibility(Player.X, Player.Y);
@@ -339,6 +365,7 @@ public class GameState
         }
 
         Player.RemoveFromInventory(item);
+        Statistics.ItemsThrown++;
         EventLog.Add($"THREW {item.Name}");
 
         if (trajectory.Target != null)
@@ -418,6 +445,7 @@ public class GameState
         }
 
         Player.RemoveFromInventory(item);
+        Statistics.TrapsPlaced++;
         EventLog.Add($"PLACED {item.Name}");
         return true;
     }
@@ -439,8 +467,10 @@ public class GameState
         }
 
         EventLog.Add($"FIRED {weapon.Name}");
+        Statistics.RangedShots++;
         if (trajectory.Target != null)
         {
+            Statistics.RangedHits++;
             trajectory.Target.TakeDamage(weapon.Power);
             EventLog.Add($"{weapon.Name} HIT {trajectory.Target.Name} {weapon.Power}");
             if (trajectory.Target.State == NPCState.Dead)
@@ -464,5 +494,48 @@ public class GameState
             and not PlayerCommand.SelectPreviousItem
             and not PlayerCommand.SelectNextItem;
     }
+
+    private TurnSnapshot CaptureStatistics()
+    {
+        var actors = Map.NPCs.ToDictionary(npc => npc.Id,
+            npc => new NpcSnapshot(npc.HP, npc.State, npc.IsPursuingPlayer));
+        return new TurnSnapshot(Player.Health, Statistics.HealingReceived,
+            Map.PlacedTraps.Count, Statistics.TrapsPlaced, actors);
+    }
+
+    private void CompleteStatistics(TurnSnapshot snapshot)
+    {
+        int healingThisTurn = Statistics.HealingReceived - snapshot.HealingReceived;
+        Statistics.DamageReceived += Math.Max(0,
+            snapshot.PlayerHealth + healingThisTurn - Player.Health);
+
+        int newlyPursuing = 0;
+        int pursuingNow = 0;
+        foreach (BaseNPC npc in Map.NPCs)
+        {
+            if (!snapshot.Npcs.TryGetValue(npc.Id, out NpcSnapshot before)) continue;
+            Statistics.DamageDealt += Math.Max(0, before.HP - Math.Max(0, npc.HP));
+            if (before.State != NPCState.Dead && npc.State == NPCState.Dead)
+                Statistics.RecordDefeat(npc.CharacterType);
+            if (npc.IsPursuingPlayer)
+            {
+                pursuingNow++;
+                if (!before.Pursuing) newlyPursuing++;
+            }
+        }
+
+        int pursuingBefore = snapshot.Npcs.Values.Count(npc => npc.Pursuing);
+        if (pursuingBefore == 0 && pursuingNow > 0) Statistics.DetectionEpisodes++;
+        Statistics.NpcsAlerted += newlyPursuing;
+        Statistics.MaximumPursuers = Math.Max(Statistics.MaximumPursuers, pursuingNow);
+
+        int trapsPlacedThisTurn = Statistics.TrapsPlaced - snapshot.TrapsPlaced;
+        Statistics.TrapsTriggered += Math.Max(0,
+            snapshot.PlacedTrapCount + trapsPlacedThisTurn - Map.PlacedTraps.Count);
+    }
+
+    private sealed record NpcSnapshot(int HP, NPCState State, bool Pursuing);
+    private sealed record TurnSnapshot(int PlayerHealth, int HealingReceived,
+        int PlacedTrapCount, int TrapsPlaced, Dictionary<Guid, NpcSnapshot> Npcs);
 
 }

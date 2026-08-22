@@ -20,6 +20,7 @@ The simulation is strictly turn based. Every successful player action advances t
 - A scrolling 18×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
 - Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
+- Live run statistics, a compact pause snapshot, and full victory/defeat reports suitable for playtest feedback
 - Remappable gameplay controls and persistent per-user runtime settings
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
@@ -101,11 +102,11 @@ Gameplay keys can be changed under **Pause → Options → Controls**. Each acti
 
 Bindings and runtime options are saved to the platform's per-user application-data folder (`RogueSandpit/settings.json`). A missing or damaged file safely falls back to defaults.
 
-The pause menu provides both **Restart This Seed**, which reconstructs the current generated run, and **New Run**, which chooses a fresh seed. The window title and F1 diagnostics show the active seed for reporting or reproducing interesting maps.
+The pause menu provides both **Restart This Seed**, which reconstructs the current generated run, and **New Run**, which chooses a fresh seed. Its compact statistics snapshot makes useful playtest information available without entering developer mode. Victory and defeat show a fuller run report; use arrows and Enter to restart the same seed, start a new run, or quit. Space remains a quick New Run shortcut. The window title and F1 diagnostics show the active seed for reporting or reproducing interesting maps.
 
 ## Developer diagnostics
 
-F1 reveals the full map and development-only state. Hovering a cell identifies its contents, entrance distance and generation-depth band, and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The active seed, retained/pruned doorway counts, and real-time countdown are shown only in this view.
+F1 reveals the full map and development-only state. Hovering a cell identifies its contents, entrance distance and generation-depth band, and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The active seed, retained/pruned doorway counts, real-time countdown, and compact live run statistics are shown only in this view.
 
 These diagnostics intentionally expose simulation information that normal play hides. They are expected to evolve or disappear behind better player-facing visual language later.
 

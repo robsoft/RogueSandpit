@@ -26,7 +26,11 @@ Escape no longer exits the application. Quit is an explicit pause-menu command.
 
 ## Pause menu
 
-The primitive keyboard menu contains Resume, Options, Restart, and Quit. Up/down changes selection and Enter confirms. Restart is immediate during this prototype phase.
+The primitive keyboard menu contains Resume, Options, Restart This Seed, New Run, and Quit. A compact run-statistics snapshot appears above it. Up/down changes selection and Enter confirms. Restarts are immediate during this prototype phase.
+
+## Terminal report
+
+Victory and Game Over present the completed run's seed, timing, combat, stealth, inventory, door, and trap statistics. Defeat also identifies a concise cause. The terminal menu offers Restart This Seed, New Run, and Quit; arrows and Enter navigate it, while Space remains a direct New Run shortcut.
 
 ## Options foundation
 
