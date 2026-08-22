@@ -60,7 +60,6 @@ public class MapTopologyTests
                 .SelectMany(room => Enumerable.Range(room.X1, room.X2 - room.X1)
                     .SelectMany(x => Enumerable.Range(room.Y1, room.Y2 - room.Y1).Select(y => (X: x, Y: y))))
                 .Where(position => map.MapCells[position.X, position.Y].CellType is MapCellType.Floor or MapCellType.Special)
-                .Where(position => !map.IsOccupiedByLivingNPC(position.X, position.Y))
                 .Where(distances.ContainsKey)
                 .Max(position => distances[position]);
 

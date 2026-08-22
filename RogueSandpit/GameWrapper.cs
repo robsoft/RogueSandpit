@@ -1136,7 +1136,10 @@ namespace RogueSandpit
 
             string parentType = cell.ParentElement?.GetType().Name ?? "NONE";
             string parentName = cell.ParentElement?.Name ?? "";
-            _pixelFont.DrawText(_spriteBatch, $"PARENT {parentType} {parentName}",
+            int entranceDistance = _map.GetEntranceDistance(position.X, position.Y);
+            string depth = entranceDistance < 0 ? "UNREACHABLE" : _map.GetDepthBand(position.X, position.Y).ToString();
+            _pixelFont.DrawText(_spriteBatch,
+                $"PARENT {parentType} {parentName} D{entranceDistance} {depth}",
                 new Vector2(panelX + 6, panelY + 27), 1, Color.LightGray);
 
             GroundItem groundItem = _map.GetGroundItemAt(position.X, position.Y);

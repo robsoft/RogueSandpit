@@ -16,6 +16,7 @@ public enum CharacterMood { Attacker, Defender, Neutral, Helpful };
 public enum NPCMoraleState { Steady, Shaken, Fleeing, Enraged, Fearless };
 public enum StatusEffectType { Stunned, Bleeding };
 public enum RenderMode { Rooms, Cells };
+public enum GenerationDepthBand { Shallow, Middle, Deep };
 public enum MapCellType { Wall, Floor, Door, Special };
 public enum GameOutcome { Playing, Won, Lost };
 public enum PlayerCommand { None, MoveUp, MoveDown, MoveLeft, MoveRight, Wait, SelectPreviousItem, SelectNextItem, UsePotion, UseBandage, EquipItem, DropItem, ToggleDoorUp, ToggleDoorDown, ToggleDoorLeft, ToggleDoorRight, LayFalseTrailUp, LayFalseTrailDown, LayFalseTrailLeft, LayFalseTrailRight, ThrowItemUp, ThrowItemDown, ThrowItemLeft, ThrowItemRight, PlaceTrapUp, PlaceTrapDown, PlaceTrapLeft, PlaceTrapRight, FireRangedUp, FireRangedDown, FireRangedLeft, FireRangedRight };

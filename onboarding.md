@@ -42,7 +42,7 @@ At this milestone the full rule suite contains 168 passing tests. The native ren
 
 ### World and navigation
 
-- `Models/Map.cs` owns its generation seed, generated terrain, doorway pruning, and occupancy decisions. It also coordinates noise, alerts, evidence, ground items, placed traps, throws, and environmental effects.
+- `Models/Map.cs` owns its generation seed, entrance-distance/depth data, generated terrain, encounter pacing, doorway pruning, and occupancy decisions. It also coordinates noise, alerts, evidence, ground items, placed traps, throws, and environmental effects.
 - `Models/EnvironmentalEffect.cs` represents temporary smoke and fire.
 - `Models/PathFinding.cs` provides cardinal A* navigation using actor-aware blocking rules.
 - Rooms, corridors, doors, cells, obstacles, the entrance, and objective are separate map-model types under `Models/`.
@@ -72,6 +72,7 @@ Preserve these behaviours when changing input, UI, animation, or timing:
 - A defeated NPC neither acts nor occupies a cell, but its death remains available as casualty evidence and its drops remain on the map.
 - Normal fog of war and F1 omniscience are distinct presentation modes over the same simulation.
 - Reinitialising a map resets its owned seed and reproduces terrain, doors, actors, loot, and the objective. New runs explicitly choose a different seed.
+- Initial NPC placement remains beyond the protected entrance distance; generation depth affects archetype weights, objective guards, loot location, and equipment tier without changing later NPC movement rules.
 
 ## Development workflow
 

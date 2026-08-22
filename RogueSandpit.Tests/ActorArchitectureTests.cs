@@ -11,15 +11,18 @@ public class ActorArchitectureTests
         for (int seed = 0; seed < 100; seed++)
         {
             var map = new Map(seed);
-            int expectedCount = map.RoomList.Sum(room => (int)(room.Area / 35F));
+            int maximumAreaCount = map.RoomList.Sum(room =>
+                Math.Max(room.Specials.Count > 0 ? 2 : 0, (int)(room.Area / 35F)));
 
-            Assert.Equal(expectedCount, map.NPCs.Count);
+            Assert.InRange(map.NPCs.Count, 1, maximumAreaCount);
             Assert.Equal(map.NPCs.Count, map.NPCs.Select(npc => (npc.X, npc.Y)).Distinct().Count());
             Assert.All(map.NPCs, npc =>
             {
                 Assert.True(map.IsWalkable(npc.X, npc.Y));
                 Assert.IsType<Room>(map.MapCells[npc.X, npc.Y].ParentElement);
-                Assert.False(npc.X == map.StartPosX && npc.Y == map.StartPosY);
+                Assert.Equal(MapCellType.Floor, map.MapCells[npc.X, npc.Y].CellType);
+                Assert.True(map.GetEntranceDistance(npc.X, npc.Y) > Map.EntranceSafetyDistance,
+                    $"Seed {seed} placed NPC within entrance safety distance.");
             });
         }
     }
