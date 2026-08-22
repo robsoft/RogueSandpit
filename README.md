@@ -15,6 +15,7 @@ The simulation is strictly turn based. Every successful player action advances t
 ### Exploration and environment
 
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
+- Reproducible run seeds and deterministic pruning of visually clustered doorway candidates
 - A scrolling 18×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
 - Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
@@ -63,11 +64,12 @@ The project targets `net9.0` and restores MonoGame and its content-pipeline tool
 | `--fullscreen` | Use borderless desktop fullscreen with aspect-ratio-preserving scaling |
 | `--realtime` | Start with timed turns enabled |
 | `--turn-seconds <number>` | Set the idle interval used by real-time mode |
+| `--seed <integer>` | Reproduce a specific generated run |
 
 Options can be combined:
 
 ```powershell
-dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime --turn-seconds 1.5
+dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime --turn-seconds 1.5 --seed 123
 ```
 
 ## Controls
@@ -89,7 +91,7 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | `F1` | Toggle the developer view |
 | `F11` | Restore health and apply a representative developer test loadout |
 | `F12` | Toggle real-time mode |
-| `Space` | Restart after victory or defeat |
+| `Space` | Start a new generated run after victory or defeat |
 | `Escape` | Cancel a prompt, close inventory, return from options, resume, or pause |
 | Arrows / `Enter` | Navigate and confirm pause/options menu choices |
 
@@ -97,9 +99,11 @@ Gameplay keys can be changed under **Pause → Options → Controls**. Each acti
 
 Bindings and runtime options are saved to the platform's per-user application-data folder (`RogueSandpit/settings.json`). A missing or damaged file safely falls back to defaults.
 
+The pause menu provides both **Restart This Seed**, which reconstructs the current generated run, and **New Run**, which chooses a fresh seed. The window title and F1 diagnostics show the active seed for reporting or reproducing interesting maps.
+
 ## Developer diagnostics
 
-F1 reveals the full map and development-only state. Hovering a cell identifies its contents and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The real-time countdown is shown only in this view.
+F1 reveals the full map and development-only state. Hovering a cell identifies its contents and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The active seed, retained/pruned doorway counts, and real-time countdown are shown only in this view.
 
 These diagnostics intentionally expose simulation information that normal play hides. They are expected to evolve or disappear behind better player-facing visual language later.
 

@@ -4,7 +4,7 @@ try
 {
     RogueSandpit.GameOptions options = RogueSandpit.GameOptions.Parse(args);
     using var game = new RogueSandpit.GameWrapper(options.WindowScale, options.TurnSeconds,
-        options.Fullscreen, options.StartRealtime);
+        options.Fullscreen, options.StartRealtime, options.Seed);
     game.Run();
 }
 catch (ArgumentException exception)

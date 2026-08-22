@@ -14,8 +14,12 @@ public class Map
 {
     private const int TrailLifetime = 12;
     private const int TrailCapacity = 24;
+    private const int DoorClusterRadius = 2;
     private long _nextTrailSequence;
     public bool IsInitialising { get; private set; } = false;
+    public int Seed { get; private set; }
+    public int DoorCandidateCount { get; private set; }
+    public int PrunedDoorwayCount { get; private set; }
 
     // these are 'config', really
     public int Width { get; } = 80;
@@ -52,12 +56,13 @@ public class Map
 
     public Map(int seed = 0)
     {
-        RandGen.SetSeed(seed);
+        Seed = seed;
         Initialise();
     }
 
     public void Initialise()
     {
+        RandGen.SetSeed(Seed);
         IsInitialising = true;
 
         // clear the list of rooms
@@ -110,6 +115,12 @@ public class Map
         CurrentPlayerY = StartPosY;
 
         IsInitialising = false;
+    }
+
+    public void Regenerate(int seed)
+    {
+        Seed = seed;
+        Initialise();
     }
 
     private void CalculateRoomAreas()
@@ -194,12 +205,25 @@ public class Map
             }
         }
 
-        for (int i = 0; i < candidates.Count; i++)
+        DoorCandidateCount = candidates.Count;
+        var planned = candidates.Select((position, index) =>
+            (Position: position, Index: index,
+                State: index % 4 == 0 ? DoorState.Locked : DoorState.Closed)).ToList();
+        var retained = planned.Where(candidate => candidate.State == DoorState.Locked).ToList();
+
+        foreach (var candidate in planned.Where(candidate => candidate.State == DoorState.Closed))
         {
-            Point position = candidates[i];
-            DoorState state = i % 4 == 0 ? DoorState.Locked : DoorState.Closed;
-            Doors.Add(new Doorway(position.X, position.Y, state));
-            MapCells[position.X, position.Y].SetCellType(MapCellType.Door);
+            bool clustered = retained.Any(existing =>
+                Math.Abs(existing.Position.X - candidate.Position.X) <= DoorClusterRadius
+                && Math.Abs(existing.Position.Y - candidate.Position.Y) <= DoorClusterRadius);
+            if (!clustered) retained.Add(candidate);
+        }
+
+        PrunedDoorwayCount = planned.Count - retained.Count;
+        foreach (var candidate in retained.OrderBy(candidate => candidate.Index))
+        {
+            Doors.Add(new Doorway(candidate.Position.X, candidate.Position.Y, candidate.State));
+            MapCells[candidate.Position.X, candidate.Position.Y].SetCellType(MapCellType.Door);
         }
     }
 
