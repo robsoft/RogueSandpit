@@ -62,4 +62,18 @@ public class ApplicationScreenCoordinatorTests
 
         Assert.Equal(ApplicationScreen.Options, coordinator.CurrentScreen);
     }
+
+    [Fact]
+    public void HelpIsAPauseOffshoot()
+    {
+        var coordinator = new ApplicationScreenCoordinator();
+        coordinator.Pause();
+
+        coordinator.OpenHelp();
+        Assert.Equal(ApplicationScreen.Help, coordinator.CurrentScreen);
+        Assert.False(coordinator.SimulationActive);
+        coordinator.BackFromHelp();
+
+        Assert.Equal(ApplicationScreen.Paused, coordinator.CurrentScreen);
+    }
 }

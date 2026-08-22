@@ -8,6 +8,7 @@ Separate application navigation and simulation pause policy from gameplay input 
 
 - `Playing`: gameplay input and simulation are active.
 - `Paused`: gameplay remains visible but no turns or real-time progress occur.
+- `Help`: binding-aware control reference opened from pause; gameplay remains frozen.
 - `Options`: opened from pause; gameplay remains frozen.
 - `GameOver`: terminal loss screen.
 - `Victory`: terminal win screen.
@@ -18,15 +19,16 @@ The game continues to start directly in `Playing` for development convenience. A
 
 1. Cancel an active directional action.
 2. Close the inventory.
-3. Return from options to pause.
-4. Resume from pause.
-5. Pause active gameplay.
+3. Return from controls to options, or Help to pause.
+4. Return from options to pause.
+5. Resume from pause.
+6. Pause active gameplay.
 
 Escape no longer exits the application. Quit is an explicit pause-menu command.
 
 ## Pause menu
 
-The primitive keyboard menu contains Resume, Save Game, Load Game, Options, Restart This Seed, New Run, and Quit. A compact run-statistics snapshot and save/load feedback appear above it. Up/down changes selection and Enter confirms. Save/load and restarts are immediate during this prototype phase.
+The primitive keyboard menu contains Resume, Help, Save Game, Load Game, Options, Restart This Seed, New Run, and Quit. A compact run-statistics snapshot and save/load feedback appear above it. Up/down changes selection and Enter confirms. Help reflects current bindings; Save/load and restarts are immediate during this prototype phase.
 
 ## Terminal report
 
@@ -47,7 +49,7 @@ Up/down changes selection; left/right changes the selected value; Enter activate
 
 ## Invariants
 
-- Pause and options consume no turn and freeze the real-time countdown.
+- Pause, Help, controls, and options consume no turn and freeze the real-time countdown.
 - Terminal states cannot return to active simulation without restarting.
 - Application navigation remains independent of Gum.
 - Simulation models do not reference application screens.

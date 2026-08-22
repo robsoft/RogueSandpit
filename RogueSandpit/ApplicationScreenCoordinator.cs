@@ -7,6 +7,7 @@ public enum ApplicationScreen
 {
     Playing,
     Paused,
+    Help,
     Options,
     Controls,
     GameOver,
@@ -31,6 +32,16 @@ public sealed class ApplicationScreenCoordinator
     public void OpenOptions()
     {
         if (CurrentScreen == ApplicationScreen.Paused) CurrentScreen = ApplicationScreen.Options;
+    }
+
+    public void OpenHelp()
+    {
+        if (CurrentScreen == ApplicationScreen.Paused) CurrentScreen = ApplicationScreen.Help;
+    }
+
+    public void BackFromHelp()
+    {
+        if (CurrentScreen == ApplicationScreen.Help) CurrentScreen = ApplicationScreen.Paused;
     }
 
     public void BackFromOptions()

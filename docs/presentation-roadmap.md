@@ -254,7 +254,7 @@ Fog-of-war shading, debug paths, line-of-sight lines, valid/invalid targeting, a
 
 ### Minor presentation follow-ups
 
-- Hovering the player in F1 debug mode should identify the player and show relevant player state in the inspection panel, comparable to the existing NPC inspection details.
+The earlier player-hover diagnostic follow-up is complete: F1 inspection identifies the player and exposes health, equipment, inventory, objective, and status-effect state.
 
 ## Deliberately out of scope
 
