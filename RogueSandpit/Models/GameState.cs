@@ -263,11 +263,7 @@ public class GameState
     private bool SelectItem(bool next)
     {
         bool selected = Player.SelectInventoryItem(next);
-        if (!selected)
-        {
-            EventLog.Add("INVENTORY EMPTY");
-            return false;
-        }
+        if (!selected) return false;
 
         EventLog.Add($"SELECTED {Player.Inventory.SelectedItem.Name}");
         return false;
@@ -275,10 +271,10 @@ public class GameState
 
     private bool EquipItem()
     {
-        PlayerItemActionResult result = Player.EquipSelectedItem(out Item item);
+        PlayerItemActionResult result = Player.ToggleSelectedEquipment(out Item item, out bool equipped);
         if (result == PlayerItemActionResult.Success)
         {
-            EventLog.Add($"EQUIPPED {item.Name}");
+            EventLog.Add(equipped ? $"EQUIPPED {item.Name}" : $"UNEQUIPPED {item.Name}");
             return true;
         }
 
@@ -347,16 +343,17 @@ public class GameState
 
         if (trajectory.Target != null)
         {
-            if (item.Type == ItemType.Weapon)
+            int impactDamage = ThrownImpactDamage(item);
+            if (impactDamage > 0)
             {
-                trajectory.Target.TakeDamage(item.Power);
-                EventLog.Add($"{item.Name} HIT {trajectory.Target.Name} {item.Power}");
-                if (trajectory.Target.State == NPCState.Active)
+                trajectory.Target.TakeDamage(impactDamage);
+                EventLog.Add($"{item.Name} HIT {trajectory.Target.Name} {impactDamage}");
+                if (item.Type == ItemType.Weapon && trajectory.Target.State == NPCState.Active)
                 {
                     trajectory.Target.ApplyStatus(StatusEffectType.Bleeding, 3, 2, item.Name);
                     EventLog.Add($"{trajectory.Target.Name} BLEEDING");
                 }
-                else
+                else if (trajectory.Target.State == NPCState.Dead)
                 {
                     trajectory.Target.ResolveDeathConsequences(EventLog.Add);
                 }
@@ -393,6 +390,15 @@ public class GameState
         EmitNoiseAt("IMPACT", trajectory.ImpactX, trajectory.ImpactY, 7);
         return true;
     }
+
+    private static int ThrownImpactDamage(Item item) => item.Type switch
+    {
+        ItemType.Weapon => Math.Max(1, item.Power),
+        ItemType.Armor or ItemType.RangedWeapon => Math.Max(1, (item.Power + 1) / 2),
+        ItemType.Trap => Math.Max(1, (item.Power + 2) / 3),
+        ItemType.SmokeBomb or ItemType.FireBomb => 0,
+        _ => 1
+    };
 
     private bool PlaceTrap(int deltaX, int deltaY)
     {

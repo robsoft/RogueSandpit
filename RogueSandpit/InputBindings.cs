@@ -121,6 +121,19 @@ public sealed class InputBindings
     public static bool IsReserved(Keys key) => key is Keys.Escape or Keys.Enter
         or Keys.F1 or Keys.F11 or Keys.F12;
 
+    public static int? InventorySlotForKey(Keys key) => key switch
+    {
+        Keys.D1 or Keys.NumPad1 => 0,
+        Keys.D2 or Keys.NumPad2 => 1,
+        Keys.D3 or Keys.NumPad3 => 2,
+        Keys.D4 or Keys.NumPad4 => 3,
+        Keys.D5 or Keys.NumPad5 => 4,
+        Keys.D6 or Keys.NumPad6 => 5,
+        Keys.D7 or Keys.NumPad7 => 6,
+        Keys.D8 or Keys.NumPad8 => 7,
+        _ => null
+    };
+
     private InputAction? FindConflict(InputAction action, Keys key)
     {
         foreach ((InputAction candidate, List<Keys> keys) in _bindings)

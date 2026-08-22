@@ -5,6 +5,34 @@ namespace RogueSandpit.Tests;
 
 public class ThrowingTrapTests
 {
+    [Theory]
+    [InlineData(ItemType.Armor, 3)]
+    [InlineData(ItemType.RangedWeapon, 4)]
+    [InlineData(ItemType.Trap, 6)]
+    [InlineData(ItemType.HealingPotion, 1)]
+    [InlineData(ItemType.Key, 1)]
+    [InlineData(ItemType.Bandage, 1)]
+    [InlineData(ItemType.SmokeBomb, 0)]
+    [InlineData(ItemType.FireBomb, 0)]
+    public void OrdinaryAndSpecialItemsHaveDefinedThrownImpactDamage(ItemType type, int expectedDamage)
+    {
+        Map map = CreateBlankMap();
+        AddHorizontalFloor(map, 10, 16, 10);
+        var player = new Player { X = 10, Y = 10 };
+        Item item = ItemFactory.Create(type);
+        player.Inventory.TryAdd(item);
+        var target = new Troll(map, 13, 10, null) { State = NPCState.Active };
+        map.NPCs.Add(target);
+        var game = new GameState(map, player);
+
+        game.Update(PlayerCommand.ThrowItemRight);
+
+        string expectedEvent = expectedDamage > 0
+            ? $"{item.Name} HIT {target.Name} {expectedDamage}"
+            : $"{item.Name} HIT {target.Name}";
+        Assert.Contains(expectedEvent, game.EventLog.Entries);
+    }
+
     [Fact]
     public void ThrowSelectedItemLandsAtRangeAndUnequipsIt()
     {

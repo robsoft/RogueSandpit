@@ -21,24 +21,3 @@ Before changing generation, verify:
 - Clusters are reduced without removing tactically useful doors indiscriminately.
 
 A likely approach is a post-generation doorway-pruning pass which scores local clusters, preserves mandatory/locked doors, tests topology before removal, and converts selected doorway cells to ordinary floor.
-
-## Selecting within a one-item inventory
-
-When the inventory contains fewer than two selectable items, Select Previous Item and Select Next Item have no meaningful result. Treat either command as a silent no-op: do not change selection, add an event-log entry, or consume a player turn. This must hold whether the inventory panel is open or the selection command is used during normal play.
-
-Add focused simulation tests for empty, one-item, and multi-item inventories when this is addressed. Multi-item selection should retain its existing wrap-around behaviour.
-
-## Inventory selection, equipment, and throwing clarity
-
-The inventory popup does not yet communicate item state clearly enough, particularly when preparing smoke bombs and fire bombs. Review its visual language so the player can immediately distinguish:
-
-- The currently selected inventory slot.
-- Items currently equipped as melee weapon, ranged weapon, or armor.
-- The selected item that will be used by the next throw command; throwable items may not actually need a separate "equipped" state, but the intended action must be obvious.
-- Items which can be consumed, equipped, thrown, or used in some other way.
-
-Consider Enter as a context-sensitive equip/unequip toggle while the inventory popup is open. Define its behaviour for non-equippable items explicitly rather than silently implying that bombs, potions, and ordinary equipment share the same state. Preserve the existing dedicated action key as a remappable alternative if useful.
-
-Because the popup already labels its eight slots `1` through `8`, consider making the number row direct selection shortcuts. Empty or unavailable slots should be silent no-ops and must not consume a turn. Decide separately whether choosing a slot is purely UI navigation or also closes the popup/performs an action; the safer default is selection only.
-
-Throwing currently accepts any selected item, including equipment such as an axe. Keep that freedom, but give non-special thrown items appropriate impact damage derived from their item category and power. Verify what happens when an equipped item is thrown: it should leave the inventory, be unequipped consistently, land or be recoverable under the normal throwing rules, damage the target at most once, and consume exactly one turn. Smoke bombs, fire bombs, distractions, ordinary weapons, armor, consumables, and keys need focused coverage so permissive throwing cannot create state inconsistencies.

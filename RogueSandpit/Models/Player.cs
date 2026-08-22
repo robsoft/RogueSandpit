@@ -191,13 +191,30 @@ public class Player
         return PlayerItemActionResult.Success;
     }
 
-    public PlayerItemActionResult EquipSelectedItem(out Item equippedItem)
+    public bool IsEquipped(Item item) => item != null
+        && (EquippedWeapon == item || EquippedArmor == item || EquippedRangedWeapon == item);
+
+    public PlayerItemActionResult ToggleSelectedEquipment(out Item equipment, out bool equipped)
     {
-        equippedItem = Inventory.SelectedItem;
-        if (equippedItem == null) return PlayerItemActionResult.NoSelection;
-        if (equippedItem.Type == ItemType.Weapon && Equip(equippedItem)) return PlayerItemActionResult.Success;
-        if (equippedItem.Type == ItemType.Armor && EquipArmor(equippedItem)) return PlayerItemActionResult.Success;
-        if (equippedItem.Type == ItemType.RangedWeapon && EquipRanged(equippedItem)) return PlayerItemActionResult.Success;
+        equipment = Inventory.SelectedItem;
+        equipped = false;
+        if (equipment == null) return PlayerItemActionResult.NoSelection;
+        if (IsEquipped(equipment))
+        {
+            if (EquippedWeapon == equipment) EquippedWeapon = null;
+            if (EquippedArmor == equipment) EquippedArmor = null;
+            if (EquippedRangedWeapon == equipment) EquippedRangedWeapon = null;
+            return PlayerItemActionResult.Success;
+        }
+
+        equipped = equipment.Type switch
+        {
+            ItemType.Weapon => Equip(equipment),
+            ItemType.Armor => EquipArmor(equipment),
+            ItemType.RangedWeapon => EquipRanged(equipment),
+            _ => false
+        };
+        if (equipped) return PlayerItemActionResult.Success;
         return PlayerItemActionResult.WrongItemType;
     }
 

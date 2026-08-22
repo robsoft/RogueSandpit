@@ -238,7 +238,7 @@ public class LootInventoryTests
     }
 
     [Fact]
-    public void SelectionDoesNotAdvanceNpcTurn()
+    public void SelectionWithOneItemIsSilentAndDoesNotAdvanceTurn()
     {
         (Map map, Player player, GameState gameState, int x, int y) = CreateGameOnOpenFloor();
         player.Inventory.TryAdd(ItemFactory.Create(ItemType.Key));
@@ -250,9 +250,72 @@ public class LootInventoryTests
         map.NPCs.Add(npc);
 
         gameState.Update(PlayerCommand.SelectNextItem);
+        gameState.Update(PlayerCommand.SelectPreviousItem);
 
         Assert.False(player.Dead);
+        Assert.Equal(0, gameState.TurnCount);
+        Assert.Empty(gameState.EventLog.Entries);
+        Assert.Equal(0, player.Inventory.SelectedIndex);
+    }
+
+    [Fact]
+    public void SelectionWithEmptyInventoryIsSilent()
+    {
+        (_, _, GameState gameState, _, _) = CreateGameOnOpenFloor();
+
+        gameState.Update(PlayerCommand.SelectNextItem);
+        gameState.Update(PlayerCommand.SelectPreviousItem);
+
+        Assert.Equal(0, gameState.TurnCount);
+        Assert.Empty(gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void SelectionWithMultipleItemsStillWrapsAndReportsSelection()
+    {
+        (_, Player player, GameState gameState, _, _) = CreateGameOnOpenFloor();
+        Item potion = ItemFactory.Create(ItemType.HealingPotion);
+        Item key = ItemFactory.Create(ItemType.Key);
+        player.Inventory.TryAdd(potion);
+        player.Inventory.TryAdd(key);
+
+        gameState.Update(PlayerCommand.SelectPreviousItem);
+
+        Assert.Same(key, player.Inventory.SelectedItem);
+        Assert.Equal(0, gameState.TurnCount);
         Assert.Contains("SELECTED BRASS KEY", gameState.EventLog.Entries);
+    }
+
+    [Fact]
+    public void DirectSlotSelectionRejectsEmptyAndAlreadySelectedSlots()
+    {
+        var inventory = new Inventory();
+        Item potion = ItemFactory.Create(ItemType.HealingPotion);
+        Item key = ItemFactory.Create(ItemType.Key);
+        inventory.TryAdd(potion);
+        inventory.TryAdd(key);
+
+        Assert.False(inventory.SelectIndex(0));
+        Assert.False(inventory.SelectIndex(7));
+        Assert.True(inventory.SelectIndex(1));
+        Assert.Same(key, inventory.SelectedItem);
+    }
+
+    [Fact]
+    public void EquippingSelectedEquipmentAgainUnequipsIt()
+    {
+        (_, Player player, GameState gameState, _, _) = CreateGameOnOpenFloor();
+        Item weapon = ItemFactory.Create(ItemType.Weapon);
+        player.Inventory.TryAdd(weapon);
+
+        gameState.Update(PlayerCommand.EquipItem);
+        gameState.Update(PlayerCommand.EquipItem);
+
+        Assert.Null(player.EquippedWeapon);
+        Assert.Equal(player.BaseDamage, player.Damage);
+        Assert.Equal(2, gameState.TurnCount);
+        Assert.Contains("EQUIPPED IRON SWORD", gameState.EventLog.Entries);
+        Assert.Contains("UNEQUIPPED IRON SWORD", gameState.EventLog.Entries);
     }
 
     [Fact]
