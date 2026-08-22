@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,4 +27,5 @@ public sealed class NpcTurnScheduler
     }
 
     public int InitiativeOffset => _initiativeOffset;
+    internal void RestoreInitiativeOffset(int offset) => _initiativeOffset = Math.Max(0, offset);
 }

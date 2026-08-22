@@ -29,6 +29,11 @@ public sealed class StatusEffectCollection
     public bool Has(StatusEffectType type) => _effects.Any(effect => effect.Type == type);
 
     public void Clear() => _effects.Clear();
+    internal void Restore(IEnumerable<TimedStatusEffect> effects)
+    {
+        _effects.Clear();
+        _effects.AddRange(effects);
+    }
     public bool Remove(StatusEffectType type) => _effects.RemoveAll(effect => effect.Type == type) > 0;
 
     public void Apply(StatusEffectType type, int duration, int power = 0, string source = "UNKNOWN")

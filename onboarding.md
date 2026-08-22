@@ -37,6 +37,7 @@ The native render canvas is always 800×600; window scaling and fullscreen prese
 
 - `Models/GameState.cs` coordinates the current run and player-to-NPC turn boundary.
 - `Models/RunStatistics.cs` is the framework-independent per-run record used by pause, developer, and terminal reports. `GameState` updates it from successful actions and reconciled before/after simulation state rather than event-log text.
+- `Models/SaveGameSnapshot.cs` defines the versioned persistence contract. `GameSaveStore.cs` owns atomic JSON I/O; restoration constructs and validates a complete replacement `GameState` before application references are changed.
 - `Models/NpcTurnScheduler.cs` snapshots the active NPC phase and rotates initiative between turns.
 - Simulation models are independent of MonoGame so rules can be exercised by xUnit without a graphics device.
 - NPC actions currently resolve sequentially. Rotation provides fairness, but this is not simultaneous intent resolution.
@@ -74,6 +75,7 @@ Preserve these behaviours when changing input, UI, animation, or timing:
 - A defeated NPC neither acts nor occupies a cell, but its death remains available as casualty evidence and its drops remain on the map.
 - Normal fog of war and F1 omniscience are distinct presentation modes over the same simulation.
 - Reinitialising a map resets its owned seed and reproduces terrain, doors, actors, loot, and the objective. New runs explicitly choose a different seed.
+- Saving and loading are UI-only operations that spend no turn. A load restores simulation RNG state and returns to a clean paused screen rather than restoring an in-progress prompt or countdown.
 - Initial NPC placement remains beyond the protected entrance distance; generation depth affects archetype weights, objective guards, loot location, and equipment tier without changing later NPC movement rules.
 
 ## Development workflow

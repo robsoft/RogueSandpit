@@ -91,6 +91,24 @@ public class Player
         return actualDamage;
     }
 
+    internal void Restore(PlayerSnapshot snapshot, Map map, IReadOnlyDictionary<Guid, Item> items)
+    {
+        Id = snapshot.Id;
+        MaxHealth = snapshot.MaxHealth;
+        Health = snapshot.Health;
+        BaseDamage = snapshot.BaseDamage;
+        Dead = snapshot.Dead;
+        HasSpecial = snapshot.HasSpecial;
+        Inventory = new Inventory(snapshot.InventoryCapacity);
+        foreach (Guid itemId in snapshot.InventoryItemIds) Inventory.TryAdd(items[itemId]);
+        Inventory.RestoreSelection(snapshot.SelectedInventoryIndex);
+        EquippedWeapon = snapshot.EquippedWeaponId is Guid weaponId ? items[weaponId] : null;
+        EquippedArmor = snapshot.EquippedArmorId is Guid armorId ? items[armorId] : null;
+        EquippedRangedWeapon = snapshot.EquippedRangedWeaponId is Guid rangedId ? items[rangedId] : null;
+        StatusEffects.Restore(snapshot.StatusEffects.Select(effect => effect.ToModel()));
+        Place(map, snapshot.X, snapshot.Y);
+    }
+
     public void ApplyStatus(StatusEffectType type, int duration, int power = 0, string source = "UNKNOWN")
     {
         StatusEffects.Apply(type, duration, power, source);

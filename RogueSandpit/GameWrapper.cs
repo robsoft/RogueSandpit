@@ -31,6 +31,7 @@ namespace RogueSandpit
         private readonly RuntimeSettings _runtimeSettings;
         private readonly InputBindings _bindings;
         private readonly SettingsStore _settingsStore;
+        private readonly GameSaveStore _gameSaveStore;
         private int _pauseMenuSelection;
         private int _optionsSelection;
         private int _controlsSelection;
@@ -38,10 +39,11 @@ namespace RogueSandpit
         private int _bindingSlot;
         private bool _capturingBinding;
         private string _controlsMessage = "";
+        private string _pauseMessage = "";
         private readonly int _initialSeed;
 
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
-        private enum PauseMenuItem { Resume, Options, RestartThisSeed, NewRun, Quit }
+        private enum PauseMenuItem { Resume, SaveGame, LoadGame, Options, RestartThisSeed, NewRun, Quit }
         private enum OptionsItem { RealtimeInterval, MasterVolume, EffectsVolume, MusicVolume, MuteUnfocused, Controls, Back }
         private enum TerminalMenuItem { RestartThisSeed, NewRun, Quit }
 
@@ -50,10 +52,12 @@ namespace RogueSandpit
 
         public GameWrapper(int windowScale = GameOptions.DefaultWindowScale,
             double turnSeconds = GameOptions.DefaultTurnSeconds,
-            bool fullscreen = false, bool startRealtime = false, int? seed = null)
+            bool fullscreen = false, bool startRealtime = false, int? seed = null,
+            string savePath = null)
         {
             _initialSeed = seed ?? Random.Shared.Next();
             _settingsStore = new SettingsStore(SettingsStore.DefaultPath);
+            _gameSaveStore = new GameSaveStore(savePath ?? GameSaveStore.DefaultPath);
             LoadedSettings loadedSettings = _settingsStore.Load(turnSeconds);
             _runtimeSettings = loadedSettings.Runtime;
             _bindings = loadedSettings.Bindings;
@@ -109,6 +113,7 @@ namespace RogueSandpit
             _inventoryOpen = false;
             _directionalAction = DirectionalAction.None;
             _terminalMenuSelection = 0;
+            _pauseMessage = "";
             if (regenerateMap)
             {
                 if (newSeed.HasValue) _map.Regenerate(newSeed.Value);
@@ -238,6 +243,12 @@ namespace RogueSandpit
                 case PauseMenuItem.Resume:
                     _screens.Resume();
                     break;
+                case PauseMenuItem.SaveGame:
+                    _pauseMessage = _gameSaveStore.Save(_gameState, _realtimeTurnTimer.Enabled).Message;
+                    break;
+                case PauseMenuItem.LoadGame:
+                    LoadSavedGame();
+                    break;
                 case PauseMenuItem.Options:
                     _optionsSelection = 0;
                     _screens.OpenOptions();
@@ -252,6 +263,23 @@ namespace RogueSandpit
                     Exit();
                     break;
             }
+        }
+
+        private void LoadSavedGame()
+        {
+            SaveGameResult result = _gameSaveStore.Load();
+            _pauseMessage = result.Message;
+            if (!result.Success) return;
+
+            _gameState = result.Game;
+            _map = _gameState.Map;
+            _player = _gameState.Player;
+            _mapRenderer.SetMap(_map);
+            _realtimeTurnTimer.Reset();
+            _realtimeTurnTimer.SetEnabled(result.RealtimeMode);
+            _inventoryOpen = false;
+            _directionalAction = DirectionalAction.None;
+            Window.Title = $"Rogue Sandpit - Seed: {_map.Seed}";
         }
 
         private void UpdateOptionsMenu()
@@ -955,9 +983,9 @@ namespace RogueSandpit
         private void DrawPauseMenu()
         {
             const int panelX = 170;
-            const int panelY = 75;
+            const int panelY = 35;
             const int panelWidth = 460;
-            const int panelHeight = 430;
+            const int panelHeight = 530;
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
                 new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.94f);
             const string heading = "PAUSED";
@@ -978,7 +1006,7 @@ namespace RogueSandpit
             PauseMenuItem[] items = Enum.GetValues<PauseMenuItem>();
             for (int index = 0; index < items.Length; index++)
             {
-                int y = panelY + 125 + index * 48;
+                int y = panelY + 125 + index * 42;
                 bool selected = index == _pauseMenuSelection;
                 if (selected)
                 {
@@ -989,11 +1017,19 @@ namespace RogueSandpit
                 {
                     PauseMenuItem.RestartThisSeed => "RESTART THIS SEED",
                     PauseMenuItem.NewRun => "NEW RUN",
+                    PauseMenuItem.SaveGame => "SAVE GAME",
+                    PauseMenuItem.LoadGame => "LOAD GAME",
                     _ => items[index].ToString().ToUpperInvariant()
                 };
                 _pixelFont.DrawText(_spriteBatch, label,
                     new Vector2(panelX + 60, y), 3, selected ? Color.White : Color.Gray);
             }
+
+            if (!string.IsNullOrEmpty(_pauseMessage))
+                _pixelFont.DrawText(_spriteBatch, _pauseMessage,
+                    new Vector2(panelX + 42, panelY + panelHeight - 48), 1,
+                    _pauseMessage.Contains("FAILED") || _pauseMessage.Contains("INVALID")
+                        || _pauseMessage.Contains("NO SAVED") ? Color.OrangeRed : Color.LightGreen);
 
             _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT   ENTER CONFIRM   ESC RESUME",
                 new Vector2(panelX + 42, panelY + panelHeight - 30), 1, Color.LightGray);

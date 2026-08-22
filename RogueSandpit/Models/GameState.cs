@@ -126,6 +126,15 @@ public class GameState
         CompleteStatistics(snapshot);
     }
 
+    internal void RestorePersistence(SaveGameSnapshot snapshot)
+    {
+        Outcome = snapshot.Outcome;
+        TurnCount = snapshot.TurnCount;
+        _npcTurnScheduler.RestoreInitiativeOffset(snapshot.InitiativeOffset);
+        EventLog.Restore(snapshot.EventLog);
+        Statistics.Restore(snapshot.Statistics);
+    }
+
     private BaseNPC MoveNPCs()
     {
         foreach (BaseNPC npc in _npcTurnScheduler.CreateTurnOrder(Map.NPCs))

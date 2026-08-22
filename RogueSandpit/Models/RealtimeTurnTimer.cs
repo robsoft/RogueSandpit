@@ -22,6 +22,12 @@ public sealed class RealtimeTurnTimer
         Reset();
     }
 
+    public void SetEnabled(bool enabled)
+    {
+        Enabled = enabled;
+        Reset();
+    }
+
     public void SetInterval(double intervalSeconds)
     {
         if (intervalSeconds <= 0) throw new ArgumentOutOfRangeException(nameof(intervalSeconds));

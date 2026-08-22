@@ -44,4 +44,34 @@ public sealed class RunStatistics
     }
 
     internal void RecordDefeat(CharacterTypes type) => _defeatsByArchetype[type]++;
+
+    internal void Restore(RunStatisticsSnapshot snapshot)
+    {
+        Turns = snapshot.Turns;
+        DeliberateTurns = snapshot.DeliberateTurns;
+        RealtimeTurns = snapshot.RealtimeTurns;
+        ObjectiveCollectedTurn = snapshot.ObjectiveCollectedTurn;
+        EscapeTurn = snapshot.EscapeTurn;
+        foreach (CharacterTypes type in Enum.GetValues<CharacterTypes>())
+            _defeatsByArchetype[type] = snapshot.DefeatsByArchetype.GetValueOrDefault(type);
+        DamageDealt = snapshot.DamageDealt;
+        DamageReceived = snapshot.DamageReceived;
+        HealingReceived = snapshot.HealingReceived;
+        MeleeAttacks = snapshot.MeleeAttacks;
+        RangedShots = snapshot.RangedShots;
+        RangedHits = snapshot.RangedHits;
+        DetectionEpisodes = snapshot.DetectionEpisodes;
+        NpcsAlerted = snapshot.NpcsAlerted;
+        MaximumPursuers = snapshot.MaximumPursuers;
+        ItemsCollected = snapshot.ItemsCollected;
+        ItemsConsumed = snapshot.ItemsConsumed;
+        ItemsDropped = snapshot.ItemsDropped;
+        ItemsThrown = snapshot.ItemsThrown;
+        DoorsOpened = snapshot.DoorsOpened;
+        DoorsClosed = snapshot.DoorsClosed;
+        DoorsUnlocked = snapshot.DoorsUnlocked;
+        TrapsPlaced = snapshot.TrapsPlaced;
+        TrapsTriggered = snapshot.TrapsTriggered;
+        DefeatCause = snapshot.DefeatCause ?? "";
+    }
 }
