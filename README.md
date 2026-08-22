@@ -22,6 +22,7 @@ The simulation is strictly turn based. Every successful player action advances t
 - Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
 - Versioned single-slot JSON save/restore with safe validation and faithful random continuation
 - Live run statistics, a compact pause snapshot, and full victory/defeat reports suitable for playtest feedback
+- Binding-aware in-game Help and automatic JSON reports for completed playtest runs
 - Remappable gameplay controls and persistent per-user runtime settings
 - Persistent fog of war with an omniscient developer view
 - Doors that can be opened or closed in place; locked doors require a reusable key
@@ -103,7 +104,9 @@ Gameplay keys can be changed under **Pause → Options → Controls**. Each acti
 
 Bindings and runtime options are saved to the platform's per-user application-data folder (`RogueSandpit/settings.json`). The single game-save slot is stored alongside it as `RogueSandpit/save-game.json`. Missing or damaged files are handled safely.
 
-The pause menu provides **Save Game** and **Load Game**, plus both **Restart This Seed**, which reconstructs the current generated run, and **New Run**, which chooses a fresh seed. Loading returns to a clean paused state and never spends a turn. Its compact statistics snapshot makes useful playtest information available without entering developer mode. Victory and defeat show a fuller run report; use arrows and Enter to restart the same seed, start a new run, or quit. Space remains a quick New Run shortcut. The window title and F1 diagnostics show the active seed for reporting or reproducing interesting maps.
+The pause menu provides **Help**, **Save Game**, and **Load Game**, plus both **Restart This Seed**, which reconstructs the current generated run, and **New Run**, which chooses a fresh seed. Help always reflects the active remapped controls. Loading returns to a clean paused state and never spends a turn. Its compact statistics snapshot makes useful playtest information available without entering developer mode. Victory and defeat show a fuller run report; use arrows and Enter to restart the same seed, start a new run, or quit. Space remains a quick New Run shortcut. The window title and F1 diagnostics show the active seed for reporting or reproducing interesting maps.
+
+Every completed run also writes a versioned JSON playtest report under the per-user `RogueSandpit/run-reports` directory. The terminal screen shows the generated filename; report failure never interrupts play.
 
 ## Developer diagnostics
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -32,6 +33,7 @@ namespace RogueSandpit
         private readonly InputBindings _bindings;
         private readonly SettingsStore _settingsStore;
         private readonly GameSaveStore _gameSaveStore;
+        private readonly RunReportStore _runReportStore;
         private int _pauseMenuSelection;
         private int _optionsSelection;
         private int _controlsSelection;
@@ -40,10 +42,12 @@ namespace RogueSandpit
         private bool _capturingBinding;
         private string _controlsMessage = "";
         private string _pauseMessage = "";
+        private string _runReportMessage = "";
+        private bool _runReportAttempted;
         private readonly int _initialSeed;
 
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
-        private enum PauseMenuItem { Resume, SaveGame, LoadGame, Options, RestartThisSeed, NewRun, Quit }
+        private enum PauseMenuItem { Resume, Help, SaveGame, LoadGame, Options, RestartThisSeed, NewRun, Quit }
         private enum OptionsItem { RealtimeInterval, MasterVolume, EffectsVolume, MusicVolume, MuteUnfocused, Controls, Back }
         private enum TerminalMenuItem { RestartThisSeed, NewRun, Quit }
 
@@ -53,11 +57,12 @@ namespace RogueSandpit
         public GameWrapper(int windowScale = GameOptions.DefaultWindowScale,
             double turnSeconds = GameOptions.DefaultTurnSeconds,
             bool fullscreen = false, bool startRealtime = false, int? seed = null,
-            string savePath = null)
+            string savePath = null, string runReportDirectory = null)
         {
             _initialSeed = seed ?? Random.Shared.Next();
             _settingsStore = new SettingsStore(SettingsStore.DefaultPath);
             _gameSaveStore = new GameSaveStore(savePath ?? GameSaveStore.DefaultPath);
+            _runReportStore = new RunReportStore(runReportDirectory ?? RunReportStore.DefaultDirectory);
             LoadedSettings loadedSettings = _settingsStore.Load(turnSeconds);
             _runtimeSettings = loadedSettings.Runtime;
             _bindings = loadedSettings.Bindings;
@@ -114,6 +119,8 @@ namespace RogueSandpit
             _directionalAction = DirectionalAction.None;
             _terminalMenuSelection = 0;
             _pauseMessage = "";
+            _runReportMessage = "";
+            _runReportAttempted = false;
             if (regenerateMap)
             {
                 if (newSeed.HasValue) _map.Regenerate(newSeed.Value);
@@ -150,9 +157,13 @@ namespace RogueSandpit
                 case ApplicationScreen.Playing:
                     UpdateLive(gameTime);
                     _screens.SynchronizeOutcome(_gameState.Outcome);
+                    TrySaveCompletedRunReport();
                     break;
                 case ApplicationScreen.Paused:
                     UpdatePauseMenu();
+                    break;
+                case ApplicationScreen.Help:
+                    if (WasPressed(Keys.Enter)) _screens.BackFromHelp();
                     break;
                 case ApplicationScreen.Options:
                     UpdateOptionsMenu();
@@ -194,6 +205,12 @@ namespace RogueSandpit
                 {
                     _screens.BackFromControls();
                 }
+                return true;
+            }
+
+            if (_screens.CurrentScreen == ApplicationScreen.Help)
+            {
+                _screens.BackFromHelp();
                 return true;
             }
 
@@ -243,6 +260,9 @@ namespace RogueSandpit
                 case PauseMenuItem.Resume:
                     _screens.Resume();
                     break;
+                case PauseMenuItem.Help:
+                    _screens.OpenHelp();
+                    break;
                 case PauseMenuItem.SaveGame:
                     _pauseMessage = _gameSaveStore.Save(_gameState, _realtimeTurnTimer.Enabled).Message;
                     break;
@@ -280,6 +300,17 @@ namespace RogueSandpit
             _inventoryOpen = false;
             _directionalAction = DirectionalAction.None;
             Window.Title = $"Rogue Sandpit - Seed: {_map.Seed}";
+            _runReportAttempted = false;
+            _runReportMessage = "";
+        }
+
+        private void TrySaveCompletedRunReport()
+        {
+            if (_runReportAttempted || _gameState.Outcome == GameOutcome.Playing) return;
+            _runReportAttempted = true;
+            RunReportResult result = _runReportStore.Save(_gameState,
+                _realtimeTurnTimer.Enabled, _runtimeSettings.RealtimeTurnSeconds);
+            _runReportMessage = result.Success ? $"REPORT {result.FileName}" : result.Message;
         }
 
         private void UpdateOptionsMenu()
@@ -707,6 +738,10 @@ namespace RogueSandpit
             {
                 DrawControlsMenu();
             }
+            else if (_screens.CurrentScreen == ApplicationScreen.Help)
+            {
+                DrawHelpScreen();
+            }
             else if (_screens.CurrentScreen is ApplicationScreen.GameOver or ApplicationScreen.Victory)
             {
                 DrawEndScreen();
@@ -1019,6 +1054,7 @@ namespace RogueSandpit
                     PauseMenuItem.NewRun => "NEW RUN",
                     PauseMenuItem.SaveGame => "SAVE GAME",
                     PauseMenuItem.LoadGame => "LOAD GAME",
+                    PauseMenuItem.Help => "HELP",
                     _ => items[index].ToString().ToUpperInvariant()
                 };
                 _pixelFont.DrawText(_spriteBatch, label,
@@ -1033,6 +1069,40 @@ namespace RogueSandpit
 
             _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT   ENTER CONFIRM   ESC RESUME",
                 new Vector2(panelX + 42, panelY + panelHeight - 30), 1, Color.LightGray);
+        }
+
+        private void DrawHelpScreen()
+        {
+            const int panelX = 70;
+            const int panelY = 25;
+            const int panelWidth = 660;
+            const int panelHeight = 550;
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.97f);
+            _pixelFont.DrawText(_spriteBatch, "HELP / ACTIVE CONTROLS",
+                new Vector2(panelX + 105, panelY + 24), 4, Color.White);
+
+            IReadOnlyList<HelpRow> rows = HelpReference.Build(_bindings);
+            string previousSection = "";
+            int y = panelY + 82;
+            foreach (HelpRow row in rows)
+            {
+                if (row.Section != previousSection)
+                {
+                    if (previousSection.Length > 0) y += 7;
+                    _pixelFont.DrawText(_spriteBatch, row.Section,
+                        new Vector2(panelX + 35, y), 1, Color.Gold);
+                    previousSection = row.Section;
+                }
+                _pixelFont.DrawText(_spriteBatch, row.Action,
+                    new Vector2(panelX + 145, y), 1, Color.LightGray);
+                _pixelFont.DrawText(_spriteBatch, row.Keys,
+                    new Vector2(panelX + 390, y), 1, Color.White);
+                y += 18;
+            }
+
+            _pixelFont.DrawText(_spriteBatch, "ENTER OR ESC RETURNS TO PAUSE",
+                new Vector2(panelX + 205, panelY + panelHeight - 25), 1, Color.LightGray);
         }
 
         private void DrawOptionsMenu()
@@ -1156,13 +1226,7 @@ namespace RogueSandpit
                 index > 0 && char.IsUpper(character) ? $" {character}" : character.ToString())).ToUpperInvariant()
         };
 
-        private static string FriendlyKeyName(Keys key) => key switch
-        {
-            Keys.OemPeriod => ".",
-            Keys.OemOpenBrackets => "[",
-            Keys.OemCloseBrackets => "]",
-            _ => key.ToString().ToUpperInvariant()
-        };
+        private static string FriendlyKeyName(Keys key) => HelpReference.KeyLabel(key);
 
         private void DrawEventLog()
         {
@@ -1368,6 +1432,11 @@ namespace RogueSandpit
                 _pixelFont.DrawText(_spriteBatch, label,
                     new Vector2(panelX + 195, y), 2, selected ? Color.White : Color.Gray);
             }
+
+            if (!string.IsNullOrEmpty(_runReportMessage))
+                _pixelFont.DrawText(_spriteBatch, _runReportMessage,
+                    new Vector2(panelX + 175, panelY + panelHeight - 56), 1,
+                    _runReportMessage.Contains("FAILED") ? Color.OrangeRed : Color.LightGreen);
 
             _pixelFont.DrawText(_spriteBatch,
                 "ARROWS SELECT   ENTER CONFIRM   SPACE NEW RUN",

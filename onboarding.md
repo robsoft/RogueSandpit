@@ -38,6 +38,7 @@ The native render canvas is always 800×600; window scaling and fullscreen prese
 - `Models/GameState.cs` coordinates the current run and player-to-NPC turn boundary.
 - `Models/RunStatistics.cs` is the framework-independent per-run record used by pause, developer, and terminal reports. `GameState` updates it from successful actions and reconciled before/after simulation state rather than event-log text.
 - `Models/SaveGameSnapshot.cs` defines the versioned persistence contract. `GameSaveStore.cs` owns atomic JSON I/O; restoration constructs and validates a complete replacement `GameState` before application references are changed.
+- `RunReportStore.cs` writes a smaller immutable terminal-run document for playtest sharing. It is deliberately separate from resumable save-game persistence.
 - `Models/NpcTurnScheduler.cs` snapshots the active NPC phase and rotates initiative between turns.
 - Simulation models are independent of MonoGame so rules can be exercised by xUnit without a graphics device.
 - NPC actions currently resolve sequentially. Rotation provides fairness, but this is not simultaneous intent resolution.
