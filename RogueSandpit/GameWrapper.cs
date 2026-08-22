@@ -922,14 +922,17 @@ namespace RogueSandpit
 
         private void DrawPauseMenu()
         {
-            const int panelX = 210;
+            const int panelX = 170;
             const int panelY = 75;
-            const int panelWidth = 380;
+            const int panelWidth = 460;
             const int panelHeight = 430;
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
                 new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.94f);
-            _pixelFont.DrawText(_spriteBatch, "PAUSED",
-                new Vector2(panelX + 103, panelY + 35), 5, Color.White);
+            const string heading = "PAUSED";
+            const int headingScale = 5;
+            int headingX = panelX + (panelWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
+            _pixelFont.DrawText(_spriteBatch, heading,
+                new Vector2(headingX, panelY + 35), headingScale, Color.White);
 
             PauseMenuItem[] items = Enum.GetValues<PauseMenuItem>();
             for (int index = 0; index < items.Length; index++)
@@ -939,7 +942,7 @@ namespace RogueSandpit
                 if (selected)
                 {
                     _uiDrawer.DrawFilledRectangle(_spriteBatch,
-                        new Rectangle(panelX + 55, y - 9, panelWidth - 110, 34), Color.DarkSlateBlue);
+                        new Rectangle(panelX + 35, y - 9, panelWidth - 70, 34), Color.DarkSlateBlue);
                 }
                 string label = items[index] switch
                 {
@@ -948,7 +951,7 @@ namespace RogueSandpit
                     _ => items[index].ToString().ToUpperInvariant()
                 };
                 _pixelFont.DrawText(_spriteBatch, label,
-                    new Vector2(panelX + 78, y), 3, selected ? Color.White : Color.Gray);
+                    new Vector2(panelX + 60, y), 3, selected ? Color.White : Color.Gray);
             }
 
             _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT   ENTER CONFIRM   ESC RESUME",
