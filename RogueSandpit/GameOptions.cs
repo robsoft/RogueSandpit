@@ -10,13 +10,16 @@ public sealed class GameOptions
     public double TurnSeconds { get; }
     public bool Fullscreen { get; }
     public bool StartRealtime { get; }
+    public int? Seed { get; }
 
-    private GameOptions(int windowScale, double turnSeconds, bool fullscreen, bool startRealtime)
+    private GameOptions(int windowScale, double turnSeconds, bool fullscreen, bool startRealtime,
+        int? seed)
     {
         WindowScale = windowScale;
         TurnSeconds = turnSeconds;
         Fullscreen = fullscreen;
         StartRealtime = startRealtime;
+        Seed = seed;
     }
 
     public static GameOptions Parse(string[] args)
@@ -25,6 +28,7 @@ public sealed class GameOptions
         double turnSeconds = DefaultTurnSeconds;
         bool fullscreen = false;
         bool startRealtime = false;
+        int? seed = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -64,6 +68,23 @@ public sealed class GameOptions
                     throw new ArgumentException("--turn-seconds must be a number from 0.1 to 10.");
                 continue;
             }
+            else if (argument == "--seed")
+            {
+                if (++i >= args.Length) throw new ArgumentException("--seed requires an integer value.");
+                value = args[i];
+                if (!int.TryParse(value, out int parsedSeed))
+                    throw new ArgumentException("--seed must be an integer.");
+                seed = parsedSeed;
+                continue;
+            }
+            else if (argument.StartsWith("--seed="))
+            {
+                value = argument["--seed=".Length..];
+                if (!int.TryParse(value, out int parsedSeed))
+                    throw new ArgumentException("--seed must be an integer.");
+                seed = parsedSeed;
+                continue;
+            }
             else
             {
                 throw new ArgumentException($"Unknown argument: {argument}");
@@ -75,6 +96,6 @@ public sealed class GameOptions
             }
         }
 
-        return new GameOptions(windowScale, turnSeconds, fullscreen, startRealtime);
+        return new GameOptions(windowScale, turnSeconds, fullscreen, startRealtime, seed);
     }
 }

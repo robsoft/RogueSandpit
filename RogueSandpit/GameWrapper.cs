@@ -37,9 +37,10 @@ namespace RogueSandpit
         private int _bindingSlot;
         private bool _capturingBinding;
         private string _controlsMessage = "";
+        private readonly int _initialSeed;
 
         private enum DirectionalAction { None, ToggleDoor, LayFalseTrail, ThrowItem, PlaceTrap, FireRanged }
-        private enum PauseMenuItem { Resume, Options, Restart, Quit }
+        private enum PauseMenuItem { Resume, Options, RestartThisSeed, NewRun, Quit }
         private enum OptionsItem { RealtimeInterval, MasterVolume, EffectsVolume, MusicVolume, MuteUnfocused, Controls, Back }
 
         public const int NativeWidth = 800;
@@ -47,8 +48,9 @@ namespace RogueSandpit
 
         public GameWrapper(int windowScale = GameOptions.DefaultWindowScale,
             double turnSeconds = GameOptions.DefaultTurnSeconds,
-            bool fullscreen = false, bool startRealtime = false)
+            bool fullscreen = false, bool startRealtime = false, int? seed = null)
         {
+            _initialSeed = seed ?? Random.Shared.Next();
             _settingsStore = new SettingsStore(SettingsStore.DefaultPath);
             LoadedSettings loadedSettings = _settingsStore.Load(turnSeconds);
             _runtimeSettings = loadedSettings.Runtime;
@@ -81,7 +83,7 @@ namespace RogueSandpit
 
         protected override void Initialize()
         {
-            _map = new Map(123);
+            _map = new Map(_initialSeed);
             KickOffNewGame(false);
             base.Initialize();
         }
@@ -99,21 +101,29 @@ namespace RogueSandpit
             CalculateRenderDestination();
         }
 
-        private void KickOffNewGame(bool regenerateMap = true)
+        private void KickOffNewGame(bool regenerateMap = true, int? newSeed = null)
         {
             _realtimeTurnTimer.Reset();
             _inventoryOpen = false;
             _directionalAction = DirectionalAction.None;
             if (regenerateMap)
             {
-                _map.Initialise();
+                if (newSeed.HasValue) _map.Regenerate(newSeed.Value);
+                else _map.Initialise();
             }
             _player = new Player();
             _player.Place(_map, _map.StartPosX, _map.StartPosY);
             _gameState = new GameState(_map, _player);
             _screens.StartPlaying();
 
-            Window.Title = $"Rogue Sandpit - Seed: {RandGen.Seed}";
+            Window.Title = $"Rogue Sandpit - Seed: {_map.Seed}";
+        }
+
+        private void StartNewRun()
+        {
+            int seed;
+            do seed = Random.Shared.Next(); while (seed == _map.Seed);
+            KickOffNewGame(newSeed: seed);
         }
 
         protected override void Update(GameTime gameTime)
@@ -188,7 +198,7 @@ namespace RogueSandpit
 
         private void UpdateTerminalScreen()
         {
-            if (WasPressed(Keys.Space)) KickOffNewGame();
+            if (WasPressed(Keys.Space)) StartNewRun();
         }
 
         private void UpdatePauseMenu()
@@ -207,8 +217,11 @@ namespace RogueSandpit
                     _optionsSelection = 0;
                     _screens.OpenOptions();
                     break;
-                case PauseMenuItem.Restart:
+                case PauseMenuItem.RestartThisSeed:
                     KickOffNewGame();
+                    break;
+                case PauseMenuItem.NewRun:
+                    StartNewRun();
                     break;
                 case PauseMenuItem.Quit:
                     Exit();
@@ -736,6 +749,12 @@ namespace RogueSandpit
 
         private void DrawDebugHud()
         {
+            _uiDrawer.DrawFilledRectangle(_spriteBatch,
+                new Rectangle(0, 552, 300, 14), Color.Black);
+            _pixelFont.DrawText(_spriteBatch,
+                $"SEED {_map.Seed}  DOORS {_map.Doors.Count}/{_map.DoorCandidateCount}  PRUNED {_map.PrunedDoorwayCount}",
+                new Vector2(6, 555), 1, Color.LightGoldenrodYellow);
+
             if (_realtimeTurnTimer.Enabled && _map.RenderMode == RenderMode.Cells)
             {
                 string timerText = (_inventoryOpen || _directionalAction != DirectionalAction.None
@@ -904,9 +923,9 @@ namespace RogueSandpit
         private void DrawPauseMenu()
         {
             const int panelX = 210;
-            const int panelY = 105;
+            const int panelY = 75;
             const int panelWidth = 380;
-            const int panelHeight = 370;
+            const int panelHeight = 430;
             _uiDrawer.DrawFilledRectangle(_spriteBatch,
                 new Rectangle(panelX, panelY, panelWidth, panelHeight), Color.Black * 0.94f);
             _pixelFont.DrawText(_spriteBatch, "PAUSED",
@@ -922,7 +941,13 @@ namespace RogueSandpit
                     _uiDrawer.DrawFilledRectangle(_spriteBatch,
                         new Rectangle(panelX + 55, y - 9, panelWidth - 110, 34), Color.DarkSlateBlue);
                 }
-                _pixelFont.DrawText(_spriteBatch, items[index].ToString().ToUpperInvariant(),
+                string label = items[index] switch
+                {
+                    PauseMenuItem.RestartThisSeed => "RESTART THIS SEED",
+                    PauseMenuItem.NewRun => "NEW RUN",
+                    _ => items[index].ToString().ToUpperInvariant()
+                };
+                _pixelFont.DrawText(_spriteBatch, label,
                     new Vector2(panelX + 78, y), 3, selected ? Color.White : Color.Gray);
             }
 
@@ -1208,7 +1233,7 @@ namespace RogueSandpit
             int headingX = (NativeWidth - _pixelFont.MeasureWidth(heading, headingScale)) / 2;
             _pixelFont.DrawText(_spriteBatch, heading, new Vector2(headingX, 240), headingScale, headingColor);
 
-            const string restartText = "SPACE TO RESTART";
+            const string restartText = "SPACE FOR NEW RUN";
             int restartScale = 3;
             int restartX = (NativeWidth - _pixelFont.MeasureWidth(restartText, restartScale)) / 2;
             _pixelFont.DrawText(_spriteBatch, restartText, new Vector2(restartX, 320), restartScale, Color.White);

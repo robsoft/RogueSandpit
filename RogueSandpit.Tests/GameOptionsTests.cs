@@ -14,6 +14,7 @@ public class GameOptionsTests
         Assert.Equal(1.0, options.TurnSeconds);
         Assert.False(options.Fullscreen);
         Assert.False(options.StartRealtime);
+        Assert.Null(options.Seed);
     }
 
     [Theory]
@@ -68,5 +69,27 @@ public class GameOptionsTests
         Assert.True(options.StartRealtime);
         Assert.Equal(3, options.WindowScale);
         Assert.Equal(0.75, options.TurnSeconds);
+    }
+
+    [Theory]
+    [InlineData(new[] { "--seed", "123" }, 123)]
+    [InlineData(new[] { "--seed=-456" }, -456)]
+    public void SeedSupportsSeparatedAndEqualsForms(string[] args, int expected)
+    {
+        Assert.Equal(expected, GameOptions.Parse(args).Seed);
+    }
+
+    [Theory]
+    [InlineData("--seed=nope")]
+    [InlineData("--seed=")]
+    public void InvalidSeedIsRejected(string argument)
+    {
+        Assert.Throws<ArgumentException>(() => GameOptions.Parse([argument]));
+    }
+
+    [Fact]
+    public void MissingSeedValueIsRejected()
+    {
+        Assert.Throws<ArgumentException>(() => GameOptions.Parse(["--seed"]));
     }
 }
