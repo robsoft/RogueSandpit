@@ -77,12 +77,12 @@ dotnet run --project RogueSandpit/RogueSandpit.csproj -- --fullscreen --realtime
 | Arrow keys | Move or answer a directional prompt |
 | `Space`, `.`, or numpad `5` | Wait one turn |
 | `[` / `]` | Select an inventory item |
-| `I` | Open or close the inventory panel; arrows select while open |
-| `E` | Equip the selected weapon, bow, or armor |
+| `I` | Open or close the inventory panel; arrows or `1`–`8` select while open |
+| `E`, or `Enter` in inventory | Equip or unequip the selected weapon, bow, or armor |
 | `H` / `B` | Use the selected healing potion / bandage |
 | `D` | Drop the selected item |
 | `C` | Toggle an adjacent unlocked door; choose a direction if ambiguous |
-| `F`, then arrow | Throw the selected item |
+| `F`, then arrow | Throw the selected item; ordinary items inflict type/power-based impact damage |
 | `R`, then arrow | Fire the equipped ranged weapon |
 | `P`, then arrow | Place the selected trap |
 | `T`, then arrow | Lay a false trail |

@@ -401,6 +401,12 @@ namespace RogueSandpit
         {
             if (_inventoryOpen)
             {
+                int? slot = NewlyPressedInventorySlot();
+                if (slot.HasValue)
+                {
+                    _player.Inventory.SelectIndex(slot.Value);
+                    return PlayerCommand.None;
+                }
                 if (WasPressed(InputAction.MoveUp) || WasPressed(InputAction.MoveLeft)
                     || WasPressed(InputAction.SelectPreviousItem))
                     return PlayerCommand.SelectPreviousItem;
@@ -409,7 +415,8 @@ namespace RogueSandpit
                     return PlayerCommand.SelectNextItem;
                 if (WasPressed(InputAction.UsePotion)) return PlayerCommand.UsePotion;
                 if (WasPressed(InputAction.UseBandage)) return PlayerCommand.UseBandage;
-                if (WasPressed(InputAction.Equip)) return PlayerCommand.EquipItem;
+                if (WasPressed(Keys.Enter) || WasPressed(InputAction.Equip))
+                    return PlayerCommand.EquipItem;
                 if (WasPressed(InputAction.Drop)) return PlayerCommand.DropItem;
                 return PlayerCommand.None;
             }
@@ -490,6 +497,17 @@ namespace RogueSandpit
             if (WasPressed(InputAction.Equip)) return PlayerCommand.EquipItem;
             if (WasPressed(InputAction.Drop)) return PlayerCommand.DropItem;
             return PlayerCommand.None;
+        }
+
+        private int? NewlyPressedInventorySlot()
+        {
+            foreach (Keys key in _currentKeyboardState.GetPressedKeys())
+            {
+                if (_previousKeyboardState.IsKeyDown(key)) continue;
+                int? slot = InputBindings.InventorySlotForKey(key);
+                if (slot >= 0 && slot < _player.Inventory.Capacity) return slot;
+            }
+            return null;
         }
 
         private PlayerCommand DirectionalCommand(int deltaX, int deltaY)
@@ -846,21 +864,41 @@ namespace RogueSandpit
                 Item item = index < _player.Inventory.Items.Count ? _player.Inventory.Items[index] : null;
                 string itemName = item?.Name ?? "EMPTY";
                 Color itemColor = item == null ? Color.DarkGray : Color.White;
-                _pixelFont.DrawText(_spriteBatch, $"{index + 1} {itemName}",
+                _pixelFont.DrawText(_spriteBatch, $"{(selected ? ">" : " ")}{index + 1} {itemName}",
                     new Vector2(panelX + 18, rowY), 2, itemColor);
 
                 if (item == null) continue;
                 string power = item.Power > 0 ? $" {item.Power}" : "";
-                string equipped = item == _player.EquippedWeapon || item == _player.EquippedArmor
-                    || item == _player.EquippedRangedWeapon
-                    ? " EQUIPPED"
+                string equipped = item == _player.EquippedWeapon ? " [MELEE]"
+                    : item == _player.EquippedArmor ? " [ARMOR]"
+                    : item == _player.EquippedRangedWeapon ? " [RANGED]"
                     : "";
                 _pixelFont.DrawText(_spriteBatch, $"{item.Type}{power}{equipped}",
                     new Vector2(panelX + 245, rowY + 4), 1, Color.LightGray);
             }
 
-            _pixelFont.DrawText(_spriteBatch, "ARROWS SELECT  H POTION  B BANDAGE  E EQUIP  D DROP  I CLOSE",
+            string selectedName = _player.Inventory.SelectedItem?.Name ?? "NONE";
+            string selectedAction = InventoryActionHint(_player.Inventory.SelectedItem);
+            _pixelFont.DrawText(_spriteBatch, $"SELECTED {selectedName}   {selectedAction}",
+                new Vector2(panelX + 14, panelY + panelHeight - 42), 1, Color.Yellow);
+            _pixelFont.DrawText(_spriteBatch, "1-8/ARROWS SELECT  ENTER TOGGLE EQUIP  D DROP  I CLOSE",
                 new Vector2(panelX + 14, panelY + panelHeight - 22), 1, Color.LightGray);
+        }
+
+        private string InventoryActionHint(Item item)
+        {
+            if (item == null) return "";
+            return item.Type switch
+            {
+                ItemType.Weapon or ItemType.Armor or ItemType.RangedWeapon =>
+                    _player.IsEquipped(item) ? "ENTER UNEQUIP  F THROW" : "ENTER EQUIP  F THROW",
+                ItemType.HealingPotion => "H USE  F THROW",
+                ItemType.Bandage => "B USE  F THROW",
+                ItemType.Trap => "P PLACE  F THROW",
+                ItemType.SmokeBomb => "F THROW SMOKE",
+                ItemType.FireBomb => "F THROW FIRE",
+                _ => "F THROW"
+            };
         }
 
         private void DrawPauseMenu()

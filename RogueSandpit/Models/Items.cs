@@ -79,15 +79,22 @@ public class Inventory
 
     public bool SelectNext()
     {
-        if (_items.Count == 0) return false;
+        if (_items.Count < 2) return false;
         SelectedIndex = (SelectedIndex + 1) % _items.Count;
         return true;
     }
 
     public bool SelectPrevious()
     {
-        if (_items.Count == 0) return false;
+        if (_items.Count < 2) return false;
         SelectedIndex = (SelectedIndex - 1 + _items.Count) % _items.Count;
+        return true;
+    }
+
+    public bool SelectIndex(int index)
+    {
+        if (index < 0 || index >= _items.Count || index == SelectedIndex) return false;
+        SelectedIndex = index;
         return true;
     }
 }

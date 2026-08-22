@@ -55,4 +55,20 @@ public class InputBindingsTests
         Assert.Equal(new[] { Keys.V }, bindings.GetKeys(InputAction.Inventory));
         Assert.Equal(new[] { Keys.E }, bindings.GetKeys(InputAction.Equip));
     }
+
+    [Theory]
+    [InlineData(Keys.D1, 0)]
+    [InlineData(Keys.D8, 7)]
+    [InlineData(Keys.NumPad1, 0)]
+    [InlineData(Keys.NumPad8, 7)]
+    public void NumberKeysMapToInventorySlots(Keys key, int expectedSlot)
+    {
+        Assert.Equal(expectedSlot, InputBindings.InventorySlotForKey(key));
+    }
+
+    [Fact]
+    public void NonNumberKeyDoesNotMapToInventorySlot()
+    {
+        Assert.Null(InputBindings.InventorySlotForKey(Keys.I));
+    }
 }
