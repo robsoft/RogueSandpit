@@ -15,11 +15,16 @@ public class Map
     private const int TrailLifetime = 12;
     private const int TrailCapacity = 24;
     private const int DoorClusterRadius = 2;
+    public const int EntranceSafetyDistance = 10;
     private long _nextTrailSequence;
+    private Dictionary<(int X, int Y), int> _entranceDistances = [];
     public bool IsInitialising { get; private set; } = false;
     public int Seed { get; private set; }
     public int DoorCandidateCount { get; private set; }
     public int PrunedDoorwayCount { get; private set; }
+    public int MaximumEntranceDistance { get; private set; }
+    public int MinimumRoomEntranceDistance { get; private set; }
+    public int MaximumRoomEntranceDistance { get; private set; }
 
     // these are 'config', really
     public int Width { get; } = 80;
@@ -104,11 +109,12 @@ public class Map
 
         // now flatten this into a single big 2-d array
         CreateMapCells();
-        AddNPCs();
         AddDoorways();
+        CalculateGenerationDepths();
 
         // Add the macguffin to a reachable, unoccupied floor cell
         AddSpecials();
+        AddNPCs();
         AddLoot();
 
         CurrentPlayerX = StartPosX;
@@ -145,14 +151,16 @@ public class Map
         {
             // and add a number of NPCs based on that area (1 per 35 squares, on average)
             int npcCount = (int)(room.Area / 35F);
+            if (room.Specials.Count > 0) npcCount = Math.Max(2, npcCount);
             var candidates = new List<Point>();
             for (int x = room.X1; x < room.X2; x++)
             {
                 for (int y = room.Y1; y < room.Y2; y++)
                 {
                     if (MapCells[x, y].ParentElement == room
+                        && MapCells[x, y].CellType == MapCellType.Floor
                         && CanNpcEnter(x, y)
-                        && (x != StartPosX || y != StartPosY))
+                        && GetEntranceDistance(x, y) > EntranceSafetyDistance)
                     {
                         candidates.Add(new Point(x, y));
                     }
@@ -165,12 +173,13 @@ public class Map
                 Point position = candidates[candidateIndex];
                 candidates.RemoveAt(candidateIndex);
 
-                int characterType = RandGen.RandInt(0, Enum.GetValues(typeof(CharacterTypes)).Length);
-                var npc = NPCFactory.CreateNPC(this, (CharacterTypes)characterType, position.X, position.Y, room);
+                GenerationDepthBand depth = GetDepthBand(position.X, position.Y);
+                CharacterTypes characterType = ChooseNpcType(depth);
+                var npc = NPCFactory.CreateNPC(this, characterType, position.X, position.Y, room);
                 npc.State = NPCState.Active;
                 if (RandGen.RandInt(0, 100) < 30)
                 {
-                    npc.HeldItem = ItemFactory.CreateRandom();
+                    npc.HeldItem = ItemFactory.CreateForDepth(depth);
                 }
 
                 NPCs.Add(npc);
@@ -227,6 +236,28 @@ public class Map
         }
     }
 
+    private static CharacterTypes ChooseNpcType(GenerationDepthBand depth)
+    {
+        int roll = RandGen.RandInt(0, 100);
+        return depth switch
+        {
+            GenerationDepthBand.Shallow => roll < 40 ? CharacterTypes.Wretch
+                : roll < 75 ? CharacterTypes.Goblin
+                : roll < 90 ? CharacterTypes.Skeleton
+                : CharacterTypes.Orc,
+            GenerationDepthBand.Middle => roll < 20 ? CharacterTypes.Wretch
+                : roll < 45 ? CharacterTypes.Goblin
+                : roll < 70 ? CharacterTypes.Skeleton
+                : roll < 90 ? CharacterTypes.Orc
+                : CharacterTypes.Troll,
+            _ => roll < 10 ? CharacterTypes.Wretch
+                : roll < 25 ? CharacterTypes.Goblin
+                : roll < 45 ? CharacterTypes.Skeleton
+                : roll < 70 ? CharacterTypes.Orc
+                : CharacterTypes.Troll
+        };
+    }
+
     private void AddLoot()
     {
         int entranceKeyY = StartPosY - 1;
@@ -253,15 +284,37 @@ public class Map
             }
         }
 
-        const int lootCount = 6;
-        for (int i = 0; i < lootCount && candidates.Count > 0; i++)
+        ItemType[] deepConsumables = [ItemType.Bandage, ItemType.SmokeBomb, ItemType.FireBomb];
+        ItemType deepConsumable = deepConsumables[RandGen.RandInt(0, deepConsumables.Length)];
+        var placements = new (ItemType Type, GenerationDepthBand Band)[]
         {
-            int candidateIndex = RandGen.RandInt(0, candidates.Count);
-            Point position = candidates[candidateIndex];
-            candidates.RemoveAt(candidateIndex);
-            ItemType type = (ItemType)(i % Enum.GetValues<ItemType>().Length);
-            GroundItems.Add(new GroundItem(ItemFactory.Create(type), position.X, position.Y));
+            (ItemType.HealingPotion, GenerationDepthBand.Shallow),
+            (ItemType.Weapon, GenerationDepthBand.Shallow),
+            (ItemType.Armor, GenerationDepthBand.Middle),
+            (ItemType.Trap, GenerationDepthBand.Middle),
+            (ItemType.RangedWeapon, GenerationDepthBand.Deep),
+            (deepConsumable, GenerationDepthBand.Deep)
+        };
+
+        foreach ((ItemType type, GenerationDepthBand band) in placements)
+        {
+            if (candidates.Count == 0) break;
+            Point position = RemoveLootCandidate(candidates, band);
+            Item item = type is ItemType.Weapon or ItemType.Armor or ItemType.RangedWeapon
+                ? ItemFactory.CreateEquipment(type, (int)band + 1)
+                : ItemFactory.Create(type);
+            GroundItems.Add(new GroundItem(item, position.X, position.Y));
         }
+    }
+
+    private Point RemoveLootCandidate(List<Point> candidates, GenerationDepthBand desiredBand)
+    {
+        List<Point> preferred = candidates.Where(position =>
+            GetDepthBand(position.X, position.Y) == desiredBand).ToList();
+        List<Point> pool = preferred.Count > 0 ? preferred : candidates;
+        Point selected = pool[RandGen.RandInt(0, pool.Count)];
+        candidates.Remove(selected);
+        return selected;
     }
 
     private void AddSpecials()
@@ -269,7 +322,7 @@ public class Map
         Room specialRoom = null;
         Point specialPosition = Point.Zero;
         int greatestDistance = -1;
-        Dictionary<(int X, int Y), int> distances = CalculateTerrainDistances();
+        Dictionary<(int X, int Y), int> distances = _entranceDistances;
 
         foreach (Room room in RoomList)
         {
@@ -319,6 +372,35 @@ public class Map
         }
 
         return distances;
+    }
+
+    private void CalculateGenerationDepths()
+    {
+        _entranceDistances = CalculateTerrainDistances();
+        MaximumEntranceDistance = _entranceDistances.Count == 0
+            ? 0
+            : _entranceDistances.Values.Max();
+        List<int> roomDistances = _entranceDistances
+            .Where(pair => MapCells[pair.Key.X, pair.Key.Y].ParentElement is Room
+                && MapCells[pair.Key.X, pair.Key.Y].CellType == MapCellType.Floor)
+            .Select(pair => pair.Value)
+            .ToList();
+        MinimumRoomEntranceDistance = roomDistances.Count == 0 ? 0 : roomDistances.Min();
+        MaximumRoomEntranceDistance = roomDistances.Count == 0 ? 0 : roomDistances.Max();
+    }
+
+    public int GetEntranceDistance(int x, int y) =>
+        _entranceDistances.TryGetValue((x, y), out int distance) ? distance : -1;
+
+    public GenerationDepthBand GetDepthBand(int x, int y)
+    {
+        int distance = GetEntranceDistance(x, y);
+        if (distance < 0 || MaximumRoomEntranceDistance <= MinimumRoomEntranceDistance)
+            return GenerationDepthBand.Shallow;
+        double depth = (double)(distance - MinimumRoomEntranceDistance)
+            / (MaximumRoomEntranceDistance - MinimumRoomEntranceDistance);
+        if (depth < 1.0 / 3.0) return GenerationDepthBand.Shallow;
+        return depth < 2.0 / 3.0 ? GenerationDepthBand.Middle : GenerationDepthBand.Deep;
     }
 
     // this flattens the room/corridor/obstacle structure into a single 2-d array of 'cells' that we can easily query for line-of-sight and pathfinding, without having to think about rooms and corridors etc. We can still use the room/corridor/obstacle structure for rendering, and for any room-specific logic we want to add later on

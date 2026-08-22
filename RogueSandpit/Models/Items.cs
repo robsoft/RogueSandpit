@@ -10,14 +10,16 @@ public class Item
     public string Name { get; }
     public ItemType Type { get; }
     public int Power { get; }
+    public int Tier { get; }
     public TrapKind? TrapKind { get; }
 
-    public Item(string name, ItemType type, int power = 0, TrapKind? trapKind = null)
+    public Item(string name, ItemType type, int power = 0, TrapKind? trapKind = null, int tier = 0)
     {
         Name = name;
         Type = type;
         Power = power;
         TrapKind = trapKind;
+        Tier = tier;
     }
 }
 
@@ -106,11 +108,11 @@ public static class ItemFactory
         return type switch
         {
             ItemType.HealingPotion => new Item("HEALING POTION", type, 35),
-            ItemType.Weapon => new Item("IRON SWORD", type, 8),
+            ItemType.Weapon => new Item("IRON SWORD", type, 8, tier: 1),
             ItemType.Key => new Item("BRASS KEY", type),
-            ItemType.Armor => new Item("LEATHER ARMOR", type, 5),
+            ItemType.Armor => new Item("LEATHER ARMOR", type, 5, tier: 1),
             ItemType.Trap => new Item("HUNTING TRAP", type, 18),
-            ItemType.RangedWeapon => new Item("SHORT BOW", type, 7),
+            ItemType.RangedWeapon => new Item("SHORT BOW", type, 7, tier: 1),
             ItemType.Bandage => new Item("BANDAGE", type, 12),
             ItemType.SmokeBomb => new Item("SMOKE BOMB", type),
             ItemType.FireBomb => new Item("FIRE BOMB", type, 6),
@@ -131,15 +133,15 @@ public static class ItemFactory
         if (tier is < 1 or > 3) throw new ArgumentOutOfRangeException(nameof(tier));
         return (type, tier) switch
         {
-            (ItemType.Weapon, 1) => new Item("IRON SWORD", type, 8),
-            (ItemType.Weapon, 2) => new Item("STEEL AXE", type, 12),
-            (ItemType.Weapon, 3) => new Item("WAR HAMMER", type, 16),
-            (ItemType.Armor, 1) => new Item("LEATHER ARMOR", type, 5),
-            (ItemType.Armor, 2) => new Item("CHAIN MAIL", type, 8),
-            (ItemType.Armor, 3) => new Item("PLATE ARMOR", type, 12),
-            (ItemType.RangedWeapon, 1) => new Item("SHORT BOW", type, 7),
-            (ItemType.RangedWeapon, 2) => new Item("HUNTER BOW", type, 10),
-            (ItemType.RangedWeapon, 3) => new Item("WAR BOW", type, 13),
+            (ItemType.Weapon, 1) => new Item("IRON SWORD", type, 8, tier: tier),
+            (ItemType.Weapon, 2) => new Item("STEEL AXE", type, 12, tier: tier),
+            (ItemType.Weapon, 3) => new Item("WAR HAMMER", type, 16, tier: tier),
+            (ItemType.Armor, 1) => new Item("LEATHER ARMOR", type, 5, tier: tier),
+            (ItemType.Armor, 2) => new Item("CHAIN MAIL", type, 8, tier: tier),
+            (ItemType.Armor, 3) => new Item("PLATE ARMOR", type, 12, tier: tier),
+            (ItemType.RangedWeapon, 1) => new Item("SHORT BOW", type, 7, tier: tier),
+            (ItemType.RangedWeapon, 2) => new Item("HUNTER BOW", type, 10, tier: tier),
+            (ItemType.RangedWeapon, 3) => new Item("WAR BOW", type, 13, tier: tier),
             _ => throw new ArgumentException("Equipment tiers require a weapon, armor, or ranged weapon.")
         };
     }
@@ -151,6 +153,17 @@ public static class ItemFactory
             return CreateTrap((TrapKind)RandGen.RandInt(0, Enum.GetValues<TrapKind>().Length));
         if (type is ItemType.Weapon or ItemType.Armor or ItemType.RangedWeapon)
             return CreateEquipment(type, RandGen.RandInt(1, 4));
+        return Create(type);
+    }
+
+    public static Item CreateForDepth(GenerationDepthBand depthBand)
+    {
+        int band = Math.Clamp((int)depthBand, 0, 2);
+        ItemType type = (ItemType)RandGen.RandInt(0, Enum.GetValues<ItemType>().Length);
+        if (type == ItemType.Trap)
+            return CreateTrap((TrapKind)RandGen.RandInt(0, Enum.GetValues<TrapKind>().Length));
+        if (type is ItemType.Weapon or ItemType.Armor or ItemType.RangedWeapon)
+            return CreateEquipment(type, band + 1);
         return Create(type);
     }
 }

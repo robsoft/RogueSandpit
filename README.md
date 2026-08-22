@@ -16,6 +16,7 @@ The simulation is strictly turn based. Every successful player action advances t
 
 - Seeded procedural rooms, corridors, doors, entrance, and retrieval objective
 - Reproducible run seeds and deterministic pruning of visually clustered doorway candidates
+- Path-distance encounter pacing with a protected entrance approach and shallow/middle/deep generation bands
 - A scrolling 18×16 local viewport using native-size 32×32 tiles, with the compact whole-map view retained under F1
 - A structured right-hand HUD for player state, equipment, inventory, objective, effects, and recent events
 - Keyboard-driven pause and runtime options screens with simulation-safe modal behaviour
@@ -38,6 +39,7 @@ The simulation is strictly turn based. Every successful player action advances t
 ### NPC simulation
 
 - Orc, Goblin, Skeleton, Troll, and Wretch archetypes with seeded names and distinct profiles
+- Depth-weighted populations: weaker shallow encounters, mixed middle rooms, stronger deep opposition, and objective guards
 - Line of sight, A* pursuit, hearing, last-known-position memory, prediction, and local searching
 - Confidence decay, evidence trails, coordinated alerts, distributed searches, calls for help, and casualty investigation
 - Archetype-specific morale, tracking skill, trap awareness, and hazard avoidance
@@ -103,7 +105,7 @@ The pause menu provides both **Restart This Seed**, which reconstructs the curre
 
 ## Developer diagnostics
 
-F1 reveals the full map and development-only state. Hovering a cell identifies its contents and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The active seed, retained/pruned doorway counts, and real-time countdown are shown only in this view.
+F1 reveals the full map and development-only state. Hovering a cell identifies its contents, entrance distance and generation-depth band, and exposes NPC intent, line of sight, paths, and awareness state. NPC colours distinguish pursuit, investigation, retreat, and rage. The active seed, retained/pruned doorway counts, and real-time countdown are shown only in this view.
 
 These diagnostics intentionally expose simulation information that normal play hides. They are expected to evolve or disappear behind better player-facing visual language later.
 

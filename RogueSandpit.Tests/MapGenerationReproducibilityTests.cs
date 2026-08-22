@@ -94,9 +94,9 @@ public class MapGenerationReproducibilityTests
         foreach (Doorway door in map.Doors)
             signature.Append($";D:{door.X1},{door.Y1},{door.State}");
         foreach (BaseNPC npc in map.NPCs)
-            signature.Append($";N:{npc.CharacterType},{npc.Name},{npc.X},{npc.Y},{npc.HeldItem?.Name}");
+            signature.Append($";N:{npc.CharacterType},{npc.Name},{npc.X},{npc.Y},{npc.HeldItem?.Name},{npc.HeldItem?.Tier}");
         foreach (GroundItem item in map.GroundItems)
-            signature.Append($";I:{item.Item.Name},{item.Item.Power},{item.X},{item.Y}");
+            signature.Append($";I:{item.Item.Name},{item.Item.Power},{item.Item.Tier},{item.X},{item.Y}");
         foreach (Special special in map.RoomList.SelectMany(room => room.Specials))
             signature.Append($";S:{special.X},{special.Y}");
         return signature.ToString();
